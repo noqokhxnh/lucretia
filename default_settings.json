@@ -487,13 +487,13 @@
   ],
   "startup": [
     {
-      "command": "systemctl --user start hyprpolkitagent"
+      "command": "/usr/lib/polkit-kde-authentication-agent-1"
     },
     {
       "command": "awww-daemon"
     },
     {
-      "command": "hypridle"
+      "command": "hypridle -c ~/.config/niri/hypridle.conf"
     },
     {
       "command": "quickshell -p ~/.config/niri/scripts/quickshell/Shell.qml"

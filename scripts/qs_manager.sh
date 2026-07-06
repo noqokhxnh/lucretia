@@ -18,10 +18,18 @@ if [[ "$ACTION" =~ ^[0-9]+$ ]]; then
     # Send IPC command directly to Main.qml via Quickshell's native IPC handler
     quickshell -p "$SHELL_QML_PATH" ipc call main handleCommand "close" "" "" >/dev/null 2>&1
 
-    if [[ "$TARGET" == "move" ]]; then
-        hyprctl dispatch "hl.dsp.window.move({ workspace = $ACTION })" >/dev/null 2>&1
+    if [ "$XDG_CURRENT_DESKTOP" = "niri" ]; then
+        if [[ "$TARGET" == "move" ]]; then
+            niri msg action move-column-to-workspace "$ACTION" >/dev/null 2>&1
+        else
+            niri msg action focus-workspace "$ACTION" >/dev/null 2>&1
+        fi
     else
-        hyprctl dispatch "hl.dsp.focus({ workspace = $ACTION })" >/dev/null 2>&1
+        if [[ "$TARGET" == "move" ]]; then
+            hyprctl dispatch "hl.dsp.window.move({ workspace = $ACTION })" >/dev/null 2>&1
+        else
+            hyprctl dispatch "hl.dsp.focus({ workspace = $ACTION })" >/dev/null 2>&1
+        fi
     fi
     exit 0
 fi

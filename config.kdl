@@ -180,9 +180,9 @@ binds {
     Super+Tab { focus-monitor-next; }
 }
 
-spawn-at-startup "systemctl" "--user" "start" "hyprpolkitagent"
+spawn-at-startup "/usr/lib/polkit-kde-authentication-agent-1"
 spawn-at-startup "awww-daemon"
-spawn-at-startup "hypridle"
+spawn-at-startup "hypridle" "-c" "/home/khxnh/.config/niri/hypridle.conf"
 spawn-at-startup "quickshell" "-p" "/home/khxnh/.config/niri/scripts/quickshell/Shell.qml"
 spawn-at-startup "/home/khxnh/.config/niri/scripts/init.sh"
 spawn-at-startup "playerctld"

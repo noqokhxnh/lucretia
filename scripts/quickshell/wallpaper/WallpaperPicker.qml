@@ -87,7 +87,7 @@ Item {
 
     Process {
         id: monitorProc
-        command: ["sh", "-c", "export PATH=$PATH:/usr/bin:/usr/local/bin:/run/current-system/sw/bin && hyprctl monitors -j"]
+        command: ["sh", "-c", "export PATH=$PATH:/usr/bin:/usr/local/bin:/run/current-system/sw/bin && if [ \"$XDG_CURRENT_DESKTOP\" = \"niri\" ]; then niri msg -j outputs | jq '[.[]]'; else hyprctl monitors -j; fi"]
         running: false
         
         stdout: StdioCollector {

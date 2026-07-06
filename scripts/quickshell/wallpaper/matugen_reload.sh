@@ -101,7 +101,7 @@ if command -v gsettings &> /dev/null; then
 fi
 
 # Reload Hyprland to update border colors
-if command -v hyprctl &> /dev/null; then
+if [ "$XDG_CURRENT_DESKTOP" = "Hyprland" ] && command -v hyprctl &> /dev/null; then
     hyprctl reload
 fi
 

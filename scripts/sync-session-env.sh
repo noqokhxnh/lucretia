@@ -33,8 +33,13 @@ systemctl --user import-environment \
     DBUS_SESSION_BUS_ADDRESS
 
 # Khởi động lại các dịch vụ portal để áp dụng biến môi trường mới
-systemctl --user stop xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-desktop-portal 2>/dev/null
-systemctl --user start xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-desktop-portal 2>/dev/null
+if [ "$XDG_CURRENT_DESKTOP" = "niri" ]; then
+    systemctl --user stop xdg-desktop-portal-gnome xdg-desktop-portal-gtk xdg-desktop-portal 2>/dev/null
+    systemctl --user start xdg-desktop-portal-gnome xdg-desktop-portal-gtk xdg-desktop-portal 2>/dev/null
+else
+    systemctl --user stop xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-desktop-portal 2>/dev/null
+    systemctl --user start xdg-desktop-portal-hyprland xdg-desktop-portal-gtk xdg-desktop-portal 2>/dev/null
+fi
 
 # Khởi động swayosd-server sau khi môi trường hiển thị và D-Bus đã sẵn sàng
 swayosd-server --top-margin 0.9 --style "$HOME/.config/swayosd/style.css" >/dev/null 2>&1 &
