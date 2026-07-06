@@ -123,7 +123,7 @@ Item {
     Process {
         id: remoteVerProcess
         running: false
-        command: ["bash", "-c", "curl -m 5 -s https://raw.githubusercontent.com/noqokhxnh/my_configuration/main/install.sh | grep '^DOTS_VERSION=' | cut -d'\"' -f2"]
+        command: ["bash", "-c", "curl -m 5 -s https://raw.githubusercontent.com/noqokhxnh/niri/main/install.sh | grep '^DOTS_VERSION=' | cut -d'\"' -f2"]
         stdout: StdioCollector {
             onStreamFinished: {
                 let out = this.text ? this.text.trim() : "";
@@ -146,7 +146,7 @@ try:
         
     local_v = parse_v(local_str)
 
-    req = urllib.request.Request('https://raw.githubusercontent.com/noqokhxnh/my_configuration/main/updates.json')
+    req = urllib.request.Request('https://raw.githubusercontent.com/noqokhxnh/niri/main/updates.json')
     res = urllib.request.urlopen(req, timeout=5)
     data = json.loads(res.read().decode())
 
@@ -205,7 +205,7 @@ except Exception:
     property string fetchScript: `
 import urllib.request, json, subprocess
 
-repo = 'noqokhxnh/my_configuration'
+repo = 'noqokhxnh/niri'
 
 try:
     local = subprocess.check_output("source ~/.local/state/imperative-dots-version 2>/dev/null && echo $LOCAL_VERSION", shell=True).decode('utf-8').strip()

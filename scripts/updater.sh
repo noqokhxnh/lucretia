@@ -120,7 +120,7 @@ fi
 # ─────────────────────────────────────────────
 # NON-GIT MODE: Fetch and run remote installer
 # ─────────────────────────────────────────────
-INSTALLER_URL="https://raw.githubusercontent.com/noqokhxnh/my_configuration/main/install.sh"
+INSTALLER_URL="https://raw.githubusercontent.com/noqokhxnh/niri/main/install.sh"
 TMPFILE=$(mktemp /tmp/installer.XXXXXX.sh)
 
 # Cleanup tmpfile khi script kết thúc (dù thành công hay lỗi)
