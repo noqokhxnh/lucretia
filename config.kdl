@@ -21,17 +21,7 @@ input {
     focus-follows-mouse
 }
 
-output "eDP-1" {
-    mode "1920x1080@60"
-    scale 1.0
-    position x=0 y=0
-}
 
-output "HDMI-A-1" {
-    mode "3840x2160@30"
-    scale 1.0
-    position x=0 y=0
-}
 
 layout {
     gaps 12
@@ -205,3 +195,9 @@ spawn-at-startup "/home/khxnh/.config/niri/scripts/volume_listener.sh"
 spawn-at-startup "/home/khxnh/.config/niri/scripts/update_notifier.sh"
 spawn-at-startup "/home/khxnh/.config/niri/scripts/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
+
+output "eDP-1" {
+    mode "1920x1080@360"
+    position x=0 y=0
+    scale 1.00
+}

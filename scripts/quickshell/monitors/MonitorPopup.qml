@@ -63,8 +63,8 @@ Item {
     property int originalLayoutOriginX: 0
     property int originalLayoutOriginY: 0
 
-    // Mirror/Extend mode: false = Extend (default), true = Mirror
-    property bool mirrorMode: false
+    // Niri does not support mirror mode — always extend
+    // property bool mirrorMode: false  // REMOVED: unsupported on niri
 
     ListModel {
         id: monitorsModel
@@ -319,73 +319,93 @@ Item {
     // -------------------------------------------------------------------------
     // NATIVE SYSTEM PROCESSES 
     // -------------------------------------------------------------------------
+
+    // Helper: convert niri transform string to int (0=Normal, 1=90, 2=180, 3=270)
+    function niriTransformToInt(tfStr) {
+        if (!tfStr || tfStr === "Normal") return 0;
+        if (tfStr === "_90" || tfStr === "90") return 1;
+        if (tfStr === "_180" || tfStr === "180") return 2;
+        if (tfStr === "_270" || tfStr === "270") return 3;
+        // Flipped variants — map to closest rotation
+        if (tfStr === "Flipped") return 0;
+        if (tfStr === "Flipped90") return 1;
+        if (tfStr === "Flipped180") return 2;
+        if (tfStr === "Flipped270") return 3;
+        return 0;
+    }
+
+    // Helper: convert int transform back to niri string
+    function intToNiriTransform(tf) {
+        if (tf === 1) return "_90";
+        if (tf === 2) return "_180";
+        if (tf === 3) return "_270";
+        return "Normal";
+    }
+
     Process {
         id: displayPoller
-        command: ["hyprctl", "monitors", "all", "-j"]
+        // niri msg --json outputs returns an object keyed by output name
+        command: ["niri", "msg", "--json", "outputs"]
         running: true
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    let data = JSON.parse(this.text.trim());
-                    console.log("[MonitorPopup] Received data: " + JSON.stringify(data));
+                    let raw = JSON.parse(this.text.trim());
+                    console.log("[MonitorPopup] Received niri outputs data");
                     monitorsModel.clear();
-                    
-                    let minX = 999999, minY = 999999;
 
+                    // Convert from object to array
+                    let data = Object.values(raw);
+
+                    let minX = 999999, minY = 999999;
                     for (let i = 0; i < data.length; i++) {
-                        if (data[i].x < minX) minX = data[i].x;
-                        if (data[i].y < minY) minY = data[i].y;
+                        let lx = data[i].logical ? data[i].logical.x : 0;
+                        let ly = data[i].logical ? data[i].logical.y : 0;
+                        if (lx < minX) minX = lx;
+                        if (ly < minY) minY = ly;
                     }
 
                     window.originalLayoutOriginX = minX !== 999999 ? minX : 0;
                     window.originalLayoutOriginY = minY !== 999999 ? minY : 0;
 
-                    // Build ID-to-name map for mirrorOf resolution
-                    // Hyprland returns mirrorOf as monitor ID ("0", "1") not name
-                    let idToName = {};
                     for (let i = 0; i < data.length; i++) {
-                        idToName[data[i].id.toString()] = data[i].name;
-                    }
+                        let out = data[i];
 
-                    // Detect if any monitor is currently mirroring
-                    let hasMirror = false;
-                    for (let i = 0; i < data.length; i++) {
-                        if (data[i].mirrorOf && data[i].mirrorOf !== "none" && data[i].mirrorOf !== "") {
-                            hasMirror = true;
-                            break;
-                        }
-                    }
-                    window.mirrorMode = hasMirror;
-                    console.log("[MonitorPopup] Detected mirrorMode: " + hasMirror);
+                        // Get current mode from modes array
+                        let modeIdx = (out.current_mode !== null && out.current_mode !== undefined) ? out.current_mode : 0;
+                        let mode = (out.modes && out.modes[modeIdx]) ? out.modes[modeIdx] : {width: 1920, height: 1080, refresh_rate: 60000};
 
-                    for (let i = 0; i < data.length; i++) {
-                        let scl = data[i].scale !== undefined ? data[i].scale : 1.0;
-                        let tf = data[i].transform !== undefined ? data[i].transform : 0;
-                        let normalizedX = (data[i].x - minX) * window.uiScale;
-                        let normalizedY = (data[i].y - minY) * window.uiScale;
+                        let resW = mode.width;
+                        let resH = mode.height;
+                        // niri refresh_rate is in mHz (millihertz), divide by 1000 for Hz
+                        let rateHz = Math.round(mode.refresh_rate / 1000);
 
-                        // Resolve mirrorOf ID to monitor name
-                        let mOf = "";
-                        if (data[i].mirrorOf && data[i].mirrorOf !== "none" && data[i].mirrorOf !== "") {
-                            mOf = idToName[data[i].mirrorOf] || data[i].mirrorOf;
-                        }
-                        console.log("[MonitorPopup] Monitor: " + data[i].name + ", mirrorOf resolved: '" + mOf + "'");
+                        let scl = (out.logical && out.logical.scale !== undefined) ? out.logical.scale : 1.0;
+                        let tfStr = (out.logical && out.logical.transform) ? out.logical.transform : "Normal";
+                        let tf = window.niriTransformToInt(tfStr);
+
+                        let lx = out.logical ? out.logical.x : 0;
+                        let ly = out.logical ? out.logical.y : 0;
+                        let normalizedX = (lx - minX) * window.uiScale;
+                        let normalizedY = (ly - minY) * window.uiScale;
+
+                        // Store all available modes for this output
+                        let availModes = out.modes || [];
+
+                        console.log("[MonitorPopup] Output: " + out.name + " " + resW + "x" + resH + "@" + rateHz + "Hz transform=" + tfStr);
 
                         monitorsModel.append({
-                            name: data[i].name,
-                            resW: data[i].width,
-                            resH: data[i].height,
+                            name: out.name,
+                            resW: resW,
+                            resH: resH,
                             sysScale: scl,
-                            rate: Math.round(data[i].refreshRate).toString(),
+                            rate: rateHz.toString(),
                             uiX: normalizedX,
                             uiY: normalizedY,
-                            transform: tf,
-                            mirrorOf: mOf
+                            transform: tf
                         });
-
-                        if (data[i].focused) window.activeEditIndex = i;
                     }
-                    
+
                     window.forceLayoutUpdate();
                 } catch(e) {
                     console.log("[MonitorPopup] Parsing error: " + e);
@@ -395,202 +415,130 @@ Item {
     }
 
     // -------------------------------------------------------------------------
-    // SYSTEM APPLY FUNCTION & DEBUG LOGGING
+    // SYSTEM APPLY FUNCTION (Niri)
     // -------------------------------------------------------------------------
-    // Helper: Build a Lua hl.monitor({...}) call string
-    // IMPORTANT: Always include 'mirror' — empty string explicitly un-mirrors
-    function buildEvalMonitor(opts) {
-        let parts = [];
-        parts.push('output = "' + opts.name + '"');
-        parts.push('mode = "' + opts.mode + '"');
-        parts.push('position = "' + opts.position + '"');
-        parts.push('scale = ' + opts.scale);
-        if (opts.transform && opts.transform !== 0) {
-            parts.push('transform = ' + opts.transform);
+    // Build a niri config.kdl output block for a single monitor
+    function buildNiriOutputBlock(opts) {
+        // opts: { name, resW, resH, rate, x, y, scale, transform }
+        let tfStr = window.intToNiriTransform(opts.transform);
+        let block = 'output "' + opts.name + '" {\n';
+        block += '    mode "' + opts.resW + 'x' + opts.resH + '@' + opts.rate + '"\n';
+        block += '    position x=' + opts.x + ' y=' + opts.y + '\n';
+        block += '    scale ' + opts.scale.toFixed(2) + '\n';
+        if (tfStr !== "Normal") {
+            block += '    transform "' + tfStr + '"\n';
         }
-        // Always send mirror field: "" to un-mirror, "eDP-1" etc to mirror
-        parts.push('mirror = "' + (opts.mirror || "") + '"');
-        return 'hl.monitor({ ' + parts.join(', ') + ' })';
+        block += '}';
+        return block;
+    }
+
+    // Escape string for use inside a bash heredoc / sed expression
+    function escapeSed(s) {
+        return s.replace(/\\/g, '\\\\').replace(/\//g, '\\/').replace(/&/g, '\\&').replace(/\n/g, '\\n');
     }
 
     function triggerApply() {
-        flashRect.opacity = 0.8; 
+        flashRect.opacity = 0.8;
         applyFlashAnim.start();
 
         if (monitorsModel.count === 0) return;
 
-        window.debugLog("================= NEW APPLY RUN =================");
+        window.debugLog("================= NEW APPLY RUN (niri) =================");
 
-        if (monitorsModel.count === 1) {
-            let m = monitorsModel.get(0);
-            let evalCmd = buildEvalMonitor({
-                name: m.name,
-                mode: m.resW + "x" + m.resH + "@" + m.rate,
-                position: "0x0",
-                scale: m.sysScale,
-                transform: m.transform,
-                mirror: ""
+        // Collect all monitors and snap positions
+        let rects = [];
+        let finalMinX = 999999;
+        let finalMinY = 999999;
+
+        for (let i = 0; i < monitorsModel.count; i++) {
+            let m = monitorsModel.get(i);
+            let isP = m.transform === 1 || m.transform === 3;
+            // niri uses logical px (scale-independent) for positions
+            let physW = Math.round((isP ? m.resH : m.resW) / m.sysScale);
+            let physH = Math.round((isP ? m.resW : m.resH) / m.sysScale);
+            let rawX = m.uiX / window.uiScale;
+            let rawY = m.uiY / window.uiScale;
+            rects.push({
+                x: rawX, y: rawY, w: physW, h: physH,
+                resW: m.resW, resH: m.resH, name: m.name,
+                rate: m.rate, sysScale: m.sysScale, transform: m.transform
             });
-
-            let jsonMonitorsArray = [{
-                name: m.name, resW: m.resW, resH: m.resH, rate: parseInt(m.rate),
-                x: 0, y: 0, scale: m.sysScale, transform: m.transform, mirrorOf: ""
-            }];
-            let safeJson = JSON.stringify(jsonMonitorsArray).replace(/'/g, "'\\''").replace(/"/g, '\\"');
-            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/niri/settings.json > ~/.config/niri/settings.json.tmp && mv ~/.config/niri/settings.json.tmp ~/.config/niri/settings.json";
-            let postReloadCmd = "awww kill ; sleep 0.2 ; awww-daemon &";
-
-            Quickshell.execDetached(["notify-send", "Display Update", "Applied & Saved: " + m.resW + "x" + m.resH + " @ " + m.rate + "Hz"]);
-            Quickshell.execDetached(["sh", "-c", "hyprctl eval '" + evalCmd + "' ; " + jsonCmd + " ; " + postReloadCmd]);
-            
-            window.debugLog("Executed single monitor apply: " + evalCmd);
-        } else if (window.mirrorMode) {
-            // ---- MIRROR MODE ----
-            // Primary = first monitor (index 0), all others mirror it
-            let primary = monitorsModel.get(0);
-            let evalCmds = [];
-
-            evalCmds.push(buildEvalMonitor({
-                name: primary.name,
-                mode: primary.resW + "x" + primary.resH + "@" + primary.rate,
-                position: "0x0",
-                scale: primary.sysScale,
-                transform: primary.transform,
-                mirror: ""
-            }));
-
-            let jsonMonitorsArray = [{
-                name: primary.name, resW: primary.resW, resH: primary.resH, rate: parseInt(primary.rate),
-                x: 0, y: 0, scale: primary.sysScale, transform: primary.transform, mirrorOf: ""
-            }];
-
-            for (let i = 1; i < monitorsModel.count; i++) {
-                let m = monitorsModel.get(i);
-                evalCmds.push(buildEvalMonitor({
-                    name: m.name,
-                    mode: primary.resW + "x" + primary.resH,
-                    position: "auto",
-                    scale: m.sysScale,
-                    transform: 0,
-                    mirror: primary.name
-                }));
-                jsonMonitorsArray.push({
-                    name: m.name, resW: m.resW, resH: m.resH, rate: parseInt(m.rate),
-                    x: 0, y: 0, scale: m.sysScale, transform: m.transform, mirrorOf: primary.name
-                });
-            }
-
-            let fullLua = evalCmds.join(" ; ");
-            let safeJson = JSON.stringify(jsonMonitorsArray).replace(/'/g, "'\\''").replace(/"/g, '\\"');
-            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/niri/settings.json > ~/.config/niri/settings.json.tmp && mv ~/.config/niri/settings.json.tmp ~/.config/niri/settings.json";
-            let postReloadCmd = "awww kill ; sleep 0.2 ; awww-daemon &";
-
-            Quickshell.execDetached(["sh", "-c", "hyprctl eval '" + fullLua + "' ; " + jsonCmd + " ; " + postReloadCmd]);
-            Quickshell.execDetached(["notify-send", "Display Update", "Mirror: All displays → " + primary.name]);
-
-            window.debugLog("Executed mirror apply: " + fullLua);
-        } else {
-            // ---- EXTEND MODE ----
-            let rects = [];
-            let finalMinX = 999999;
-            let finalMinY = 999999;
-
-            for (let i = 0; i < monitorsModel.count; i++) {
-                let m = monitorsModel.get(i);
-                let isP = m.transform === 1 || m.transform === 3;
-                let physW = Math.round((isP ? m.resH : m.resW) / m.sysScale);
-                let physH = Math.round((isP ? m.resW : m.resH) / m.sysScale);
-                
-                let rawX = m.uiX / window.uiScale;
-                let rawY = m.uiY / window.uiScale;
-                
-                rects.push({
-                    x: rawX, y: rawY, w: physW, h: physH, 
-                    resW: m.resW, resH: m.resH, name: m.name, 
-                    rate: m.rate, sysScale: m.sysScale, transform: m.transform
-                });
-            }
-
-            function getTightSnap(pX, pY, sX, sY, sW, sH, mW, mH, t) {
-                let cx = pX; let cy = pY;
-                if (Math.abs(cx - (sX - mW)) < t) cx = sX - mW;
-                else if (Math.abs(cx - (sX + sW)) < t) cx = sX + sW;
-                else if (Math.abs(cx - sX) < t) cx = sX;
-                else if (Math.abs(cx - (sX + sW - mW)) < t) cx = sX + sW - mW;
-                else if (Math.abs(cx - (sX + sW/2 - mW/2)) < t) cx = sX + sW/2 - mW/2;
-                
-                if (Math.abs(cy - (sY - mH)) < t) cy = sY - mH;
-                else if (Math.abs(cy - (sY + sH)) < t) cy = sY + sH;
-                else if (Math.abs(cy - sY) < t) cy = sY;
-                else if (Math.abs(cy - (sY + sH - mH)) < t) cy = sY + sH - mH;
-                else if (Math.abs(cy - (sY + sH/2 - mH/2)) < t) cy = sY + sH/2 - mH/2;
-                
-                return {x: cx, y: cy};
-            }
-
-            for (let i = 1; i < rects.length; i++) {
-                let bestX = rects[i].x;
-                let bestY = rects[i].y;
-                let bestDist = 999999;
-                for (let j = 0; j < i; j++) {
-                    let r0 = rects[j];
-                    let snapped = getTightSnap(
-                        rects[i].x, rects[i].y,
-                        r0.x, r0.y,
-                        r0.w, r0.h, rects[i].w, rects[i].h, 25 // Intentionally unscaled (Physical display coordinates)
-                    );
-                    let dist = Math.hypot(rects[i].x - snapped.x, rects[i].y - snapped.y);
-                    if (dist < bestDist) {
-                        bestDist = dist;
-                        bestX = Math.round(snapped.x);
-                        bestY = Math.round(snapped.y);
-                    }
-                }
-                rects[i].x = bestX;
-                rects[i].y = bestY;
-            }
-
-            for (let i = 0; i < rects.length; i++) {
-                if (rects[i].x < finalMinX) finalMinX = rects[i].x;
-                if (rects[i].y < finalMinY) finalMinY = rects[i].y;
-            }
-            
-            let evalCmds = [];
-            let summaryString = "";
-            let jsonMonitorsArray = [];
-
-            for (let i = 0; i < rects.length; i++) {
-                let r = rects[i];
-                
-                r.x = Math.round(r.x - finalMinX);
-                r.y = Math.round(r.y - finalMinY);
-                
-                evalCmds.push(buildEvalMonitor({
-                    name: r.name,
-                    mode: r.resW + "x" + r.resH + "@" + r.rate,
-                    position: r.x + "x" + r.y,
-                    scale: r.sysScale,
-                    transform: r.transform,
-                    mirror: ""
-                }));
-                summaryString += r.name + " ";
-
-                jsonMonitorsArray.push({
-                    name: r.name, resW: r.resW, resH: r.resH, rate: parseInt(r.rate),
-                    x: r.x, y: r.y, scale: r.sysScale, transform: r.transform, mirrorOf: ""
-                });
-            }
-            
-            let fullLua = evalCmds.join(" ; ");
-            let safeJson = JSON.stringify(jsonMonitorsArray).replace(/'/g, "'\\''").replace(/"/g, '\\"');
-            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/niri/settings.json > ~/.config/niri/settings.json.tmp && mv ~/.config/niri/settings.json.tmp ~/.config/niri/settings.json";
-            let postReloadCmd = "awww kill ; sleep 0.2 ; awww-daemon &";
-
-            Quickshell.execDetached(["sh", "-c", "hyprctl eval '" + fullLua + "' ; " + jsonCmd + " ; " + postReloadCmd]);
-            Quickshell.execDetached(["notify-send", "Display Update", "Applied & Saved layout for: " + summaryString]);
-            
-            window.debugLog("Executed multi monitor apply: " + fullLua);
         }
+
+        // Snap multi-monitor positions
+        function getTightSnap(pX, pY, sX, sY, sW, sH, mW, mH, t) {
+            let cx = pX; let cy = pY;
+            if (Math.abs(cx - (sX - mW)) < t) cx = sX - mW;
+            else if (Math.abs(cx - (sX + sW)) < t) cx = sX + sW;
+            else if (Math.abs(cx - sX) < t) cx = sX;
+            else if (Math.abs(cx - (sX + sW - mW)) < t) cx = sX + sW - mW;
+            else if (Math.abs(cx - (sX + sW/2 - mW/2)) < t) cx = sX + sW/2 - mW/2;
+            if (Math.abs(cy - (sY - mH)) < t) cy = sY - mH;
+            else if (Math.abs(cy - (sY + sH)) < t) cy = sY + sH;
+            else if (Math.abs(cy - sY) < t) cy = sY;
+            else if (Math.abs(cy - (sY + sH - mH)) < t) cy = sY + sH - mH;
+            else if (Math.abs(cy - (sY + sH/2 - mH/2)) < t) cy = sY + sH/2 - mH/2;
+            return {x: cx, y: cy};
+        }
+
+        for (let i = 1; i < rects.length; i++) {
+            let bestX = rects[i].x, bestY = rects[i].y, bestDist = 999999;
+            for (let j = 0; j < i; j++) {
+                let r0 = rects[j];
+                let snapped = getTightSnap(rects[i].x, rects[i].y, r0.x, r0.y, r0.w, r0.h, rects[i].w, rects[i].h, 25);
+                let dist = Math.hypot(rects[i].x - snapped.x, rects[i].y - snapped.y);
+                if (dist < bestDist) { bestDist = dist; bestX = Math.round(snapped.x); bestY = Math.round(snapped.y); }
+            }
+            rects[i].x = bestX; rects[i].y = bestY;
+        }
+
+        for (let i = 0; i < rects.length; i++) {
+            if (rects[i].x < finalMinX) finalMinX = rects[i].x;
+            if (rects[i].y < finalMinY) finalMinY = rects[i].y;
+        }
+        if (finalMinX === 999999) finalMinX = 0;
+        if (finalMinY === 999999) finalMinY = 0;
+
+        // Build niri config.kdl output blocks
+        let outputBlocks = [];
+        let summaryString = "";
+        for (let i = 0; i < rects.length; i++) {
+            let r = rects[i];
+            r.x = Math.round(r.x - finalMinX);
+            r.y = Math.round(r.y - finalMinY);
+            outputBlocks.push(buildNiriOutputBlock({
+                name: r.name,
+                resW: r.resW,
+                resH: r.resH,
+                rate: r.rate,
+                x: r.x,
+                y: r.y,
+                scale: r.sysScale,
+                transform: r.transform
+            }));
+            summaryString += r.name + " ";
+            window.debugLog("Output block:\n" + outputBlocks[outputBlocks.length - 1]);
+        }
+
+        // Apply: backup config, strip old output blocks with perl, append new ones, reload niri
+        let applyLines = [];
+        applyLines.push("CONFIG=~/.config/niri/config.kdl");
+        applyLines.push("cp \"$CONFIG\" \"${CONFIG}.bak\"");
+        // Remove all existing output "..." { ... } blocks (single-level nesting)
+        applyLines.push("perl -i -0pe 's/\\noutput \"[^\"]+\"[^}]*\\}//g' \"$CONFIG\"");
+
+        for (let i = 0; i < outputBlocks.length; i++) {
+            let block = outputBlocks[i];
+            applyLines.push("printf '\\n%s\\n' '" + block.replace(/'/g, "'\\''") + "' >> \"$CONFIG\"");
+        }
+
+        applyLines.push("niri msg action reload-config");
+
+        let fullCmd = applyLines.join(" && ");
+        Quickshell.execDetached(["sh", "-c", fullCmd]);
+        Quickshell.execDetached(["notify-send", "Display Update", "Applied & Saved: " + summaryString.trim()]);
+
+        window.debugLog("Executed niri apply for: " + summaryString);
     }
 
 
@@ -1333,113 +1281,34 @@ Item {
 
                     Item { Layout.preferredHeight: window.s(2) }
 
-                    // --- EXTEND / MIRROR MODE TOGGLE ---
+                    // --- MULTI-MONITOR INFO BADGE (niri: extend only) ---
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: window.s(50)
+                        Layout.preferredHeight: window.s(40)
                         visible: monitorsModel.count > 1
 
                         Rectangle {
-                            id: modeToggleBg
                             anchors.fill: parent
                             radius: window.s(14)
-                            color: window.mantle
-                            border.color: window.surface0
+                            color: Qt.alpha(window.blue, 0.08)
+                            border.color: Qt.alpha(window.blue, 0.25)
                             border.width: 1
 
-                            Row {
-                                anchors.fill: parent
-                                anchors.margins: window.s(4)
-                                spacing: window.s(4)
+                            RowLayout {
+                                anchors.centerIn: parent
+                                spacing: window.s(8)
 
-                                // Extend button
-                                Rectangle {
-                                    id: extendBtn
-                                    width: (parent.width - window.s(4)) / 2
-                                    height: parent.height
-                                    radius: window.s(10)
-                                    color: !window.mirrorMode ? Qt.alpha(window.blue, 0.2) : "transparent"
-                                    border.color: !window.mirrorMode ? window.blue : "transparent"
-                                    border.width: !window.mirrorMode ? window.s(1.5) : 0
-
-                                    Behavior on color { ColorAnimation { duration: 300 } }
-                                    Behavior on border.color { ColorAnimation { duration: 300 } }
-
-                                    scale: extendMa.pressed ? 0.95 : 1.0
-                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutSine } }
-
-                                    RowLayout {
-                                        anchors.centerIn: parent
-                                        spacing: window.s(6)
-
-                                        Text {
-                                            font.family: "Iosevka Nerd Font"
-                                            font.pixelSize: window.s(18)
-                                            color: !window.mirrorMode ? window.blue : window.overlay0
-                                            text: "󰍺"
-                                            Behavior on color { ColorAnimation { duration: 300 } }
-                                        }
-                                        Text {
-                                            font.family: "JetBrains Mono"
-                                            font.weight: !window.mirrorMode ? Font.Black : Font.Normal
-                                            font.pixelSize: window.s(12)
-                                            color: !window.mirrorMode ? window.text : window.overlay0
-                                            text: "Extend"
-                                            Behavior on color { ColorAnimation { duration: 300 } }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: extendMa
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: window.mirrorMode = false
-                                    }
+                                Text {
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: window.s(16)
+                                    color: window.blue
+                                    text: "󰍺"
                                 }
-
-                                // Mirror button
-                                Rectangle {
-                                    id: mirrorBtn
-                                    width: (parent.width - window.s(4)) / 2
-                                    height: parent.height
-                                    radius: window.s(10)
-                                    color: window.mirrorMode ? Qt.alpha(window.mauve, 0.2) : "transparent"
-                                    border.color: window.mirrorMode ? window.mauve : "transparent"
-                                    border.width: window.mirrorMode ? window.s(1.5) : 0
-
-                                    Behavior on color { ColorAnimation { duration: 300 } }
-                                    Behavior on border.color { ColorAnimation { duration: 300 } }
-
-                                    scale: mirrorMa.pressed ? 0.95 : 1.0
-                                    Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutSine } }
-
-                                    RowLayout {
-                                        anchors.centerIn: parent
-                                        spacing: window.s(6)
-
-                                        Text {
-                                            font.family: "Iosevka Nerd Font"
-                                            font.pixelSize: window.s(18)
-                                            color: window.mirrorMode ? window.mauve : window.overlay0
-                                            text: "󰍹"
-                                            Behavior on color { ColorAnimation { duration: 300 } }
-                                        }
-                                        Text {
-                                            font.family: "JetBrains Mono"
-                                            font.weight: window.mirrorMode ? Font.Black : Font.Normal
-                                            font.pixelSize: window.s(12)
-                                            color: window.mirrorMode ? window.text : window.overlay0
-                                            text: "Mirror"
-                                            Behavior on color { ColorAnimation { duration: 300 } }
-                                        }
-                                    }
-
-                                    MouseArea {
-                                        id: mirrorMa
-                                        anchors.fill: parent
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: window.mirrorMode = true
-                                    }
+                                Text {
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: window.s(11)
+                                    color: window.subtext0
+                                    text: "Extend mode  ·  drag to reposition"
                                 }
                             }
                         }

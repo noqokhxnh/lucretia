@@ -20,3 +20,4 @@ config/variables.conf
 # they are hand-maintained source files, not generated output.
 # ──────────────────────────────────────────────────────────────────────────────
 hyprland.conf
+*.bak
