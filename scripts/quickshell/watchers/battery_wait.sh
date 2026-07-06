@@ -13,17 +13,11 @@ MONITOR_PID=""
 
 cleanup() {
     rm -f "$PIPE"
-    if [ -n "$MONITOR_PID" ]; then
-        kill -TERM "-$MONITOR_PID" 2>/dev/null
-        kill -TERM "$MONITOR_PID" 2>/dev/null
-    fi
-    # exit removed
+    pkill -P $$ 2>/dev/null
 }
 trap 'cleanup' EXIT; trap 'cleanup; exit 143' TERM INT
 
-# Chạy udevadm trong session riêng để kill chính xác bằng PGID
-LC_ALL=C setsid udevadm monitor --subsystem-match=power_supply 2>/dev/null > "$PIPE" &
-MONITOR_PID=$!
+LC_ALL=C udevadm monitor --subsystem-match=power_supply 2>/dev/null > "$PIPE" &
 
 # Blocks until udevadm catches a change, OR 10 seconds pass (failsafe).
 timeout 10 grep -m 1 "change" < "$PIPE" > /dev/null || true

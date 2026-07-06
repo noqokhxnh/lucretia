@@ -144,7 +144,6 @@ binds {
     Super+D { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "dashboard"; }
     Super+Shift+D { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "services"; }
     Super+Shift+M { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "monitors"; }
-    
     // --- SwayOSD Controls ---
     Caps_Lock { spawn "sleep" "0.1" "&&" "swayosd-client" "--caps-lock"; }
     XF86MonBrightnessDown { spawn "swayosd-client" "--brightness" "lower"; }

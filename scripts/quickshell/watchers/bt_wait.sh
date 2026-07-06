@@ -13,19 +13,11 @@ PID1="" PID2=""
 
 cleanup() {
     rm -f "$PIPE"
-    for pid in "$PID1" "$PID2"; do
-        [ -n "$pid" ] || continue
-        kill -TERM "-$pid" 2>/dev/null
-        kill -TERM "$pid" 2>/dev/null
-    done
-    # exit removed
+    pkill -P $$ 2>/dev/null
 }
 trap 'cleanup' EXIT; trap 'cleanup; exit 143' TERM INT
 
-# Chạy mỗi dbus-monitor trong session riêng để kill chính xác bằng PGID
-LC_ALL=C setsid dbus-monitor --system "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.Device1'" 2>/dev/null | grep --line-buffered 'string "Connected"' > "$PIPE" &
-PID1=$!
-LC_ALL=C setsid dbus-monitor --system "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.Adapter1'" 2>/dev/null | grep --line-buffered 'string "Powered"' > "$PIPE" &
-PID2=$!
+LC_ALL=C dbus-monitor --system "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.Device1'" 2>/dev/null | grep --line-buffered 'string "Connected"' > "$PIPE" &
+LC_ALL=C dbus-monitor --system "type='signal',interface='org.freedesktop.DBus.Properties',member='PropertiesChanged',arg0='org.bluez.Adapter1'" 2>/dev/null | grep --line-buffered 'string "Powered"' > "$PIPE" &
 
 read -r _ < "$PIPE"

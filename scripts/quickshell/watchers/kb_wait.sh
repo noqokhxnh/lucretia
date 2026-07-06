@@ -13,20 +13,19 @@ MONITOR_PID=""
 
 cleanup() {
     rm -f "$PIPE"
-    if [ -n "$MONITOR_PID" ]; then
-        kill -TERM "-$MONITOR_PID" 2>/dev/null
-        kill -TERM "$MONITOR_PID" 2>/dev/null
-    fi
-    # exit removed
+    pkill -P $$ 2>/dev/null
 }
 trap 'cleanup' EXIT; trap 'cleanup; exit 143' TERM INT
 
 if [ -n "$NIRI_SOCKET" ]; then
-    LC_ALL=C setsid niri msg -j event-stream 2>/dev/null | grep --line-buffered -E '"KeyboardLayoutsChanged"|"KeyboardLayoutSwitched"' > "$PIPE" &
+    LC_ALL=C niri msg -j event-stream 2>/dev/null | grep --line-buffered -E '"KeyboardLayoutsChanged"|"KeyboardLayoutSwitched"' > "$PIPE" &
 else
     sleep 10 > "$PIPE" &
 fi
-MONITOR_PID=$!
 
+# Skip the first match, which is the initial state dumped by niri msg on startup
+read -r _ < "$PIPE"
+
+# Block until the next actual keyboard layout change event occurs
 read -r _ < "$PIPE"
 sleep 0.05

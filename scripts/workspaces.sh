@@ -13,7 +13,7 @@ qs_ensure_cache "workspaces"
 # ============================================================================
 for pid in $(pgrep -f "workspaces.sh"); do
     if [ "$pid" != "$$" ] && [ "$pid" != "$PPID" ]; then
-        kill -9 "$pid" 2>/dev/null
+        kill -15 "$pid" 2>/dev/null
     fi
 done
 
