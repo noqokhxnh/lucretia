@@ -18,7 +18,7 @@ input {
         accel-speed 0.0
     }
     warp-mouse-to-focus
-    focus-follows-mouse max-threshold-cooldown-ms=100
+    focus-follows-mouse
 }
 
 output "eDP-1" {
@@ -177,3 +177,16 @@ binds {
     
     Super+Tab { focus-monitor-next; }
 }
+
+spawn-at-startup "systemctl" "--user" "start" "hyprpolkitagent"
+spawn-at-startup "awww-daemon"
+spawn-at-startup "hypridle"
+spawn-at-startup "quickshell" "-p" "/home/khxnh/.config/niri/scripts/quickshell/Shell.qml"
+spawn-at-startup "/home/khxnh/.config/niri/scripts/init.sh"
+spawn-at-startup "playerctld"
+spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
+spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
+spawn-at-startup "/home/khxnh/.config/niri/scripts/volume_listener.sh"
+spawn-at-startup "/home/khxnh/.config/niri/scripts/update_notifier.sh"
+spawn-at-startup "/home/khxnh/.config/niri/scripts/battery_power_saver.sh"
+spawn-at-startup "fcitx5" "-d"

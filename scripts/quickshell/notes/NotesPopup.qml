@@ -20,7 +20,7 @@ Item {
     readonly property color mauve: _theme.mauve || "#cba6f7"
     readonly property color red: _theme.red || "#f38ba8"
 
-    property string backendScript: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/notes/notes_backend"
+    property string backendScript: Quickshell.env("HOME") + "/.config/niri/scripts/quickshell/notes/notes_backend"
     property string tempFile: Quickshell.env("HOME") + "/.cache/qs_note_current.txt"
 
     property real introPhase: 0
@@ -392,7 +392,7 @@ Item {
                                 }
 
                                 Keys.onEscapePressed: {
-                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                                     event.accepted = true;
                                 }
                             }

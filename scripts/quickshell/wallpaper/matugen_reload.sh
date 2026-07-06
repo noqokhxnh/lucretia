@@ -4,7 +4,7 @@
 # 1. Flatten Matugen v4.0 Nested JSON for Quickshell
 # ------------------------------------------------------------------------------
 # Updated to match your config.toml output path
-QS_JSON="$HOME/.config/hypr/scripts/quickshell/qs_colors.json"
+QS_JSON="$HOME/.config/niri/scripts/quickshell/qs_colors.json"
 
 python3 -c '
 import json
@@ -40,7 +40,7 @@ except Exception as e:
 # ------------------------------------------------------------------------------
 # If Tera dumped {"color": "#hex"} into your text files, this strips it to #hex.
 TEXT_FILES=(
-    "$HOME/.config/hypr/scripts/quickshell/qs_colors.json"
+    "$HOME/.config/niri/scripts/quickshell/qs_colors.json"
     "$HOME/.config/kitty/kitty-matugen-colors.conf"
     "$HOME/.config/nvim/matugen_colors.lua"
     "$HOME/.config/cava/colors"
@@ -51,7 +51,7 @@ TEXT_FILES=(
     "$HOME/.config/qt6ct/colors/matugen.conf"
     "$HOME/.config/qt5ct/qss/matugen-style.qss"
     "$HOME/.config/qt6ct/qss/matugen-style.qss"
-    "$HOME/.config/hypr/colors.conf"
+    "$HOME/.config/niri/colors.conf"
 )
 
 for file in "${TEXT_FILES[@]}"; do

@@ -90,7 +90,7 @@ Variants {
             // --- Compiled C++ Sniffer Process ---
             Process {
                 id: keycastBackend
-                command: [paths.home + "/.config/hypr/scripts/keycast_backend"]
+                command: [paths.home + "/.config/niri/scripts/keycast_backend"]
                 running: window.isEnabled
                 
                 stdout: SplitParser {

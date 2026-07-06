@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ~/.config/hypr/scripts/apply_v055_migration.sh
+# ~/.config/niri/scripts/apply_v055_migration.sh
 # ─────────────────────────────────────────────────────────────────────────────
 # Run this ONCE after upgrading Hyprland to v0.55+.
 # It swaps the lua/ directory to the v0.55-compatible version and activates
@@ -8,7 +8,7 @@
 
 set -e
 
-HYPR_DIR="$HOME/.config/hypr"
+HYPR_DIR="$HOME/.config/niri"
 NEW_LUA="$HYPR_DIR/lua-v055"
 OLD_LUA="$HYPR_DIR/lua"
 BACKUP_LUA="$HYPR_DIR/lua-legacy"

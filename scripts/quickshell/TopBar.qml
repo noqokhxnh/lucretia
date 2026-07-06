@@ -398,7 +398,7 @@ Variants {
 
             Process {
                 id: kbPoller; running: true
-                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/kb_fetch.sh"]
+                command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/kb_fetch.sh"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         let txt = this.text.trim();
@@ -409,11 +409,11 @@ Variants {
                     }
                 }
             }
-            Process { id: kbWaiter; command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/kb_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { kbPoller.running = false; kbPoller.running = true; } } }
+            Process { id: kbWaiter; command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/kb_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { kbPoller.running = false; kbPoller.running = true; } } }
 
             Process {
                 id: audioPoller; running: true
-                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/audio_fetch.sh"]
+                command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/audio_fetch.sh"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         let txt = this.text.trim();
@@ -432,11 +432,11 @@ Variants {
                     }
                 }
             }
-            Process { id: audioWaiter; command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/audio_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { audioPoller.running = false; audioPoller.running = true; } } }
+            Process { id: audioWaiter; command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/audio_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { audioPoller.running = false; audioPoller.running = true; } } }
 
             Process {
                 id: networkPoller; running: true
-                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/network_fetch.sh"]
+                command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/network_fetch.sh"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         let txt = this.text.trim();
@@ -454,11 +454,11 @@ Variants {
                     }
                 }
             }
-            Process { id: networkWaiter; command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/network_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { networkPoller.running = false; networkPoller.running = true; } } }
+            Process { id: networkWaiter; command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/network_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { networkPoller.running = false; networkPoller.running = true; } } }
 
             Process {
                 id: btPoller; running: true
-                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/bt_fetch.sh"]
+                command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/bt_fetch.sh"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         let txt = this.text.trim();
@@ -475,11 +475,11 @@ Variants {
                     }
                 }
             }
-            Process { id: btWaiter; command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/bt_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { btPoller.running = false; btPoller.running = true; } } }
+            Process { id: btWaiter; command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/bt_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { btPoller.running = false; btPoller.running = true; } } }
 
             Process {
                 id: batteryPoller; running: true
-                command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/battery_fetch.sh"]
+                command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/battery_fetch.sh"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         let txt = this.text.trim();
@@ -497,14 +497,14 @@ Variants {
                     }
                 }
             }
-            Process { id: batteryWaiter; command: ["bash", "-c", "~/.config/hypr/scripts/quickshell/watchers/battery_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { batteryPoller.running = false; batteryPoller.running = true; } } }
+            Process { id: batteryWaiter; command: ["bash", "-c", "~/.config/niri/scripts/quickshell/watchers/battery_wait.sh"]; onExited: (exitCode) => { if (exitCode === 0) { batteryPoller.running = false; batteryPoller.running = true; } } }
 
             Process {
                 id: weatherPoller
                 command: ["bash", "-c", `
-                    echo "$(~/.config/hypr/scripts/quickshell/calendar/weather.sh --current-icon)"
-                    echo "$(~/.config/hypr/scripts/quickshell/calendar/weather.sh --current-temp)"
-                    echo "$(~/.config/hypr/scripts/quickshell/calendar/weather.sh --current-hex)"
+                    echo "$(~/.config/niri/scripts/quickshell/calendar/weather.sh --current-icon)"
+                    echo "$(~/.config/niri/scripts/quickshell/calendar/weather.sh --current-temp)"
+                    echo "$(~/.config/niri/scripts/quickshell/calendar/weather.sh --current-hex)"
                 `]
                 stdout: StdioCollector {
                     onStreamFinished: {
@@ -610,7 +610,7 @@ Variants {
                                 id: helpMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle guide"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle guide"])
                             }
                         }
 
@@ -635,7 +635,7 @@ Variants {
                                 id: searchMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle applauncher"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle applauncher"])
                             }
                         }
 
@@ -660,7 +660,7 @@ Variants {
                                 id: dashboardMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle dashboard"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle dashboard"])
                             }
                         }
 
@@ -685,7 +685,7 @@ Variants {
                                 id: settingsMouse
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle settings"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle settings"])
                             }
                         }
 
@@ -752,7 +752,7 @@ Variants {
                                 onClicked: {
                                     barWindow.updateAvailable = false;
                                     barWindow.forceUpdateShow = false;
-                                    Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle updater"]);
+                                    Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle updater"]);
                                 }
                             }
                         }
@@ -896,7 +896,7 @@ Variants {
                                     hoverEnabled: true
                                     anchors.fill: parent
                                     onClicked: {
-                                        Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh " + wsName])
+                                        Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh " + wsName])
                                     }
                                 }
                             }
@@ -949,7 +949,7 @@ Variants {
                                 width: infoLayout.width
                                 height: innerMediaLayout.height
                                 hoverEnabled: true
-                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle music"])
+                                onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle music"])
                                 
                                 Row {
                                     id: infoLayout
@@ -1103,7 +1103,7 @@ Variants {
                         id: centerMouse
                         anchors.fill: parent
                         hoverEnabled: true
-                        onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle calendar"])
+                        onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle calendar"])
                     }
 
                     RowLayout {
@@ -1274,7 +1274,7 @@ Variants {
                             anchors.fill: parent
                             onClicked: {
                                 // Open the floating widget which contains the timer
-                                Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle focustime"]);
+                                Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle focustime"]);
                             }
                         }
                     }
@@ -1307,7 +1307,7 @@ Variants {
                             color: notePill.isHovered ? mocha.yellow : mocha.subtext0
                             Behavior on color { ColorAnimation { duration: 200 } }
                         }
-                        MouseArea { id: noteMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle notes"]) }
+                        MouseArea { id: noteMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle notes"]) }
                     }
 
                     Rectangle {
@@ -1510,7 +1510,7 @@ Variants {
                                         width: Math.min(implicitWidth, barWindow.s(100)); elide: Text.ElideRight 
                                     }
                                 }
-                                MouseArea { id: wifiMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle network wifi"]) }
+                                MouseArea { id: wifiMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle network wifi"]) }
                             }
 
                             Rectangle {
@@ -1564,7 +1564,7 @@ Variants {
                                         width: Math.min(implicitWidth, barWindow.s(100)); elide: Text.ElideRight 
                                     }
                                 }
-                                MouseArea { id: btMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle network bt"]) }
+                                MouseArea { id: btMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle network bt"]) }
                             }
 
                             Rectangle {
@@ -1618,7 +1618,7 @@ Variants {
                                         color: barWindow.isSoundActive ? mocha.base : mocha.text; 
                                     }
                                 }
-                                MouseArea { id: volMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle volume"]) }
+                                MouseArea { id: volMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle volume"]) }
                             }
 
                             Rectangle {
@@ -1673,7 +1673,7 @@ Variants {
                                         Behavior on color { ColorAnimation { duration: 300 } }
                                     }
                                 }
-                                MouseArea { id: batMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle battery"]) }
+                                MouseArea { id: batMouse; hoverEnabled: true; anchors.fill: parent; onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle battery"]) }
                             }                       
                  }
             }
@@ -1729,7 +1729,7 @@ Variants {
                             hoverEnabled: true
                             onClicked: {
                                 barWindow.isRecording = false; 
-                                Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/screenshot.sh"]); 
+                                Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/screenshot.sh"]); 
                             }
                         }
                     }

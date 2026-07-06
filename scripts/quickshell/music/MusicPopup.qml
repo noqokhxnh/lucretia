@@ -268,7 +268,7 @@ Item {
             root.lastEqUpdate = Date.now(); 
             
             root.triggerEqLightning();
-            execCmd(`$HOME/.config/hypr/scripts/quickshell/music/music_backend preset ${presetName}`);
+            execCmd(`$HOME/.config/niri/scripts/quickshell/music/music_backend preset ${presetName}`);
         }
     }
 
@@ -788,7 +788,7 @@ Item {
                                         root.musicData = temp;
 
                                         var safePlayer = root.musicData.playerName ? root.musicData.playerName : "";
-                                        root.execCmd(`$HOME/.config/hypr/scripts/quickshell/music/music_backend seek ${value.toFixed(2)} ${root.musicData.length}`);
+                                        root.execCmd(`$HOME/.config/niri/scripts/quickshell/music/music_backend seek ${value.toFixed(2)} ${root.musicData.length}`);
                                         
                                         seekDebounceTimer.restart();
                                     }
@@ -899,7 +899,7 @@ Item {
                                     temp.percent = 0;
                                     temp.positionStr = "00:00";
                                     root.musicData = temp;
-                                    root.execCmd("$HOME/.config/hypr/scripts/quickshell/music/music_backend prev");
+                                    root.execCmd("$HOME/.config/niri/scripts/quickshell/music/music_backend prev");
                                 }
                                 Text { anchors.centerIn: parent; text: ""; color: parent.pressed ? root.text : root.overlay2; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(24) }
                             }
@@ -913,7 +913,7 @@ Item {
                                     var temp = Object.assign({}, root.musicData);
                                     temp.status = (temp.status === "Playing" ? "Paused" : "Playing");
                                     root.musicData = temp;
-                                    root.execCmd("$HOME/.config/hypr/scripts/quickshell/music/music_backend play-pause");
+                                    root.execCmd("$HOME/.config/niri/scripts/quickshell/music/music_backend play-pause");
                                 }
 
                                 // Fluid Ripple Animation Element
@@ -976,7 +976,7 @@ Item {
                                     temp.percent = 0;
                                     temp.positionStr = "00:00";
                                     root.musicData = temp;
-                                    root.execCmd("$HOME/.config/hypr/scripts/quickshell/music/music_backend next");
+                                    root.execCmd("$HOME/.config/niri/scripts/quickshell/music/music_backend next");
                                 }
                                 Text { anchors.centerIn: parent; text: ""; color: parent.pressed ? root.text : root.overlay2; font.family: "Iosevka Nerd Font"; font.pixelSize: root.s(24) }
                             }
@@ -1054,7 +1054,7 @@ Item {
                                         root.lastEqUpdate = Date.now(); 
                                         
                                         root.triggerEqLightning();
-                                        root.execCmd("$HOME/.config/hypr/scripts/quickshell/music/music_backend apply");
+                                        root.execCmd("$HOME/.config/niri/scripts/quickshell/music/music_backend apply");
                                     }
                                 }
                             }
@@ -1171,7 +1171,7 @@ Item {
                                                     // Set lock here too to protect individual slider tweaks
                                                     root.lastEqUpdate = Date.now();
                                                     
-                                                    root.execCmd(`$HOME/.config/hypr/scripts/quickshell/music/music_backend set_band ${modelData.idx} ${Math.round(value)}`);
+                                                    root.execCmd(`$HOME/.config/niri/scripts/quickshell/music/music_backend set_band ${modelData.idx} ${Math.round(value)}`);
                                                 }
                                             }
 

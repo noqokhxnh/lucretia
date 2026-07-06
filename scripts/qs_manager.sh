@@ -3,7 +3,7 @@
 # -----------------------------------------------------------------------------
 # GLOBAL VARS
 # -----------------------------------------------------------------------------
-SCRIPTS_DIR="$HOME/.config/hypr/scripts/quickshell"
+SCRIPTS_DIR="$HOME/.config/niri/scripts/quickshell"
 SHELL_QML_PATH="$SCRIPTS_DIR/Shell.qml"
 
 # -----------------------------------------------------------------------------

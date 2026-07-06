@@ -143,7 +143,7 @@ Item {
                             if (text !== "") {
                                 text = "";
                             } else {
-                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                             }
                         }
                     }

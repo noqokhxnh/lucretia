@@ -1117,7 +1117,7 @@ Item {
                 if (typeof masterWindow !== "undefined") {
                     masterWindow.switchWidget("hidden", "");
                 } else {
-                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                 }
             } 
         }    
@@ -2401,7 +2401,7 @@ Item {
                                             color: wsMa.containsMouse ? root.base : root.peach
                                             Behavior on color { ColorAnimation { duration: 150 } }
                                         }
-                                        MouseArea { id: wsMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", wsNum.toString()]) }
+                                        MouseArea { id: wsMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", wsNum.toString()]) }
                                     }
                                 }
                             }

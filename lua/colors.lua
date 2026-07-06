@@ -6,7 +6,7 @@ M.active_border   = "rgba(b8c3ffee)"
 M.inactive_border = "rgba(374379aa)"
 
 local home        = os.getenv("HOME") or "/home/khxnh"
-local colors_path = home .. "/.config/hypr/colors.conf"
+local colors_path = home .. "/.config/niri/colors.conf"
 
 local file = io.open(colors_path, "r")
 if not file then

@@ -71,7 +71,7 @@ Item {
 
 
     Keys.onEscapePressed: {
-        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
         event.accepted = true;
     }
 
@@ -97,7 +97,7 @@ Item {
     Process {
         id: gitCheckProcess
         running: true
-        command: ["bash", "-c", "[ -d $HOME/.config/hypr/.git ] && echo 'true' || echo 'false'"]
+        command: ["bash", "-c", "[ -d $HOME/.config/niri/.git ] && echo 'true' || echo 'false'"]
         stdout: StdioCollector {
             onStreamFinished: {
                 let out = this.text ? this.text.trim() : "false";
@@ -711,10 +711,10 @@ except Exception as e:
                     easing.type: Easing.InSine
                     onFinished: {
                         updateBtn.triggered = true;
-                        let scriptPath = Quickshell.env("HOME") + "/.config/hypr/scripts/updater.sh";
+                        let scriptPath = Quickshell.env("HOME") + "/.config/niri/scripts/updater.sh";
                         let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c '" + scriptPath + "'; else ${TERM:-xterm} -hold -e bash -c '" + scriptPath + "'; fi";
                         Quickshell.execDetached(["bash", "-c", cmd]);
-                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                     }
                 }
 

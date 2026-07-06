@@ -1,7 +1,7 @@
 
 -- Setup module search path to include the lua/ subfolder
 local home = os.getenv("HOME") or "/home/khxnh"
-package.path = package.path .. ";" .. home .. "/.config/hypr/lua/?.lua;" .. home .. "/.config/hypr/lua/?/init.lua;lua/?.lua;lua/?/init.lua"
+package.path = package.path .. ";" .. home .. "/.config/niri/lua/?.lua;" .. home .. "/.config/niri/lua/?/init.lua;lua/?.lua;lua/?/init.lua"
 
 
 -- Force reload Lua modules on configuration reload to prevent caching issues

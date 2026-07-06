@@ -95,7 +95,7 @@ Item {
     Keys.onReturnPressed: {
         if (currentTab === 2) { 
             let target = modulesDataModel.get(selectedModuleIndex).target;
-            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", target]);
+            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "toggle", target]);
             event.accepted = true;
         }
     }
@@ -310,7 +310,7 @@ Item {
             easing.type: Easing.InQuart 
         }
         ScriptAction { 
-            script: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]) 
+            script: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]) 
         }
     }
 
@@ -549,7 +549,7 @@ Item {
                                         cursorShape: Qt.PointingHandCursor
                                         onClicked: {
                                             if (index === 0) {
-                                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
+                                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "toggle", "settings"]);
                                             } else {
                                                 root.currentTab = index;
                                             }
@@ -1022,7 +1022,7 @@ Item {
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: {
                                         if (modelData.isToggle) {
-                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", "settings"]);
+                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "toggle", "settings"]);
                                         } else {
                                             root.currentTab = modelData.targetTab;
                                         }
@@ -1158,7 +1158,7 @@ Item {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", modulesDataModel.get(root.selectedModuleIndex).target]) 
+                                onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "toggle", modulesDataModel.get(root.selectedModuleIndex).target]) 
                             }
                         }
                     }
@@ -1287,7 +1287,7 @@ Item {
                                 }
                                 onDoubleClicked: { 
                                     root.selectedModuleIndex = index; 
-                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "toggle", model.target]) 
+                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "toggle", model.target]) 
                                 } 
                             }
                         }

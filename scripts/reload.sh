@@ -4,7 +4,7 @@
 hyprctl reload
 
 # 2. Attempt to reload Quickshell via IPC (Soft Reload)
-SHELL_PATH="$HOME/.config/hypr/scripts/quickshell/Shell.qml"
+SHELL_PATH="$HOME/.config/niri/scripts/quickshell/Shell.qml"
 quickshell -p "$SHELL_PATH" ipc call main forceReload >/dev/null 2>&1
 
 # 3. Give it a moment, then ensure it's actually running/fresh

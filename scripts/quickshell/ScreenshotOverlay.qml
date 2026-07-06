@@ -988,7 +988,7 @@ PanelWindow {
         let cmd = ""
         
         if (isRecord) {
-            cmd = `bash ~/.config/hypr/scripts/screenshot.sh --geometry "${root.geometryString}" --record`
+            cmd = `bash ~/.config/niri/scripts/screenshot.sh --geometry "${root.geometryString}" --record`
             cmd += ` --desk-vol ${root.deskVol} --desk-mute ${root.deskMute}`
             cmd += ` --mic-vol ${root.micVol} --mic-mute ${root.micMute}`
             if (root.micDevice !== "") cmd += ` --mic-dev "${root.micDevice}"`
@@ -1026,7 +1026,7 @@ PanelWindow {
             return
         }
 
-        cmd = `bash ~/.config/hypr/scripts/screenshot.sh --geometry "${root.geometryString}"`
+        cmd = `bash ~/.config/niri/scripts/screenshot.sh --geometry "${root.geometryString}"`
         if (openEditor) cmd += " --edit"
     
         root.visible = false

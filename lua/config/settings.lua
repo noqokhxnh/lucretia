@@ -4,7 +4,7 @@ local colors = require("colors")
 -- Read animSpeedMultiplier from settings.json
 local function get_anim_speed()
     local home = os.getenv("HOME") or "/home/khxnh"
-    local settings_path = home .. "/.config/hypr/settings.json"
+    local settings_path = home .. "/.config/niri/settings.json"
     local speed_multiplier = 1.0
     local file = io.open(settings_path, "r")
     if file then

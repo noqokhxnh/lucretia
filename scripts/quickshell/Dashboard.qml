@@ -193,7 +193,7 @@ Item {
                         delegate: AppButton {
                             width: s(140); height: s(80)
                             appName: model.name; appIcon: model.icon; appColor: model.btnColor
-                            onClicked: { Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/qs_manager.sh toggle " + model.target]); }
+                            onClicked: { Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/qs_manager.sh toggle " + model.target]); }
                         }
                     }
                 }

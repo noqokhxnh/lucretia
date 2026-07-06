@@ -191,7 +191,7 @@ Item {
             "cat /sys/class/power_supply/BAT*/status 2>/dev/null | head -n1 || echo 'Unknown'; " +
             "/usr/bin/python3 /usr/bin/powerprofilesctl get 2>/dev/null || echo 'balanced'; " +
             "awk '{print int($1/3600)\"h \"int(($1%3600)/60)\"m\"}' /proc/uptime 2>/dev/null || echo '0h 0m'; " +
-            "bash ~/.config/hypr/scripts/quickshell/watchers/audio_fetch.sh | jq -r '.volume + \" \" + (if .is_muted == \"true\" then \"off\" else \"on\" end)' || echo '0 on'; " +
+            "bash ~/.config/niri/scripts/quickshell/watchers/audio_fetch.sh | jq -r '.volume + \" \" + (if .is_muted == \"true\" then \"off\" else \"on\" end)' || echo '0 on'; " +
             "brightnessctl -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}' || echo '0'"
         ]
         running: true
@@ -905,7 +905,7 @@ Item {
                             anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: { 
                                 exitAnim.start(); // Trigger graceful UI exit
-                                Quickshell.execDetached(["bash", "-c", "~/.config/hypr/scripts/exit.sh"]); 
+                                Quickshell.execDetached(["bash", "-c", "~/.config/niri/scripts/exit.sh"]); 
                                 Quickshell.execDetached(["sh", "-c", "echo 'close' > " + paths.runDir + "/widget_state"]); 
                             }
                         }
@@ -1262,7 +1262,7 @@ Item {
                                                     volSyncDelay.stop();
                                                     window.isDraggingVol = true; 
                                                     window.sysMuted = !window.sysMuted;
-                                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/volume/audio_control.sh", "toggle-mute", "sink", "@DEFAULT@"]);
+                                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/quickshell/volume/audio_control.sh", "toggle-mute", "sink", "@DEFAULT@"]);
                                                     volSyncDelay.restart();
                                                 }
                                             }
@@ -1280,9 +1280,9 @@ Item {
                                                     if (targetPct >= 0) {
                                                         if (targetPct > 0 && window.sysMuted) {
                                                             window.sysMuted = false;
-                                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/volume/audio_control.sh", "toggle-mute", "sink", "@DEFAULT@"]);
+                                                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/quickshell/volume/audio_control.sh", "toggle-mute", "sink", "@DEFAULT@"]);
                                                         }
-                                                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/volume/audio_control.sh", "set-volume", "sink", "@DEFAULT@", targetPct]);
+                                                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/quickshell/volume/audio_control.sh", "set-volume", "sink", "@DEFAULT@", targetPct]);
                                                         targetPct = -1;
                                                     }
                                                 }
@@ -1321,8 +1321,8 @@ Item {
                                 
                                 Repeater {
                                     model: ListModel {
-                                        ListElement { cmd: "bash $HOME/.config/hypr/scripts/lock.sh"; icon: ""; baseColor: "mauve"; weight: 1.0 }
-                                        ListElement { cmd: "bash $HOME/.config/hypr/scripts/lock.sh; systemctl suspend"; icon: "ᶻ 𝗓 𝗓"; baseColor: "blue"; weight: 1.0 }
+                                        ListElement { cmd: "bash $HOME/.config/niri/scripts/lock.sh"; icon: ""; baseColor: "mauve"; weight: 1.0 }
+                                        ListElement { cmd: "bash $HOME/.config/niri/scripts/lock.sh; systemctl suspend"; icon: "ᶻ 𝗓 𝗓"; baseColor: "blue"; weight: 1.0 }
                                         ListElement { cmd: "systemctl reboot"; icon: "󰑓"; baseColor: "yellow"; weight: 2.0 }
                                         ListElement { cmd: "systemctl poweroff"; icon: ""; baseColor: "red"; weight: 3.0 }
                                     }

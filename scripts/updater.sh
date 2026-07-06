@@ -36,7 +36,7 @@ check_network
 # Detect git repo
 # ─────────────────────────────────────────────
 IS_GIT=false
-REPO_DIR="$HOME/.config/hypr"
+REPO_DIR="$HOME/.config/niri"
 if [ -d "$REPO_DIR/.git" ]; then
     IS_GIT=true
 fi

@@ -5,7 +5,7 @@
 # trước khi user kịp mở terminal và gõ sudo.
 #
 # Gọi từ autostart.lua:
-#   hl.exec_cmd("~/.config/hypr/scripts/sync-session-env.sh")
+#   hl.exec_cmd("~/.config/niri/scripts/sync-session-env.sh")
 #   -- Đặt trước tất cả hl.exec_cmd() khác
 
 # Đợi WAYLAND_DISPLAY sẵn sàng (tránh race condition với Hyprland compositor)

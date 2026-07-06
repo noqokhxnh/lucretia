@@ -21,8 +21,8 @@ cleanup() {
 }
 trap 'cleanup' EXIT; trap 'cleanup; exit 143' TERM INT
 
-if [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ]; then
-    LC_ALL=C setsid socat -U - UNIX-CONNECT:"$XDG_RUNTIME_DIR/hypr/$HYPRLAND_INSTANCE_SIGNATURE/.socket2.sock" 2>/dev/null | grep --line-buffered "activelayout>>" > "$PIPE" &
+if [ -n "$NIRI_SOCKET" ]; then
+    LC_ALL=C setsid niri msg -j event-stream 2>/dev/null | grep --line-buffered -E '"KeyboardLayoutsChanged"|"KeyboardLayoutSwitched"' > "$PIPE" &
 else
     sleep 10 > "$PIPE" &
 fi

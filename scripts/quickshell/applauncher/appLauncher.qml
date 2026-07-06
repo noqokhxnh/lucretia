@@ -481,7 +481,7 @@ Item {
 
         // Hyprland 0.55 removed the legacy "exec" dispatcher; run via shell like keybind exec_cmd.
         Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && " + execStr]);
-        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
     }
 
     // --- AGGRESSIVE FOCUS MANAGEMENT ---
@@ -518,7 +518,7 @@ Item {
     }
 
     Keys.onEscapePressed: {
-        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
         event.accepted = true;
     }
 
@@ -720,11 +720,11 @@ Item {
                                 let runtimeDir = Quickshell.env("XDG_RUNTIME_DIR") || "/tmp";
                                 let keycastDir = runtimeDir + "/quickshell/keycast";
                                 Quickshell.execDetached(["bash", "-c", "mkdir -p " + keycastDir + " && echo '" + cmd + "' > " + keycastDir + "/enabled"]);
-                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                             } else if (window.specialMode !== "" && !window.specialLoading) {
                                 let content = window.specialResult;
                                 Quickshell.execDetached(["bash", "-c", "printf '%s' '" + content.replace(/'/g, "'\\''") + "' | wl-copy"]);
-                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                             } else if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
                                 let item = appModel.get(appList.currentIndex);
                                 launchApp(item.name, item.exec);
@@ -732,7 +732,7 @@ Item {
                             event.accepted = true;
                         }
                         Keys.onEscapePressed: {
-                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh", "close"]);
+                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh", "close"]);
                             event.accepted = true;
                         }
                     }

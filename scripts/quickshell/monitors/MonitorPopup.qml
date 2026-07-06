@@ -437,7 +437,7 @@ Item {
                 x: 0, y: 0, scale: m.sysScale, transform: m.transform, mirrorOf: ""
             }];
             let safeJson = JSON.stringify(jsonMonitorsArray).replace(/'/g, "'\\''").replace(/"/g, '\\"');
-            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/hypr/settings.json > ~/.config/hypr/settings.json.tmp && mv ~/.config/hypr/settings.json.tmp ~/.config/hypr/settings.json";
+            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/niri/settings.json > ~/.config/niri/settings.json.tmp && mv ~/.config/niri/settings.json.tmp ~/.config/niri/settings.json";
             let postReloadCmd = "awww kill ; sleep 0.2 ; awww-daemon &";
 
             Quickshell.execDetached(["notify-send", "Display Update", "Applied & Saved: " + m.resW + "x" + m.resH + " @ " + m.rate + "Hz"]);
@@ -482,7 +482,7 @@ Item {
 
             let fullLua = evalCmds.join(" ; ");
             let safeJson = JSON.stringify(jsonMonitorsArray).replace(/'/g, "'\\''").replace(/"/g, '\\"');
-            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/hypr/settings.json > ~/.config/hypr/settings.json.tmp && mv ~/.config/hypr/settings.json.tmp ~/.config/hypr/settings.json";
+            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/niri/settings.json > ~/.config/niri/settings.json.tmp && mv ~/.config/niri/settings.json.tmp ~/.config/niri/settings.json";
             let postReloadCmd = "awww kill ; sleep 0.2 ; awww-daemon &";
 
             Quickshell.execDetached(["sh", "-c", "hyprctl eval '" + fullLua + "' ; " + jsonCmd + " ; " + postReloadCmd]);
@@ -583,7 +583,7 @@ Item {
             
             let fullLua = evalCmds.join(" ; ");
             let safeJson = JSON.stringify(jsonMonitorsArray).replace(/'/g, "'\\''").replace(/"/g, '\\"');
-            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/hypr/settings.json > ~/.config/hypr/settings.json.tmp && mv ~/.config/hypr/settings.json.tmp ~/.config/hypr/settings.json";
+            let jsonCmd = "jq '.monitors = " + safeJson + "' ~/.config/niri/settings.json > ~/.config/niri/settings.json.tmp && mv ~/.config/niri/settings.json.tmp ~/.config/niri/settings.json";
             let postReloadCmd = "awww kill ; sleep 0.2 ; awww-daemon &";
 
             Quickshell.execDetached(["sh", "-c", "hyprctl eval '" + fullLua + "' ; " + jsonCmd + " ; " + postReloadCmd]);

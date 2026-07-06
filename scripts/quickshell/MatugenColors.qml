@@ -30,7 +30,7 @@ Item {
     property color teal: "#94e2d5"
 
     property string rawJson: ""
-    readonly property string _colorsFile: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/qs_colors.json"
+    readonly property string _colorsFile: Quickshell.env("HOME") + "/.config/niri/scripts/quickshell/qs_colors.json"
 
     function _applyColors(txt) {
         if (txt === "" || txt === root.rawJson) return;

@@ -212,7 +212,7 @@ elif echo "$GPU_INFO" | grep -qi "vmware\|virtualbox\|qxl\|virtio\|bochs"; then
     GPU_VENDOR="VM"
 fi
 
-EXISTING_SETTINGS="$HOME/.config/hypr/settings.json"
+EXISTING_SETTINGS="$HOME/.config/niri/settings.json"
 if [ -f "$EXISTING_SETTINGS" ] && command -v jq &>/dev/null; then
     _sj_lang=$(jq -r 'if has("language") then (.language // "") else "IGNORE_ME" end' "$EXISTING_SETTINGS" 2>/dev/null)
     _sj_kbopt=$(jq -r 'if has("kbOptions") then (.kbOptions // "") else "IGNORE_ME" end' "$EXISTING_SETTINGS" 2>/dev/null)
@@ -672,7 +672,7 @@ set_weather_api() {
         draw_header
         echo -e "${BOLD}${C_CYAN}=== OpenWeatherMap Interactive Setup ===${RESET}"
 
-        ENV_FILE="$HOME/.config/hypr/scripts/quickshell/calendar/.env"
+        ENV_FILE="$HOME/.config/niri/scripts/quickshell/calendar/.env"
 
         if [ -f "$ENV_FILE" ] || [[ -n "$WEATHER_API_KEY" && "$WEATHER_API_KEY" != "Skipped" ]]; then
             echo -e "${C_GREEN}An existing Weather configuration (.env) was detected.${RESET}"
@@ -936,7 +936,7 @@ while true; do
     S_TEL=$( [ "$ENABLE_TELEMETRY" = true ] && echo -e "${C_GREEN}[ON]${RESET}" || echo -e "${DIM}[OFF]${RESET}" )
 
     if [[ -z "$WEATHER_API_KEY" ]]; then
-        if [ -f "$HOME/.config/hypr/scripts/quickshell/calendar/.env" ]; then
+        if [ -f "$HOME/.config/niri/scripts/quickshell/calendar/.env" ]; then
             API_DISPLAY="Set (from .env file)"
         else
             API_DISPLAY="Not Set"
@@ -1162,7 +1162,7 @@ fi
 # ------------------------------------------------------------------------------
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting up Dotfiles Configuration..."
 REPO_URL="https://github.com/noqokhxnh/my_configuration.git"
-TARGET_CONFIG_DIR="$HOME/.config/hypr"
+TARGET_CONFIG_DIR="$HOME/.config/niri"
 BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d_%H%M%S)"
 
 OLD_COMMIT=""

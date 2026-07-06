@@ -28,6 +28,8 @@ struct TrackerState {
 
 bool running = true;
 
+bool is_locked();
+
 void signal_handler(int signum) {
     running = false;
 }

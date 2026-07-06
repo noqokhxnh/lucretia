@@ -13,5 +13,5 @@ hl.env("NIXOS_OZONE_WL",        "1") -- Kích hoạt Wayland cho Chromium/Electr
 hl.env("XDG_PICTURES_DIR",      "/home/khxnh/Pictures")
 hl.env("XDG_VIDEOS_DIR",        "/home/khxnh/Videos")
 hl.env("WALLPAPER_DIR",         "/home/khxnh/Pictures/Wallpapers")
-hl.env("SCRIPT_DIR",            "/home/khxnh/.config/hypr/scripts")
+hl.env("SCRIPT_DIR",            "/home/khxnh/.config/niri/scripts")
 hl.env("QT_QPA_PLATFORMTHEME",  "qt6ct")

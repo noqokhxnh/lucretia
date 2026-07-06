@@ -24,7 +24,7 @@ hl.gesture({
     fingers   = 3,
     direction = "up",
     action    = function()
-        hl.dispatch(hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh toggle overview"))
+        hl.dispatch(hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh toggle overview"))
     end,
 })
 
@@ -33,7 +33,7 @@ hl.gesture({
     direction = "down",
     action    = function()
         if is_overview_open() then
-            hl.dispatch(hl.dsp.exec_cmd("quickshell -p ~/.config/hypr/scripts/quickshell/Shell.qml ipc call overview close"))
+            hl.dispatch(hl.dsp.exec_cmd("quickshell -p ~/.config/niri/scripts/quickshell/Shell.qml ipc call overview close"))
         end
     end,
 })
@@ -98,9 +98,9 @@ hl.bind(mainMod .. " + W",      hl.dsp.exec_cmd("brave"))
 hl.bind(mainMod .. " + E",      hl.dsp.exec_cmd("nautilus"))
 
 -- ───────── Quickshell Scripts ─────────────────────────────────────────────────
-local qs = "bash ~/.config/hypr/scripts/qs_manager.sh toggle "
-hl.bind(mainMod .. " + SHIFT + ALT + R", hl.dsp.exec_cmd("bash ~/.config/hypr/scripts/reload.sh"))
-hl.bind(mainMod .. " + V",              hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh toggle clipboard"))
+local qs = "bash ~/.config/niri/scripts/qs_manager.sh toggle "
+hl.bind(mainMod .. " + SHIFT + ALT + R", hl.dsp.exec_cmd("bash ~/.config/niri/scripts/reload.sh"))
+hl.bind(mainMod .. " + V",              hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh toggle clipboard"))
 hl.bind(mainMod .. " + SHIFT + P",      hl.dsp.exec_cmd(qs .. "movies"))
 hl.bind(mainMod .. " + Super_L",        hl.dsp.exec_cmd(qs .. "applauncher"))
 hl.bind(mainMod .. " + SHIFT + I",      hl.dsp.exec_cmd(qs .. "settings"))
@@ -124,15 +124,15 @@ hl.bind("XF86MonBrightnessDown", hl.dsp.exec_cmd("swayosd-client --brightness lo
 hl.bind("XF86MonBrightnessUp",   hl.dsp.exec_cmd("swayosd-client --brightness raise"),            { locked = true })
 
 -- ───────── Screenshot Binds ───────────────────────────────────────────────────
-hl.bind("Print",                   hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh"))
-hl.bind("SHIFT + Print",           hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh --edit"))
-hl.bind(mainMod .. " + Print",     hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh --full"))
-hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh --full --edit"))
-hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("~/.config/hypr/scripts/screenshot.sh"))
+hl.bind("Print",                   hl.dsp.exec_cmd("~/.config/niri/scripts/screenshot.sh"))
+hl.bind("SHIFT + Print",           hl.dsp.exec_cmd("~/.config/niri/scripts/screenshot.sh --edit"))
+hl.bind(mainMod .. " + Print",     hl.dsp.exec_cmd("~/.config/niri/scripts/screenshot.sh --full"))
+hl.bind(mainMod .. " + SHIFT + Print", hl.dsp.exec_cmd("~/.config/niri/scripts/screenshot.sh --full --edit"))
+hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("~/.config/niri/scripts/screenshot.sh"))
 
 -- ───────── Session & Media Controls (locked) ─────────────────────────────────
-hl.bind("XF86PowerOff",         hl.dsp.exec_cmd("bash ~/.config/hypr/scripts/lock.sh"),   { locked = true })
-hl.bind(mainMod .. " + comma",  hl.dsp.exec_cmd("bash ~/.config/hypr/scripts/lock.sh"),   { locked = true, repeating = true })
+hl.bind("XF86PowerOff",         hl.dsp.exec_cmd("bash ~/.config/niri/scripts/lock.sh"),   { locked = true })
+hl.bind(mainMod .. " + comma",  hl.dsp.exec_cmd("bash ~/.config/niri/scripts/lock.sh"),   { locked = true, repeating = true })
 hl.bind(mainMod .. " + SPACE",  hl.dsp.exec_cmd("playerctl play-pause"),                  { locked = true })
 hl.bind("XF86AudioPause",       hl.dsp.exec_cmd("playerctl play-pause"),                  { locked = true })
 hl.bind("XF86AudioPlay",        hl.dsp.exec_cmd("playerctl play-pause"),                  { locked = true })
@@ -143,11 +143,11 @@ hl.bind("xf86audioraisevolume", hl.dsp.exec_cmd("swayosd-client --output-volume 
 
 -- ───────── Workspaces ─────────────────────────────────────────────────────────
 for i = 1, 9 do
-    hl.bind(mainMod .. " + " .. i,           hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh " .. i))
-    hl.bind(mainMod .. " + ALT + " .. i,     hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh " .. i .. " move"))
+    hl.bind(mainMod .. " + " .. i,           hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh " .. i))
+    hl.bind(mainMod .. " + ALT + " .. i,     hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh " .. i .. " move"))
 end
-hl.bind(mainMod .. " + 0",           hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh 10"))
-hl.bind(mainMod .. " + ALT + 0",     hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh 10 move"))
+hl.bind(mainMod .. " + 0",           hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh 10"))
+hl.bind(mainMod .. " + ALT + 0",     hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh 10 move"))
 
 -- ───────── Workspace Overview ─────────────────────────────────────────────────
-hl.bind(mainMod .. " + TAB", hl.dsp.exec_cmd("~/.config/hypr/scripts/qs_manager.sh toggle overview"))
+hl.bind(mainMod .. " + TAB", hl.dsp.exec_cmd("~/.config/niri/scripts/qs_manager.sh toggle overview"))

@@ -1,6 +1,6 @@
 
 local home = os.getenv("HOME") or "/home/khxnh"
-local settings_path = home .. "/.config/hypr/settings.json"
+local settings_path = home .. "/.config/niri/settings.json"
 
 local file = io.open(settings_path, "r")
 if file then

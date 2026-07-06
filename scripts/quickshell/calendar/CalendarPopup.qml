@@ -107,7 +107,7 @@ Item {
     readonly property color green: _theme.green
     readonly property color red: _theme.red
 
-    readonly property string scriptsDir: Quickshell.env("HOME") + "/.config/hypr/scripts/quickshell/calendar"
+    readonly property string scriptsDir: Quickshell.env("HOME") + "/.config/niri/scripts/quickshell/calendar"
 
     // -------------------------------------------------------------------------
     // TIME OF DAY DYNAMIC COLORS

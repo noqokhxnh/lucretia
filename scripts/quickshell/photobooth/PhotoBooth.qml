@@ -398,7 +398,7 @@ Item {
                                 window.isMinimized = false
                                 Quickshell.execDetached([
                                     "bash",
-                                    Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh",
+                                    Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh",
                                     "close"
                                 ])
                             }
@@ -843,7 +843,7 @@ Item {
     Keys.onEscapePressed: {
         Quickshell.execDetached([
             "bash",
-            Quickshell.env("HOME") + "/.config/hypr/scripts/qs_manager.sh",
+            Quickshell.env("HOME") + "/.config/niri/scripts/qs_manager.sh",
             "close"
         ])
         event.accepted = true
