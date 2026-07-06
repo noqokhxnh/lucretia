@@ -55,18 +55,24 @@ print_workspaces() {
     
     # Generate the JSON and write it atomically to prevent UI flickering
     echo "$spaces" | jq --unbuffered --argjson windows "$windows" --arg end "$SEQ_END" -c '
-        # Map windows to their workspace IDs
-        ([$windows[] | select(.workspace_id != null)] | group_by(.workspace_id) | map({(.[0].workspace_id|tostring): {count: length, last_focused: (map(select(.is_focused == true)) | .[0] // .[0])}}) | add) as $w_map
+        # Map workspace ID to its index
+        (map({key: (.id|tostring), value: .idx}) | from_entries) as $id_to_idx
         |
-        # Get the active workspace ID
-        (map(select(.is_active == true or .active == true)) | .[0].id) as $active_id
+        # Map windows to their workspace indices and group by workspace index
+        ([$windows[] | select(.workspace_id != null) | . + {workspace_idx: ($id_to_idx[.workspace_id|tostring])} | select(.workspace_idx != null)]
+         | group_by(.workspace_idx)
+         | map({((.[0].workspace_idx|tostring)): {count: length, last_focused: (map(select(.is_focused == true)) | .[0] // .[0])}})
+         | add) as $w_map
+        |
+        # Get the active workspace index
+        (map(select(.is_active == true or .is_focused == true)) | .[0].idx) as $active_idx
         |
         # Iterate from 1 to SEQ_END
         [range(1; ($end|tonumber) + 1)] | map(
             . as $i |
             ($w_map[$i|tostring]) as $w_info |
             # Determine state: active -> occupied -> empty
-            (if $i == $active_id then "active"
+            (if $i == $active_idx then "active"
              elif ($w_info != null and $w_info.count > 0) then "occupied"
              else "empty" end) as $state |
 

@@ -17,7 +17,7 @@ input {
     mouse {
         accel-speed 0.0
     }
-    warp-mouse-to-focus
+    // warp-mouse-to-focus
     focus-follows-mouse
 }
 
@@ -94,22 +94,35 @@ binds {
     Super+Shift+Right { set-column-width "+10%"; }
     Super+Shift+Up { set-window-height "-10%"; }
     Super+Shift+Down { set-window-height "+10%"; }
+    Super+Shift+H { set-column-width "-10%"; }
+    Super+Shift+L { set-column-width "+10%"; }
+    Super+Shift+K { set-window-height "-10%"; }
+    Super+Shift+J { set-window-height "+10%"; }
     
     // --- Window movement ---
     Super+Ctrl+Left { move-column-left; }
     Super+Ctrl+Right { move-column-right; }
     Super+Ctrl+Up { move-window-up-or-to-workspace-up; }
     Super+Ctrl+Down { move-window-down-or-to-workspace-down; }
+    Super+Ctrl+H { move-column-left; }
+    Super+Ctrl+L { move-column-right; }
+    Super+Ctrl+K { move-window-up-or-to-workspace-up; }
+    Super+Ctrl+J { move-window-down-or-to-workspace-down; }
     
     // --- Focus movement ---
     Super+Left { focus-column-left; }
     Super+Right { focus-column-right; }
     Super+Up { focus-window-or-monitor-up; }
     Super+Down { focus-window-or-monitor-down; }
+    Super+H { focus-column-left; }
+    Super+L { focus-column-right; }
+    Super+K { focus-window-or-monitor-up; }
+    Super+J { focus-window-or-monitor-down; }
     
     // --- Application Launchers ---
-    Super+Return { spawn "kitty"; }
+    Super+Return { spawn "foot"; }
     Super+F { spawn "firefox"; }
+    Super+W { spawn "brave"; }
     Super+E { spawn "nautilus"; }
     
     // --- Quickshell Panel Toggles ---
