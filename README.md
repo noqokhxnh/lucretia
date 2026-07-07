@@ -4,6 +4,8 @@ A state-of-the-art, high-performance, and visually stunning Wayland desktop envi
 
 Featuring real-time Material You dynamic color theme generation, customized high-speed utility widgets, and custom C++ backend controllers.
 
+> **Forked from** [ilyamiro/nixos-configuration](https://github.com/ilyamiro/nixos-configuration) — adapted for **Niri**.
+
 ---
 
 ## 🚀 Fast Automated Installation
