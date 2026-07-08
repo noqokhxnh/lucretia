@@ -1,6 +1,6 @@
 {
   "uiScale": 1.0,
-  "openGuideAtStartup": true,
+  "openGuideAtStartup": false,
   "topbarHelpIcon": true,
   "workspaceCount": 8,
   "wallpaperDir": "",

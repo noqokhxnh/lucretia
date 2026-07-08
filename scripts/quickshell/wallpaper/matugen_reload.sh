@@ -104,7 +104,7 @@ fi
 if [ "$XDG_CURRENT_DESKTOP" = "Hyprland" ] && command -v hyprctl &> /dev/null; then
     hyprctl reload
 elif [ "$XDG_CURRENT_DESKTOP" = "niri" ]; then
-    niri msg action quit 2>/dev/null || true
+    niri msg action reload-config 2>/dev/null || true
 fi
 
 
