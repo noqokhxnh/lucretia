@@ -1,0 +1,851 @@
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
+import QtMultimedia
+import Quickshell
+import Quickshell.Io
+import "../"
+import "../components" as Components
+
+Item {
+    id: window
+    focus: true
+
+    property var notifModel: null
+    property var liveNotifs: null
+    property int layoutWidth: 860
+    property int layoutHeight: 760
+
+    // Used by Main.qml to dynamically resize the master window
+    property int targetMasterWidth: 860
+    property int targetMasterHeight: 760
+
+    MatugenColors { id: _theme }
+    
+    readonly property color bg:       _theme.base     || "#1e1e2e"
+    readonly property color fg:       _theme.text     || "#cdd6f4"
+    readonly property color surf0:    _theme.surface0 || "#313244"
+    readonly property color surf1:    _theme.surface1 || "#45475a"
+    readonly property color surf2:    _theme.surface2 || "#585b70"
+    readonly property color mantle:   _theme.mantle   || "#181825"
+    readonly property color crust:    _theme.crust    || "#11111b"
+    readonly property color mauve:    _theme.mauve    || "#cba6f7"
+
+    readonly property color macRed:    "#ff5f56"
+    readonly property color macYellow: "#ffbd2e"
+    readonly property color macGreen:  "#27c93f"
+
+    // --- State ---
+    property string captureMode:    "single"   // "single" | "burst" | "video"
+    property bool   isRecording:    false
+    property bool   isMirrored:     true
+    property int    countdown:      0
+    property bool   isCountingDown: false
+    property bool   flashActive:    false
+    property bool   isSessionActive: false
+    property bool   isMinimized:    false
+
+    property int  burstCount: 0
+    property var  burstFiles: []
+
+
+
+    // Intro animation
+    property real introPhase: 1
+    NumberAnimation on introPhase {
+        id: introAnim
+        from: 0; to: 1; duration: 380; easing.type: Easing.OutCubic
+    }
+
+    // --- Clip Roll ---
+    ListModel { id: clipRollModel }
+
+    function initializeSession() {
+        introAnim.restart()
+        
+        if (!window.isSessionActive) {
+            console.log("Starting new Photo Booth session")
+            Components.QsDaemonClient.sendRequest("photobooth", "setup", {}, null)
+            Components.QsDaemonClient.sendRequest("photobooth", "start_session", {}, null)
+            clipRollModel.clear()
+            window.isSessionActive = true
+        } else {
+            console.log("Restoring Photo Booth session from minimize")
+            loadSession()
+        }
+        window.isMinimized = false
+    }
+
+    Component.onCompleted: {
+        if (window.visible) {
+            initializeSession()
+        }
+    }
+
+    onVisibleChanged: {
+        if (visible) {
+            initializeSession()
+        }
+    }
+
+    Connections {
+        target: masterWindow
+        function onCurrentActiveChanged() {
+            if (masterWindow.currentActive !== "photobooth") {
+                // If it's not minimized, then close session
+                if (!window.isMinimized) {
+                    console.log("Closing Photo Booth session")
+                    window.isSessionActive = false
+                }
+            }
+        }
+    }
+
+    function addCaptureToRoll(path) {
+        let filename = path.substring(path.lastIndexOf('/') + 1)
+        // Insert at the beginning so latest is on the left
+        clipRollModel.insert(0, { name: filename, path: "file://" + path })
+        Components.QsDaemonClient.sendRequest("photobooth", "add_to_session", { path: path }, null)
+    }
+
+    function loadSession() {
+        Components.QsDaemonClient.sendRequest("photobooth", "get_session", {}, function(data) {
+            if (data) {
+                clipRollModel.clear()
+                for (let item of data) {
+                    clipRollModel.append(item)
+                }
+            }
+        })
+    }
+
+    // --- Timers ---
+    Timer {
+        id: countdownTimer
+        interval: 1000
+        repeat: true
+        onTriggered: {
+            if (window.countdown > 1) {
+                window.countdown--
+            } else {
+                window.countdown = 0
+                window.isCountingDown = false
+                stop()
+                doCapture()
+            }
+        }
+    }
+
+    Timer {
+        id: flashTimer
+        interval: 200
+        onTriggered: window.flashActive = false
+    }
+
+    Timer {
+        id: burstTimer
+        interval: 900
+        repeat: true
+        onTriggered: {
+            window.flashActive = true
+            flashTimer.restart()
+            let fname = "burst_" + window.burstCount + "_" + Date.now() + ".jpg"
+            let fpath = Quickshell.env("HOME") + "/Pictures/PhotoBooth/" + fname
+            window.burstFiles.push(fpath)
+            imageCapture.captureToFile(fpath)
+            window.burstCount++
+            if (window.burstCount >= 4) {
+                stop()
+                stitchBurst()
+            }
+        }
+    }
+
+    // --- Functions ---
+    function startCountdown() {
+        if (window.captureMode === "video") {
+            if (window.isRecording) {
+                window.isRecording = false
+                recorder.stop()
+                let path = recorder.outputLocation.toString().replace("file://", "")
+                let fname = path.substring(path.lastIndexOf('/') + 1)
+                addCaptureToRoll(fname)
+            } else {
+                window.isRecording = true
+                let fname = "video_" + Date.now() + ".mp4"
+                recorder.outputLocation = "file://" + Quickshell.env("HOME") + "/Pictures/PhotoBooth/" + fname
+                recorder.record()
+            }
+            return
+        }
+        if (window.isCountingDown) return
+        window.countdown = 3
+        window.isCountingDown = true
+        countdownTimer.restart()
+    }
+
+    function doCapture() {
+        if (window.captureMode === "single") {
+            singleShot()
+        } else if (window.captureMode === "burst") {
+            window.burstCount = 0
+            window.burstFiles = []
+            burstTimer.restart()
+        }
+    }
+
+    function singleShot() {
+        window.flashActive = true
+        flashTimer.restart()
+        let path = Quickshell.env("HOME") + "/Pictures/PhotoBooth/photo_" + Date.now() + ".jpg"
+        imageCapture.captureToFile(path)
+        addCaptureToRoll(path)
+    }
+
+    function stitchBurst() {
+        let fname = "burst_" + Date.now() + ".jpg"
+        let out = Quickshell.env("HOME") + "/Pictures/PhotoBooth/" + fname
+        
+        let inFiles = []
+        for (let f of window.burstFiles) inFiles.push(f)
+        
+        Components.QsDaemonClient.sendRequest("photobooth", "burst", { inputs: inFiles, output: out }, function(res) {
+            // Optimistically add to UI, backend will also persist it
+            clipRollModel.insert(0, { name: fname, path: "file://" + out })
+            window.burstFiles = []
+        })
+    }
+
+    function openFolder() {
+        Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && exec nautilus " + Quickshell.env("HOME") + "/Pictures/PhotoBooth"])
+    }
+
+    // --- Camera ---
+    CaptureSession {
+        id: captureSession
+        camera: Camera { 
+            id: camera
+            active: window.isSessionActive
+        }
+        imageCapture: ImageCapture {
+            id: imageCapture
+            // Manual refresh handled in singleShot/stitchBurst
+        }
+        recorder: MediaRecorder {
+            id: recorder
+            outputLocation: Quickshell.env("HOME") + "/Pictures/PhotoBooth/video_" + Date.now() + ".mp4"
+        }
+        videoOutput: cameraOutput
+    }
+
+    // =========================================================
+    // --- UI ROOT: transparent padding so rounded corners show
+    // =========================================================
+    Item {
+        id: uiRoot
+        anchors.fill: parent
+        anchors.margins: 8
+
+        // Animated scale for intro
+        transform: Scale {
+            origin.x: uiRoot.width / 2
+            origin.y: uiRoot.height / 2
+            xScale: 0.92 + window.introPhase * 0.08
+            yScale: 0.92 + window.introPhase * 0.08
+        }
+        opacity: window.introPhase
+
+        // --- Drop shadow layer ---
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -1
+            radius: 30
+            color: "transparent"
+            border.color: Qt.rgba(0, 0, 0, 0.6)
+            border.width: 1
+            z: -1
+        }
+
+        // --- Main window card ---
+        Rectangle {
+            id: card
+            anchors.fill: parent
+            radius: 28
+            color: window.mantle
+            clip: true
+
+            OrbitBackground {
+                color1: window.mauve
+                color2: window.mauve
+                opacity1: 0.06
+                opacity2: 0.04
+            }
+
+            // Drag to move and resize (covers whole card)
+            MouseArea {
+                anchors.fill: parent
+                property real lastGlobalX: 0
+                property real lastGlobalY: 0
+                property string resizeSideX: "right"
+                property string resizeSideY: "bottom"
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+
+                onPressed: (mouse) => {
+                    let globalPos = mapToItem(null, mouse.x, mouse.y)
+                    lastGlobalX = globalPos.x
+                    lastGlobalY = globalPos.y
+                    
+                    resizeSideX = (mouse.x < width / 2) ? "left" : "right"
+                    resizeSideY = (mouse.y < height / 2) ? "top" : "bottom"
+                    
+                    masterWindow.disableMorph = true
+                }
+
+                onReleased: {
+                    masterWindow.disableMorph = false
+                }
+
+                onPositionChanged: (mouse) => {
+                    let globalPos = mapToItem(null, mouse.x, mouse.y)
+                    let dx = globalPos.x - lastGlobalX
+                    let dy = globalPos.y - lastGlobalY
+                    
+                    if (mouse.buttons & Qt.LeftButton) {
+                        masterWindow.animX += dx
+                        masterWindow.animY += dy
+                    } else if (mouse.buttons & Qt.RightButton) {
+                        // X Resize
+                        let targetW = masterWindow.animW
+                        if (resizeSideX === "left") {
+                            targetW = Math.max(600, masterWindow.animW - dx)
+                            masterWindow.animX += (masterWindow.animW - targetW)
+                        } else {
+                            targetW = Math.max(600, masterWindow.animW + dx)
+                        }
+                        masterWindow.animW = targetW
+
+                        // Y Resize
+                        let targetH = masterWindow.animH
+                        if (resizeSideY === "top") {
+                            targetH = Math.max(500, masterWindow.animH - dy)
+                            masterWindow.animY += (masterWindow.animH - targetH)
+                        } else {
+                            targetH = Math.max(500, masterWindow.animH + dy)
+                        }
+                        masterWindow.animH = targetH
+                    }
+                    
+                    lastGlobalX = globalPos.x
+                    lastGlobalY = globalPos.y
+                }
+
+                cursorShape: {
+                    if (pressedButtons & Qt.RightButton) {
+                        if (resizeSideX === "left") {
+                            return (resizeSideY === "top") ? Qt.SizeFDiagCursor : Qt.SizeBDiagCursor
+                        } else {
+                            return (resizeSideY === "top") ? Qt.SizeBDiagCursor : Qt.SizeFDiagCursor
+                        }
+                    }
+                    if (pressedButtons & Qt.LeftButton) return Qt.SizeAllCursor
+                    return Qt.ArrowCursor
+                }
+            }
+
+            // ---- Title Bar ----
+            Rectangle {
+                id: titleBar
+                anchors.top: parent.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 46
+                color: window.crust
+                // Round top corners to match card
+                radius: 28
+                Rectangle { // Cover bottom radius of titleBar so it's only rounded at top
+                    anchors.bottom: parent.bottom
+                    width: parent.width; height: parent.radius
+                    color: window.crust
+                }
+
+                // Traffic lights
+                Row {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 18
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 8
+                    z: 10
+
+                    // Red — Close
+                    Rectangle {
+                        width: 13; height: 13; radius: 7
+                        color: window.macRed
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "×"
+                            font.pixelSize: 10
+                            font.weight: Font.Bold
+                            color: Qt.rgba(0,0,0,0.7)
+                            opacity: redMa.containsMouse ? 1 : 0
+                        }
+                        MouseArea {
+                            id: redMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                window.isSessionActive = false
+                                window.isMinimized = false
+                                Quickshell.execDetached([
+                                    "bash",
+                                    Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh",
+                                    "close"
+                                ])
+                            }
+                        }
+                    }
+
+                    // Yellow — Restore to initial size
+                    Rectangle {
+                        width: 13; height: 13; radius: 7
+                        color: window.macYellow
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "−"
+                            font.pixelSize: 10
+                            font.weight: Font.Bold
+                            color: Qt.rgba(0,0,0,0.7)
+                            opacity: yellowMa.containsMouse ? 1 : 0
+                        }
+                        MouseArea {
+                            id: yellowMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                console.log("Minimizing Photo Booth")
+                                window.isMinimized = true
+                                masterWindow.isVisible = false
+                            }
+                        }
+                    }
+
+                    // Green — Fullscreen
+                    Rectangle {
+                        width: 13; height: 13; radius: 7
+                        color: window.macGreen
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "⤢"
+                            font.pixelSize: 8
+                            font.weight: Font.Bold
+                            color: Qt.rgba(0,0,0,0.7)
+                            opacity: greenMa.containsMouse ? 1 : 0
+                        }
+                        MouseArea {
+                            id: greenMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                masterWindow.disableMorph = false
+                                let screen = Quickshell.screens[0]
+                                if (masterWindow.animW >= screen.width - 20) {
+                                    // Restore to default
+                                    masterWindow.animW = 860
+                                    masterWindow.animH = 760
+                                    masterWindow.animX = (screen.width - 860) / 2
+                                    masterWindow.animY = (screen.height - 760) / 2
+                                } else {
+                                    // Fullscreen
+                                    masterWindow.animX = 0
+                                    masterWindow.animY = 0
+                                    masterWindow.animW = screen.width
+                                    masterWindow.animH = screen.height
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: "Photo Booth"
+                    font.family: "Inter"
+                    font.pixelSize: 14
+                    font.weight: Font.DemiBold
+                    color: window.mauve
+                    opacity: 0.85
+                }
+            }
+
+            // ---- Camera Preview ----
+            Rectangle {
+                id: previewArea
+                anchors.top: titleBar.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: clipRoll.top
+                color: "#000000"
+                clip: true
+
+                VideoOutput {
+                    id: cameraOutput
+                    anchors.fill: parent
+                    fillMode: VideoOutput.PreserveAspectCrop
+                    transform: Rotation {
+                        origin.x: cameraOutput.width / 2
+                        origin.y: cameraOutput.height / 2
+                        axis: Qt.vector3d(0, 1, 0)
+                        angle: window.isMirrored ? 180 : 0
+                    }
+                }
+
+                // Countdown overlay
+                Text {
+                    anchors.centerIn: parent
+                    text: window.countdown
+                    font.family: "Inter"
+                    font.pixelSize: 130
+                    font.weight: Font.Bold
+                    color: "white"
+                    style: Text.Outline
+                    styleColor: Qt.rgba(0, 0, 0, 0.6)
+                    visible: window.isCountingDown && window.countdown > 0
+                }
+
+                // Flash overlay
+                Rectangle {
+                    anchors.fill: parent
+                    color: "white"
+                    opacity: window.flashActive ? 1.0 : 0.0
+                    Behavior on opacity { NumberAnimation { duration: 120; easing.type: Easing.OutQuad } }
+                }
+
+                // REC badge
+                Row {
+                    anchors.top: parent.top
+                    anchors.right: parent.right
+                    anchors.margins: 16
+                    spacing: 8
+                    visible: window.isRecording
+
+                    Rectangle {
+                        width: 10; height: 10; radius: 5; color: "#ff3b30"
+                        SequentialAnimation on opacity {
+                            loops: Animation.Infinite
+                            NumberAnimation { from: 1; to: 0.2; duration: 500 }
+                            NumberAnimation { from: 0.2; to: 1; duration: 500 }
+                        }
+                    }
+                    Text {
+                        text: "REC"
+                        color: "#ff3b30"
+                        font.family: "Inter"
+                        font.pixelSize: 12
+                        font.weight: Font.Bold
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+                }
+            }
+
+            // ---- Clip Roll ----
+            Rectangle {
+                id: clipRoll
+                anchors.bottom: bottomBar.top
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 110
+                color: Qt.rgba(0, 0, 0, 0.45)
+
+                // Separator line
+                Rectangle {
+                    anchors.top: parent.top
+                    width: parent.width; height: 1
+                    color: Qt.rgba(1, 1, 1, 0.06)
+                }
+
+                // Empty state
+                Item {
+                    anchors.fill: parent
+                    visible: clipRollModel.count === 0
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 10
+                        opacity: 0.35
+
+                        Text {
+                            text: "󰄀"
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: 22
+                            color: window.mauve
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                        Text {
+                            text: "No photos yet"
+                            font.family: "Inter"
+                            font.pixelSize: 13
+                            color: window.mauve
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+                }
+
+                ListView {
+                    anchors.fill: parent
+                    anchors.leftMargin: 12
+                    anchors.rightMargin: 12
+                    anchors.topMargin: 12
+                    anchors.bottomMargin: 12
+                    orientation: ListView.Horizontal
+                    spacing: 8
+                    model: clipRollModel
+                    visible: clipRollModel.count > 0
+                    clip: true
+
+                    delegate: Item {
+                        width: 128
+                        height: clipListView_height
+
+                        property int clipListView_height: 86
+
+                        Rectangle {
+                            id: thumb
+                            anchors.fill: parent
+                            radius: 10
+                            color: window.surf0
+                            clip: true
+                            border.color: thumbMa.containsMouse ? window.mauve : "transparent"
+                            border.width: 2
+
+                            Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                            Image {
+                                anchors.fill: parent
+                                source: model.path
+                                fillMode: Image.PreserveAspectCrop
+                                opacity: thumbMa.containsMouse ? 0.75 : 1.0
+                                Behavior on opacity { NumberAnimation { duration: 150 } }
+                            }
+
+                            // Hover open hint
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 34; height: 34; radius: 17
+                                color: Qt.rgba(0, 0, 0, 0.55)
+                                visible: thumbMa.containsMouse
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: "󰁍"
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: 18
+                                    color: "white"
+                                }
+                            }
+
+                            MouseArea {
+                                id: thumbMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                onClicked: {
+                                    let p = model.path.replace("file://", "")
+                                    Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && exec xdg-open '" + p.replace(/'/g, "'\\''") + "'"])
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ---- Bottom Bar ----
+            Rectangle {
+                id: bottomBar
+                anchors.bottom: parent.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: 90
+                color: window.crust
+                // Round bottom corners to match card
+                radius: 28
+                Rectangle { // Cover top radius of bottomBar so it's only rounded at bottom
+                    anchors.top: parent.top
+                    width: parent.width; height: parent.radius
+                    color: window.crust
+                }
+
+                // Separator
+                Rectangle {
+                    anchors.top: parent.top
+                    width: parent.width; height: 1
+                    color: Qt.rgba(1, 1, 1, 0.06)
+                }
+
+                // Mode icons (left)
+                Row {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 24
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 22
+
+                    Repeater {
+                        model: [
+                            { icon: "󰄀", key: "single",  tip: "Single" },
+                            { icon: "󰄄", key: "burst",   tip: "Burst 4×" },
+                            { icon: "󰕧", key: "video",   tip: "Video" }
+                        ]
+
+                        Item {
+                            width: 36; height: 36
+
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: 34; height: 34; radius: 10
+                                color: window.captureMode === modelData.key ? Qt.rgba(1,1,1,0.1) : "transparent"
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.icon
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: 22
+                                    color: window.captureMode === modelData.key ? window.mauve : window.surf2
+                                    Behavior on color { ColorAnimation { duration: 150 } }
+                                }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                onClicked: window.captureMode = modelData.key
+                            }
+                        }
+                    }
+                }
+
+                // Capture button (center)
+                Item {
+                    anchors.centerIn: parent
+                    width: 76; height: 76
+
+                    // Subtle outer ring
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: width / 2
+                        color: "transparent"
+                        border.color: Qt.rgba(1, 1, 1, 0.4)
+                        border.width: 2
+                    }
+
+                    // Inner red button
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: 62; height: 62
+                        radius: width / 2
+                        color: captureMa.pressed ? "#d32f2f" : "#ff3b30"
+                        
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: width / 2
+                            color: "white"
+                            opacity: captureMa.containsMouse ? 0.1 : 0
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
+
+                        // Square stop indicator for video recording
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: window.isRecording ? 22 : 0
+                            height: window.isRecording ? 22 : 0
+                            radius: 4
+                            color: "white"
+                            Behavior on width  { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                            Behavior on height { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+                        }
+
+                        Text {
+                            anchors.centerIn: parent
+                            visible: !window.isRecording
+                            text: window.captureMode === "video" ? "󰕧" : (window.captureMode === "burst" ? "󰄄" : "󰄀")
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: 24
+                            color: "white"
+                            opacity: 0.9
+                        }
+                    }
+
+                    MouseArea {
+                        id: captureMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: startCountdown()
+                    }
+                }
+
+                // Right controls: mirror toggle + open folder
+                Row {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 24
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 16
+
+                    // Mirror
+                    Item {
+                        width: 36; height: 36
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 34; height: 34; radius: 10
+                            color: window.isMirrored ? Qt.rgba(1,1,1,0.1) : "transparent"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰝭" // Better flip icon
+                                font.family: "Iosevka Nerd Font"
+                                font.pixelSize: 22
+                                color: window.isMirrored ? window.mauve : window.surf2
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+                        }
+                        MouseArea { anchors.fill: parent; onClicked: window.isMirrored = !window.isMirrored }
+                    }
+
+                    // Open folder
+                    Item {
+                        width: 36; height: 36
+                        Rectangle {
+                            anchors.centerIn: parent
+                            width: 34; height: 34; radius: 10
+                            color: folderMa.containsMouse ? Qt.rgba(1,1,1,0.1) : "transparent"
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: "󰉋"
+                                font.family: "Iosevka Nerd Font"
+                                font.pixelSize: 22
+                                color: folderMa.containsMouse ? window.mauve : window.surf2
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                            }
+                        }
+                        MouseArea {
+                            id: folderMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: openFolder()
+                        }
+                    }
+                }
+            }
+        } // card
+    } // uiRoot
+
+    Keys.onEscapePressed: {
+        Quickshell.execDetached([
+            "bash",
+            Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh",
+            "close"
+        ])
+        event.accepted = true
+    }
+}

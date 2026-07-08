@@ -12,4 +12,4 @@ Description = Rebuilding Quickshell C++ Daemons to prevent library conflicts...
 When = PostTransaction
 Depends = gcc
 Depends = pkg-config
-Exec = /usr/bin/sudo -u khxnh /home/khxnh/.config/niri/scripts/quickshell/rebuild_all.sh
+Exec = /usr/bin/sudo -u khxnh /home/khxnh/.config/niri/bin/quickshell/rebuild_all.sh

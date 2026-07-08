@@ -132,98 +132,98 @@
       "mods": "$mainMod",
       "key": "R",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/reload.sh"
+      "command": "bash ~/.config/niri/bin/reload.sh"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "C",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh toggle clipboard"
+      "command": "~/.config/niri/bin/qs_manager.sh toggle clipboard"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "P",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh toggle movies"
+      "command": "~/.config/niri/bin/qs_manager.sh toggle movies"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "D",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle applauncher"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle applauncher"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT_L",
       "key": "S",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle settings"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle settings"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "Q",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle music"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle music"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "B",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle battery"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle battery"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "W",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle wallpaper"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle wallpaper"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "S",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle calendar"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle calendar"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "N",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle network"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle network"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT_L",
       "key": "T",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle focustime"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle focustime"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "V",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle volume"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle volume"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "H",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle guide"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle guide"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "M",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/qs_manager.sh toggle monitors"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle monitors"
     },
     {
       "type": "bindl",
@@ -251,42 +251,42 @@
       "mods": "",
       "key": "Print",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/screenshot.sh"
+      "command": "~/.config/niri/bin/screenshot.sh"
     },
     {
       "type": "bindl",
       "mods": "SHIFT_L",
       "key": "Print",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/screenshot.sh --edit"
+      "command": "~/.config/niri/bin/screenshot.sh --edit"
     },
     {
       "type": "bindl",
       "mods": "$mainMod",
       "key": "Print",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/screenshot.sh --full"
+      "command": "~/.config/niri/bin/screenshot.sh --full"
     },
     {
       "type": "bindl",
       "mods": "$mainMod SHIFT_L",
       "key": "Print",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/screenshot.sh --full --edit"
+      "command": "~/.config/niri/bin/screenshot.sh --full --edit"
     },
     {
       "type": "bindl",
       "mods": "",
       "key": "XF86PowerOff",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/lock.sh"
+      "command": "bash ~/.config/niri/bin/lock.sh"
     },
     {
       "type": "bindel",
       "mods": "$mainMod",
       "key": "L",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/scripts/lock.sh"
+      "command": "bash ~/.config/niri/bin/lock.sh"
     },
     {
       "type": "bindl",
@@ -342,147 +342,147 @@
       "mods": "$mainMod",
       "key": "1",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 1"
+      "command": "~/.config/niri/bin/qs_manager.sh 1"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "2",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 2"
+      "command": "~/.config/niri/bin/qs_manager.sh 2"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "3",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 3"
+      "command": "~/.config/niri/bin/qs_manager.sh 3"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "4",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 4"
+      "command": "~/.config/niri/bin/qs_manager.sh 4"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "5",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 5"
+      "command": "~/.config/niri/bin/qs_manager.sh 5"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "6",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 6"
+      "command": "~/.config/niri/bin/qs_manager.sh 6"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "7",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 7"
+      "command": "~/.config/niri/bin/qs_manager.sh 7"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "8",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 8"
+      "command": "~/.config/niri/bin/qs_manager.sh 8"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "9",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 9"
+      "command": "~/.config/niri/bin/qs_manager.sh 9"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "0",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 10"
+      "command": "~/.config/niri/bin/qs_manager.sh 10"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "1",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 1 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 1 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "2",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 2 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 2 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "3",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 3 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 3 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "4",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 4 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 4 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "5",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 5 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 5 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "6",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 6 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 6 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "7",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 7 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 7 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "8",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 8 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 8 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "9",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 9 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 9 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod SHIFT",
       "key": "0",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/qs_manager.sh 10 move"
+      "command": "~/.config/niri/bin/qs_manager.sh 10 move"
     },
     {
       "type": "bind",
       "mods": "$mainMod",
       "key": "TAB",
       "dispatcher": "exec",
-      "command": "~/.config/niri/scripts/focus_next_monitor.sh"
+      "command": "~/.config/niri/bin/focus_next_monitor.sh"
     }
   ],
   "startup": [
@@ -493,16 +493,16 @@
       "command": "awww-daemon"
     },
     {
-      "command": "~/.config/niri/scripts/swayidle.sh"
+      "command": "~/.config/niri/bin/swayidle.sh"
     },
     {
-      "command": "quickshell -p ~/.config/niri/scripts/quickshell/Shell.qml"
+      "command": "quickshell -p ~/.config/niri/bin/quickshell/Shell.qml"
     },
     {
-      "command": "~/.config/niri/scripts/quickshell/focustime/launch_daemon.sh"
+      "command": "~/.config/niri/bin/quickshell/focustime/launch_daemon.sh"
     },
     {
-      "command": "~/.config/niri/scripts/init.sh"
+      "command": "~/.config/niri/bin/init.sh"
     },
     {
       "command": "playerctld"
@@ -517,10 +517,10 @@
       "command": "wl-paste --type image --watch cliphist store"
     },
     {
-      "command": "~/.config/niri/scripts/volume_listener.sh"
+      "command": "~/.config/niri/bin/volume_listener.sh"
     },
     {
-      "command": "~/.config/niri/scripts/update_notifier.sh"
+      "command": "~/.config/niri/bin/update_notifier.sh"
     }
   ]
 }

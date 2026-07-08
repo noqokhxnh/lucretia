@@ -126,24 +126,24 @@ binds {
     Super+E { spawn "nautilus"; }
     
     // --- Quickshell Panel Toggles ---
-    Super+Shift+Alt+R { spawn "bash" "/home/khxnh/.config/niri/scripts/reload.sh"; }
-    Super+V { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "clipboard"; }
-    Super+Shift+P { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "movies"; }
-    Super+A { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "applauncher"; }
-    Super+Shift+I { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "settings"; }
-    Super+Shift+Q { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "music"; }
-    Super+Shift+B { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "battery"; }
-    Super+Shift+W { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "wallpaper"; }
-    Super+Shift+C { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "calendar"; }
-    Super+C { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "photobooth"; }
-    Super+Shift+N { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "network"; }
-    Super+N { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "notes"; }
-    Super+Shift+T { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "focustime"; }
-    Super+Shift+V { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "volume"; }
-    Super+Shift+Alt+H { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "guide"; }
-    Super+D { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "dashboard"; }
-    Super+Shift+D { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "services"; }
-    Super+Shift+M { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "toggle" "monitors"; }
+    Super+Shift+Alt+R { spawn "bash" "/home/khxnh/.config/niri/bin/reload.sh"; }
+    Super+V { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "clipboard"; }
+    Super+Shift+P { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "movies"; }
+    Super+A { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "applauncher"; }
+    Super+Shift+I { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "settings"; }
+    Super+Shift+Q { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "music"; }
+    Super+Shift+B { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "battery"; }
+    Super+Shift+W { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "wallpaper"; }
+    Super+Shift+C { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "calendar"; }
+    Super+C { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "photobooth"; }
+    Super+Shift+N { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "network"; }
+    Super+N { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "notes"; }
+    Super+Shift+T { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "focustime"; }
+    Super+Shift+V { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "volume"; }
+    Super+Shift+Alt+H { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "guide"; }
+    Super+D { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "dashboard"; }
+    Super+Shift+D { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "services"; }
+    Super+Shift+M { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "monitors"; }
     // --- SwayOSD Controls ---
     Caps_Lock { spawn "sleep" "0.1" "&&" "swayosd-client" "--caps-lock"; }
     XF86MonBrightnessDown { spawn "swayosd-client" "--brightness" "lower"; }
@@ -154,41 +154,41 @@ binds {
     XF86AudioRaiseVolume { spawn "swayosd-client" "--output-volume" "raise"; }
     
     // --- Screenshot Controls ---
-    Print { spawn "/home/khxnh/.config/niri/scripts/screenshot.sh"; }
-    Super+Shift+S { spawn "/home/khxnh/.config/niri/scripts/screenshot.sh"; }
-    Shift+Print { spawn "/home/khxnh/.config/niri/scripts/screenshot.sh" "--edit"; }
-    Super+Print { spawn "/home/khxnh/.config/niri/scripts/screenshot.sh" "--full"; }
-    Super+Shift+Print { spawn "/home/khxnh/.config/niri/scripts/screenshot.sh" "--full" "--edit"; }
+    Print { spawn "/home/khxnh/.config/niri/bin/screenshot.sh"; }
+    Super+Shift+S { spawn "/home/khxnh/.config/niri/bin/screenshot.sh"; }
+    Shift+Print { spawn "/home/khxnh/.config/niri/bin/screenshot.sh" "--edit"; }
+    Super+Print { spawn "/home/khxnh/.config/niri/bin/screenshot.sh" "--full"; }
+    Super+Shift+Print { spawn "/home/khxnh/.config/niri/bin/screenshot.sh" "--full" "--edit"; }
     
     // --- Lock and Media Controls ---
-    XF86PowerOff { spawn "bash" "/home/khxnh/.config/niri/scripts/lock.sh"; }
-    Super+comma { spawn "bash" "/home/khxnh/.config/niri/scripts/lock.sh"; }
+    XF86PowerOff { spawn "bash" "/home/khxnh/.config/niri/bin/lock.sh"; }
+    Super+comma { spawn "bash" "/home/khxnh/.config/niri/bin/lock.sh"; }
     Super+Space { spawn "playerctl" "play-pause"; }
     XF86AudioPause { spawn "playerctl" "play-pause"; }
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
     
     // --- Workspaces navigation & column move ---
-    Super+1 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "1"; }
-    Super+2 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "2"; }
-    Super+3 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "3"; }
-    Super+4 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "4"; }
-    Super+5 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "5"; }
-    Super+6 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "6"; }
-    Super+7 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "7"; }
-    Super+8 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "8"; }
-    Super+9 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "9"; }
-    Super+0 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "10"; }
+    Super+1 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "1"; }
+    Super+2 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "2"; }
+    Super+3 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "3"; }
+    Super+4 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "4"; }
+    Super+5 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "5"; }
+    Super+6 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "6"; }
+    Super+7 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "7"; }
+    Super+8 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "8"; }
+    Super+9 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "9"; }
+    Super+0 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "10"; }
     
-    Super+Shift+1 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "1" "move"; }
-    Super+Shift+2 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "2" "move"; }
-    Super+Shift+3 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "3" "move"; }
-    Super+Shift+4 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "4" "move"; }
-    Super+Shift+5 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "5" "move"; }
-    Super+Shift+6 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "6" "move"; }
-    Super+Shift+7 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "7" "move"; }
-    Super+Shift+8 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "8" "move"; }
-    Super+Shift+9 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "9" "move"; }
-    Super+Shift+0 { spawn "bash" "/home/khxnh/.config/niri/scripts/qs_manager.sh" "10" "move"; }
+    Super+Shift+1 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "1" "move"; }
+    Super+Shift+2 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "2" "move"; }
+    Super+Shift+3 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "3" "move"; }
+    Super+Shift+4 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "4" "move"; }
+    Super+Shift+5 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "5" "move"; }
+    Super+Shift+6 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "6" "move"; }
+    Super+Shift+7 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "7" "move"; }
+    Super+Shift+8 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "8" "move"; }
+    Super+Shift+9 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "9" "move"; }
+    Super+Shift+0 { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "10" "move"; }
     
     Super+grave { fullscreen-window; }
     
@@ -197,15 +197,15 @@ binds {
 
 spawn-at-startup "/usr/lib/polkit-kde-authentication-agent-1"
 spawn-at-startup "awww-daemon"
-spawn-at-startup "/home/khxnh/.config/niri/scripts/swayidle.sh"
-spawn-at-startup "quickshell" "-p" "/home/khxnh/.config/niri/scripts/quickshell/Shell.qml"
-spawn-at-startup "/home/khxnh/.config/niri/scripts/init.sh"
+spawn-at-startup "/home/khxnh/.config/niri/bin/swayidle.sh"
+spawn-at-startup "quickshell" "-p" "/home/khxnh/.config/niri/bin/quickshell/Shell.qml"
+spawn-at-startup "/home/khxnh/.config/niri/bin/init.sh"
 spawn-at-startup "playerctld"
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
-spawn-at-startup "/home/khxnh/.config/niri/scripts/volume_listener.sh"
-spawn-at-startup "/home/khxnh/.config/niri/scripts/update_notifier.sh"
-spawn-at-startup "/home/khxnh/.config/niri/scripts/battery_power_saver.sh"
+spawn-at-startup "/home/khxnh/.config/niri/bin/volume_listener.sh"
+spawn-at-startup "/home/khxnh/.config/niri/bin/update_notifier.sh"
+spawn-at-startup "/home/khxnh/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
 
 output "eDP-1" {

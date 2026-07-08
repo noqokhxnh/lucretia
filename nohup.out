@@ -1,0 +1,109 @@
+[32m  INFO[0m: Launching config: "/home/khxnh/.config/niri/bin/quickshell/Shell.qml"
+[32m  INFO[0m: Shell ID: "52cbdf6c41c7d057d40c476d51c8a780" Path ID "52cbdf6c41c7d057d40c476d51c8a780"
+[32m  INFO[0m: Saving logs to "/run/user/1000/quickshell/by-id/3hyg0nuht/log.qslog"
+[33m  WARN[97m quickshell.qmlscanner[0m: Module path "/home/khxnh/.config/niri/bin" is outside of the config folder.
+[32m  INFO[0m: Configuration Loaded
+[33m  WARN[97m scene[0m: QML PanelWindow (parent or ancestor of WlrLayershell) at @TopBar.qml[14:9]: Setting `height` is deprecated. Set `implicitHeight` instead.
+[34m DEBUG[97m qml[0m: runDir: /run/user/1000/quickshell
+[34m DEBUG[97m qml[0m: manual path: /run/user/1000/quickshell/workspaces
+[34m DEBUG[97m qml[0m: env test: null
+[34m DEBUG[97m qml[0m: wsPath: /run/user/1000/quickshell/workspaces
+[33m  WARN[97m scene[0m: QML NotificationPopups (parent or ancestor of WlrLayershell) at @Main.qml[268:5]: Setting `width` is deprecated. Set `implicitWidth` instead.
+[33m  WARN[97m scene[0m: QML NotificationPopups (parent or ancestor of WlrLayershell) at @Main.qml[268:5]: Setting `height` is deprecated. Set `implicitHeight` instead.
+[33m  WARN[97m scene[0m: QML NotificationPopups (parent or ancestor of WlrLayershell) at @Main.qml[268:5]: Setting `height` is deprecated. Set `implicitHeight` instead.
+[33m  WARN[97m scene[0m: QML WlrLayershell at @TopBar.qml[-1:-1]: Setting `height` is deprecated. Set `implicitHeight` instead.
+[34m DEBUG[97m qml[0m: [AutoPowerManager] CPU: 0%, Temp: 0°C -> Switching to balanced
+[34m DEBUG[97m qml[0m: [QsDaemonClient] Initial connection attempt...
+[34m DEBUG[97m qml[0m: [QsDaemonClient] Connected to C++ qs_daemon!
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[97m scene[0m: @Main.qml[384:29]: Unable to assign [undefined] to int
+[33m  WARN[97m scene[0m: @Main.qml[390:29]: Unable to assign [undefined] to int
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[34m DEBUG[97m qml[0m: [AutoPowerManager] CPU: 38%, Temp: 78°C -> Switching to performance
+[33m  WARN[97m scene[0m: QML WlrLayershell at @Main.qml[-1:-1]: Setting `height` is deprecated. Set `implicitHeight` instead.
+[32m  INFO[97m qt.multimedia.ffmpeg[0m: Using Qt multimedia with FFmpeg version n8.1.2 GPL version 3 or later
+Failed to open VDPAU backend libvdpau_nvidia.so: cannot open shared object file: No such file or directory
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[97m scene[0m: @Main.qml[401:29]: Unable to assign [undefined] to int
+[33m  WARN[97m scene[0m: @Main.qml[407:29]: Unable to assign [undefined] to int
+[33m  WARN[97m scene[0m: QML WlrLayershell at @Main.qml[-1:-1]: Setting `height` is deprecated. Set `implicitHeight` instead.
+[33m  WARN[97m scene[0m: @updater/UpdaterPopup.qml[483:-1]: TypeError: Cannot read property 'visible' of null
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[97m qt.qml.context[0m: qs:@/qs/updater/UpdaterPopup.qml:73:5 Parameter "event" is not declared. Injection of parameters into signal handlers is deprecated. Use JavaScript functions with formal parameters instead.
+[33m  WARN[97m scene[0m: @updater/UpdaterPopup.qml[483:-1]: TypeError: Cannot read property 'visible' of null
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[97m scene[0m: @calendar/CalendarPopup.qml[52:-1]: Error: Cannot assign to non-existent property "targetX"
+[33m  WARN[97m scene[0m: @calendar/CalendarPopup.qml[574:33]: Unable to assign [undefined] to double
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[97m scene[0m: QML Settings at @network/NetworkPopup.qml[47:5]: Failed to initialize QSettings instance. Status code is: 1
+[33m  WARN[97m scene[0m: QML Settings at @network/NetworkPopup.qml[47:5]: The following application identifiers have not been set: QList("organizationName", "organizationDomain")
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1744:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1751:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1762:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1759:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1753:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1744:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1751:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1762:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1759:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1753:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1744:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1751:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1762:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1759:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1753:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1744:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1751:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1762:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1759:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1753:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1744:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1751:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1762:-1]: ReferenceError: locksList is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1759:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @network/NetworkPopup.qml[1753:-1]: ReferenceError: isHighlighted is not defined
+[33m  WARN[97m scene[0m: @calendar/CalendarPopup.qml[1007:-1]: TypeError: Value is null and could not be converted to an object
+[33m  WARN[97m scene[0m: @calendar/CalendarPopup.qml[976:-1]: TypeError: Value is null and could not be converted to an object
+[33m  WARN[97m scene[0m: @calendar/CalendarPopup.qml[574:-1]: TypeError: Cannot read property 'drift' of null
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[97m scene[0m: QML Settings at @volume/VolumePopup.qml[100:5]: Failed to initialize QSettings instance. Status code is: 1
+[33m  WARN[97m scene[0m: QML Settings at @volume/VolumePopup.qml[100:5]: The following application identifiers have not been set: QList("organizationName", "organizationDomain")
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifModel"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "liveNotifs"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "notifIdMap"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutWidth"
+[33m  WARN[0m: qs:@/qs/Main.qml:477: Error: Cannot assign to non-existent property "layoutHeight"

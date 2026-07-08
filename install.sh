@@ -672,7 +672,7 @@ set_weather_api() {
         draw_header
         echo -e "${BOLD}${C_CYAN}=== OpenWeatherMap Interactive Setup ===${RESET}"
 
-        ENV_FILE="$HOME/.config/niri/scripts/quickshell/calendar/.env"
+        ENV_FILE="$HOME/.config/niri/bin/quickshell/calendar/.env"
 
         if [ -f "$ENV_FILE" ] || [[ -n "$WEATHER_API_KEY" && "$WEATHER_API_KEY" != "Skipped" ]]; then
             echo -e "${C_GREEN}An existing Weather configuration (.env) was detected.${RESET}"
@@ -936,7 +936,7 @@ while true; do
     S_TEL=$( [ "$ENABLE_TELEMETRY" = true ] && echo -e "${C_GREEN}[ON]${RESET}" || echo -e "${DIM}[OFF]${RESET}" )
 
     if [[ -z "$WEATHER_API_KEY" ]]; then
-        if [ -f "$HOME/.config/niri/scripts/quickshell/calendar/.env" ]; then
+        if [ -f "$HOME/.config/niri/bin/quickshell/calendar/.env" ]; then
             API_DISPLAY="Set (from .env file)"
         else
             API_DISPLAY="Not Set"
@@ -1341,7 +1341,7 @@ printf "  -> Configuration merged %-23s ${C_GREEN}[ OK ]${RESET}\n" ""
 # 5.5. WEATHER ENVIRONMENT PERSISTENCE
 # ------------------------------------------------------------------------------
 if [[ "$WEATHER_API_KEY" != "Skipped" && -n "$WEATHER_API_KEY" ]]; then
-    WEATHER_ENV="$TARGET_CONFIG_DIR/scripts/quickshell/calendar/.env"
+    WEATHER_ENV="$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env"
     mkdir -p "$(dirname "$WEATHER_ENV")"
     cat <<EOF > "$WEATHER_ENV"
 OPENWEATHER_KEY='$WEATHER_API_KEY'
@@ -1404,7 +1404,7 @@ env = NIXOS_OZONE_WL,1
 env = XDG_PICTURES_DIR,$USER_PICTURES_DIR
 env = XDG_VIDEOS_DIR,$USER_VIDEOS_DIR
 env = WALLPAPER_DIR,$WALLPAPER_DIR
-env = SCRIPT_DIR,$TARGET_CONFIG_DIR/scripts
+env = SCRIPT_DIR,$TARGET_CONFIG_DIR/bin
 env = QT_QPA_PLATFORMTHEME,qt6ct
 
 # Hardware Injections
@@ -1414,17 +1414,17 @@ printf "  -> env.conf generated successfully %-10s ${C_GREEN}[ OK ]${RESET}\n" "
 # ------------------------------------------------------------------------------
 # 6.5. DESKTOP VS LAPTOP ADAPTABILITY
 # ------------------------------------------------------------------------------
-QS_BAT_DIR="$TARGET_CONFIG_DIR/scripts/quickshell/battery"
+QS_BAT_DIR="$TARGET_CONFIG_DIR/bin/quickshell/battery"
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Checking chassis for battery presence..."
 if ls /sys/class/power_supply/BAT* 1> /dev/null 2>&1; then
     echo -e "  -> ${C_GREEN}Battery detected.${RESET} Keeping Laptop Battery widget."
-    if [ -f "$REPO_DIR/scripts/quickshell/battery/BatteryPopup.qml" ]; then
-        cp -f "$REPO_DIR/scripts/quickshell/battery/BatteryPopup.qml" "$QS_BAT_DIR/BatteryPopup.qml" 2>/dev/null || true
+    if [ -f "$REPO_DIR/bin/quickshell/battery/BatteryPopup.qml" ]; then
+        cp -f "$REPO_DIR/bin/quickshell/battery/BatteryPopup.qml" "$QS_BAT_DIR/BatteryPopup.qml" 2>/dev/null || true
     fi
 else
     echo -e "  -> ${C_YELLOW}No battery detected (Desktop system).${RESET} Swapping to System Monitor widget."
-    if [ -f "$REPO_DIR/scripts/quickshell/battery/BatteryPopupAlt.qml" ]; then
-        cp -f "$REPO_DIR/scripts/quickshell/battery/BatteryPopupAlt.qml" "$QS_BAT_DIR/BatteryPopup.qml" 2>/dev/null || true
+    if [ -f "$REPO_DIR/bin/quickshell/battery/BatteryPopupAlt.qml" ]; then
+        cp -f "$REPO_DIR/bin/quickshell/battery/BatteryPopupAlt.qml" "$QS_BAT_DIR/BatteryPopup.qml" 2>/dev/null || true
     fi
 fi
 
@@ -1492,22 +1492,22 @@ fi
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Compiling Custom C++ Components..."
 
 # Rebuild all quickshell backends and daemons
-if [ -f "$REPO_DIR/scripts/quickshell/rebuild_all.sh" ]; then
+if [ -f "$REPO_DIR/bin/quickshell/rebuild_all.sh" ]; then
     echo -e "  -> Compiling all Quickshell C++ components (rebuild_all.sh)..."
-    chmod +x "$REPO_DIR/scripts/quickshell/rebuild_all.sh"
-    bash "$REPO_DIR/scripts/quickshell/rebuild_all.sh" >/dev/null 2>&1 || true
+    chmod +x "$REPO_DIR/bin/quickshell/rebuild_all.sh"
+    bash "$REPO_DIR/bin/quickshell/rebuild_all.sh" >/dev/null 2>&1 || true
     printf "  -> C++ components compiled successfully %-4s ${C_GREEN}[ OK ]${RESET}\n" ""
 else
     # Fallback to legacy single-daemon compilation if rebuild_all.sh is missing
-    if [ -f "$REPO_DIR/scripts/quickshell/compile_daemon.sh" ]; then
+    if [ -f "$REPO_DIR/bin/quickshell/compile_daemon.sh" ]; then
         echo -e "  -> Compiling qs_daemon (Desktop Control Daemon)..."
-        chmod +x "$REPO_DIR/scripts/quickshell/compile_daemon.sh"
-        (cd "$REPO_DIR/scripts/quickshell" && bash compile_daemon.sh >/dev/null 2>&1)
+        chmod +x "$REPO_DIR/bin/quickshell/compile_daemon.sh"
+        (cd "$REPO_DIR/bin/quickshell" && bash compile_daemon.sh >/dev/null 2>&1)
     fi
-    if [ -f "$REPO_DIR/scripts/quickshell/screenshot/compile_screenshot.sh" ]; then
+    if [ -f "$REPO_DIR/bin/quickshell/screenshot/compile_screenshot.sh" ]; then
         echo -e "  -> Compiling screenshot_backend (Screenshot Beautifier)..."
-        chmod +x "$REPO_DIR/scripts/quickshell/screenshot/compile_screenshot.sh"
-        (cd "$REPO_DIR/scripts/quickshell/screenshot" && bash compile_screenshot.sh >/dev/null 2>&1)
+        chmod +x "$REPO_DIR/bin/quickshell/screenshot/compile_screenshot.sh"
+        (cd "$REPO_DIR/bin/quickshell/screenshot" && bash compile_screenshot.sh >/dev/null 2>&1)
     fi
 fi
 
@@ -1521,7 +1521,7 @@ sudo systemctl enable --now power-profiles-daemon.service >/dev/null 2>&1 || tru
 printf "  -> Power Profiles Daemon enabled %-13s ${C_GREEN}[ OK ]${RESET}\n" ""
 
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting executable permissions on scripts..."
-find "$TARGET_CONFIG_DIR/scripts" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
+find "$TARGET_CONFIG_DIR/bin" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
 printf "  -> Permissions set successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
 
 # Setup SDDM Theme and Config
