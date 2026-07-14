@@ -1717,7 +1717,7 @@ Item {
                 spacing: Math.round(12 * window.sf)
 
                 Text {
-                    text: "Ghi chú ngày: " + window.activeNoteDate
+                    text: "Note for: " + window.activeNoteDate
                     font.family: "Outfit"
                     font.pixelSize: Math.round(16 * window.sf)
                     font.weight: Font.Bold
@@ -1736,7 +1736,7 @@ Item {
                         font.pixelSize: Math.round(13 * window.sf)
                         color: window.text
                         wrapMode: TextEdit.Wrap
-                        placeholderText: "Nhập ghi chú tại đây..."
+                        placeholderText: "Enter notes here..."
                         placeholderTextColor: window.overlay0
                         
                         background: Rectangle {
@@ -1764,7 +1764,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Hủy"
+                            text: "Cancel"
                             font.family: "Outfit"
                             font.pixelSize: Math.round(13 * window.sf)
                             font.weight: Font.Medium
@@ -1790,7 +1790,7 @@ Item {
 
                         Text {
                             anchors.centerIn: parent
-                            text: "Lưu"
+                            text: "Save"
                             font.family: "Outfit"
                             font.pixelSize: Math.round(13 * window.sf)
                             font.weight: Font.Bold
