@@ -47,9 +47,35 @@ fi
 if [ "$IS_GIT" = true ]; then
     info "Git repository detected tại $REPO_DIR"
     
-    # Fetch remote changes and verify current active branch
+    # Fetch remote changes
     info "Đang nạp (fetch) thông tin từ remote..."
     git -C "$REPO_DIR" fetch --quiet || warn "Không thể kết nối tới remote để fetch. Tiếp tục với phiên bản cục bộ..."
+
+    # ─────────────────────────────────────────────
+    # Show changelog
+    # ─────────────────────────────────────────────
+    info "Các thay đổi mới nhất:"
+    echo ""
+    # Try @{u} first, then origin/main, then origin/<current_branch>
+    current_branch=$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+    remote_ref=""
+    for ref in "@{u}" "origin/main" "origin/$current_branch"; do
+        if git -C "$REPO_DIR" rev-parse "$ref" &>/dev/null 2>&1; then
+            remote_ref="$ref"
+            break
+        fi
+    done
+    if [ -n "$remote_ref" ]; then
+        git -C "$REPO_DIR" log --oneline --decorate -10 "$remote_ref" 2>/dev/null || true
+    else
+        echo "   (Không tìm thấy remote branch nào để hiển thị changelog)"
+    fi
+    echo ""
+
+    # Pause for user to read changelog
+    echo -e "${C_YELLOW}:: Nhấn Enter để tiếp tục cập nhật...${C_RESET}"
+    read -r || true
+    echo ""
 
     # Get local and remote HEAD commit hashes for the active branch
     local_head=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null || echo "")
