@@ -24,3 +24,5 @@ hyprland.conf
 **/.codewhale/*
 !**/.codewhale/constitution.json
 .deepseek/
+.opencode/*
+.mimocode/*
