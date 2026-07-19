@@ -27,7 +27,7 @@ Item {
                 window.pendingWifiId = ""; window.pendingWifiSsid = "";
                 return;
             }
-            window.playSfx("switch.wav");
+            // window.playSfx("switch.wav"); // Disabled tab switch sound
             let modes = [];
             if (window.ethPresent) modes.push("eth");
             if (window.wifiPresent) modes.push("wifi");
@@ -202,7 +202,7 @@ Item {
     readonly property color sharedAccent: Qt.lighter(window.sapphire, 1.15) 
     readonly property color btAccent: window.mauve
 
-    property string activeMode: "bt"
+    property string activeMode: "wifi"
     readonly property color activeColor: activeMode === "bt" ? window.btAccent : window.sharedAccent
     readonly property color activeGradientSecondary: Qt.darker(window.activeColor, 1.25)
 
@@ -821,9 +821,17 @@ Item {
         }
     }
 
+    // PERF: Replaced continuous NumberAnimation (60fps) with Timer-based updates (10fps).
+    // This eliminates per-frame recalculation of 5 cores + 10-20 orbit card positions.
     property real globalOrbitAngle: 0
-    NumberAnimation on globalOrbitAngle {
-        from: 0; to: Math.PI * 2; duration: 200000; loops: Animation.Infinite; running: true
+    Timer {
+        interval: 100
+        running: true
+        repeat: true
+        onTriggered: {
+            window.globalOrbitAngle += (Math.PI * 2) * (0.1 / 200.0);
+            if (window.globalOrbitAngle > Math.PI * 2) window.globalOrbitAngle -= Math.PI * 2;
+        }
     }
 
     property real introState: 0.0
@@ -860,10 +868,12 @@ Item {
             border.width: 1
             clip: true
             
+            // PERF: Made background blobs static - they're barely visible (0.06-0.08 opacity)
+            // and were causing per-frame recalculation for no visual benefit.
             Rectangle {
                 width: parent.width * 0.8; height: width; radius: width / 2
-                x: (parent.width / 2 - width / 2) + Math.cos(window.globalOrbitAngle * 2) * window.s(150)
-                y: (parent.height / 2 - height / 2) + Math.sin(window.globalOrbitAngle * 2) * window.s(100)
+                x: (parent.width / 2 - width / 2) + window.s(80)
+                y: (parent.height / 2 - height / 2) - window.s(50)
                 opacity: window.currentPower ? 0.08 : 0.02
                 color: window.currentConn ? window.activeColor : window.surface2
                 Behavior on color { ColorAnimation { duration: 1000 } }
@@ -873,8 +883,8 @@ Item {
             
             Rectangle {
                 width: parent.width * 0.9; height: width; radius: width / 2
-                x: (parent.width / 2 - width / 2) + Math.sin(window.globalOrbitAngle * 1.5) * window.s(-150)
-                y: (parent.height / 2 - height / 2) + Math.cos(window.globalOrbitAngle * 1.5) * window.s(-100)
+                x: (parent.width / 2 - width / 2) - window.s(80)
+                y: (parent.height / 2 - height / 2) + window.s(50)
                 opacity: window.currentPower ? 0.06 : 0.01
                 color: window.currentConn ? window.activeGradientSecondary : window.surface1
                 Behavior on color { ColorAnimation { duration: 1000 } }
@@ -927,18 +937,15 @@ Item {
 
                 Timer {
                     id: lightningTimer
-                    interval: 150
+                    interval: 500
                     running: nodeLinesCanvas.opacity > 0.01 && window.currentPower 
                     repeat: true
                     onTriggered: nodeLinesCanvas.requestPaint()
                 }
 
-                Connections {
-                    target: window
-                    function onGlobalOrbitAngleChanged() { 
-                        if (window.currentConn && window.showInfoView && window.currentPower) nodeLinesCanvas.requestPaint() 
-                    }
-                }
+                // PERF: Removed onGlobalOrbitAngleChanged → requestPaint() connection.
+                // That was causing Canvas repaint every frame (~16ms) since globalOrbitAngle
+                // changes continuously. The lightningTimer at 500ms is sufficient.
                 
                 onPaint: {
                     var ctx = getContext("2d");
@@ -1098,16 +1105,15 @@ Item {
                         property bool showPassword: isPrimary && window.pendingWifiId !== "" && window.activeMode === "wifi"
                         property bool showEthDisconnected: isPrimary && window.currentPower && !window.currentConn && window.activeMode === "eth"
 
-                        MultiEffect {
-                            source: centralCore
-                            anchors.fill: centralCore
-                            shadowEnabled: true
-                            shadowColor: "#000000"
-                            shadowOpacity: window.currentPower ? 0.5 : 0.0
-                            shadowBlur: 1.2
-                            shadowVerticalOffset: window.s(6)
+                        // PERF: Replaced expensive MultiEffect shadow with simple Rectangle shadow
+                        Rectangle {
+                            anchors.centerIn: centralCore
+                            anchors.verticalCenterOffset: window.s(4)
+                            width: centralCore.width; height: centralCore.height; radius: centralCore.radius
+                            color: "#000000"
+                            opacity: window.currentPower ? 0.25 : 0.0
                             z: -1
-                            Behavior on shadowOpacity { NumberAnimation { duration: 600 } }
+                            Behavior on opacity { NumberAnimation { duration: 600 } }
                         }
 
                         Rectangle {
@@ -1245,6 +1251,7 @@ Item {
                             }
                             
                             Rectangle {
+                                id: pulseRing
                                 anchors.centerIn: parent
                                 width: parent.width + window.s(15)
                                 height: width
@@ -1254,20 +1261,20 @@ Item {
                                 border.width: window.s(3)
                                 z: -2
                                 
-                                property real pulseOp: 0.0
-                                property real pulseSc: 1.0
-                                opacity: ((window.currentConn || showPassword) && window.showInfoView && window.currentPower && !isMyDisconnecting) ? pulseOp : 0.0
-                                scale: pulseSc
-                                
-                                Timer {
-                                    interval: 120
-                                    running: parent.opacity > 0.01
-                                    repeat: true
-                                    onTriggered: {
-                                        var time = Date.now() / 1000;
-                                        parent.pulseOp = 0.3 + Math.sin(time * 2.5) * 0.15;
-                                        parent.pulseSc = 1.02 + Math.cos(time * 3.0) * 0.02;
-                                    }
+                                property bool pulseActive: ((window.currentConn || showPassword) && window.showInfoView && window.currentPower && !isMyDisconnecting)
+
+                                // PERF: Replaced JS Timer (120ms) with GPU-accelerated SequentialAnimations
+                                SequentialAnimation on opacity {
+                                    running: pulseRing.pulseActive
+                                    loops: Animation.Infinite
+                                    NumberAnimation { to: 0.45; duration: 1200; easing.type: Easing.InOutSine }
+                                    NumberAnimation { to: 0.15; duration: 1200; easing.type: Easing.InOutSine }
+                                }
+                                SequentialAnimation on scale {
+                                    running: pulseRing.pulseActive
+                                    loops: Animation.Infinite
+                                    NumberAnimation { to: 1.04; duration: 1500; easing.type: Easing.InOutSine }
+                                    NumberAnimation { to: 1.0; duration: 1500; easing.type: Easing.InOutSine }
                                 }
                             }
 
@@ -1638,25 +1645,22 @@ Item {
                                 ? (orbitContainer.height / 2) - (height / 2) + Math.sin(currentAngle) * animRadY
                                 : parentY - (height / 2) + Math.sin(currentAngle) * animRadY
 
-                            property real liveBob: myParentIdx === -1 && isInfoNode 
-                                ? Math.sin(window.globalOrbitAngle * 6) * window.s(12) * (1 - unifiedRatio) 
-                                : 0
+                            // PERF: Removed liveBob - was causing Math.sin per frame per info card
 
                             x: targetX
-                            y: targetY + liveBob
+                            y: targetY
 
                             scale: (!isLoaded ? 0.0 : (floatMa.pressed ? dynamicScale * 0.95 : (floatCard.locksList ? dynamicScale * 1.08 : dynamicScale))) * floatCard.bumpScale
                             Behavior on scale { NumberAnimation { duration: 400; easing.type: Easing.OutQuart } }
                             z: floatCard.locksList ? 10 : index
 
-                            MultiEffect {
-                                source: floatCard
-                                anchors.fill: floatCard
-                                shadowEnabled: window.currentPower && floatCardDelegateContainer.opacity > 0.05
-                                shadowColor: "#000000"
-                                shadowOpacity: 0.3
-                                shadowBlur: 0.8
-                                shadowVerticalOffset: window.s(4)
+                            // PERF: Replaced expensive MultiEffect shadow with simple Rectangle
+                            Rectangle {
+                                anchors.centerIn: floatCard
+                                anchors.verticalCenterOffset: window.s(3)
+                                width: floatCard.width; height: floatCard.height; radius: window.s(14)
+                                color: "#000000"
+                                opacity: (window.currentPower && floatCardDelegateContainer.opacity > 0.05) ? 0.15 : 0.0
                                 z: -1
                             }
 
@@ -2170,7 +2174,7 @@ Item {
                                 if (window.activeMode !== "eth") {
                                     window.powerAnimAllowed = false;
                                     powerAnimBlocker.restart();
-                                    window.playSfx("switch.wav");
+                                    // window.playSfx("switch.wav"); // Disabled tab switch sound
                                     window.activeMode = "eth";
                                 }
                             }
@@ -2202,7 +2206,7 @@ Item {
                                 if (window.activeMode !== "wifi") {
                                     window.powerAnimAllowed = false;
                                     powerAnimBlocker.restart();
-                                    window.playSfx("switch.wav");
+                                    // window.playSfx("switch.wav"); // Disabled tab switch sound
                                     window.activeMode = "wifi";
                                 }
                             }
@@ -2233,7 +2237,7 @@ Item {
                                 if (window.activeMode !== "bt") {
                                     window.powerAnimAllowed = false;
                                     powerAnimBlocker.restart();
-                                    window.playSfx("switch.wav");
+                                    // window.playSfx("switch.wav"); // Disabled tab switch sound
                                     window.activeMode = "bt";
                                 }
                             }
