@@ -11,8 +11,6 @@ Item {
     id: window
     focus: true
 
-    property var notifModel: null
-    property var liveNotifs: null
     property int layoutWidth: 860
     property int layoutHeight: 760
 
@@ -20,16 +18,18 @@ Item {
     property int targetMasterWidth: 860
     property int targetMasterHeight: 760
 
+    readonly property string photoDir: Quickshell.env("HOME") + "/Pictures/PhotoBooth"
+
     MatugenColors { id: _theme }
     
-    readonly property color bg:       _theme.base     || "#1e1e2e"
-    readonly property color fg:       _theme.text     || "#cdd6f4"
-    readonly property color surf0:    _theme.surface0 || "#313244"
-    readonly property color surf1:    _theme.surface1 || "#45475a"
-    readonly property color surf2:    _theme.surface2 || "#585b70"
-    readonly property color mantle:   _theme.mantle   || "#181825"
-    readonly property color crust:    _theme.crust    || "#11111b"
-    readonly property color mauve:    _theme.mauve    || "#cba6f7"
+    readonly property color bg:       _theme.base
+    readonly property color fg:       _theme.text
+    readonly property color surf0:    _theme.surface0
+    readonly property color surf1:    _theme.surface1
+    readonly property color surf2:    _theme.surface2
+    readonly property color mantle:   _theme.mantle
+    readonly property color crust:    _theme.crust
+    readonly property color mauve:    _theme.mauve
 
     readonly property color macRed:    "#ff5f56"
     readonly property color macYellow: "#ffbd2e"
@@ -46,6 +46,7 @@ Item {
     property bool   isMinimized:    false
 
     property int  burstCount: 0
+    property int  burstProgress: 0
     property var  burstFiles: []
 
 
@@ -62,6 +63,8 @@ Item {
 
     function initializeSession() {
         introAnim.restart()
+
+        Quickshell.execDetached(["bash", "-c", "mkdir -p '" + window.photoDir + "'"])
         
         if (!window.isSessionActive) {
             console.log("Starting new Photo Booth session")
@@ -147,10 +150,11 @@ Item {
         interval: 900
         repeat: true
         onTriggered: {
+            window.burstProgress = window.burstCount + 1  // 1-indexed for display
             window.flashActive = true
             flashTimer.restart()
             let fname = "burst_" + window.burstCount + "_" + Date.now() + ".jpg"
-            let fpath = Quickshell.env("HOME") + "/Pictures/PhotoBooth/" + fname
+            let fpath = window.photoDir + "/" + fname
             window.burstFiles.push(fpath)
             imageCapture.captureToFile(fpath)
             window.burstCount++
@@ -173,7 +177,7 @@ Item {
             } else {
                 window.isRecording = true
                 let fname = "video_" + Date.now() + ".mp4"
-                recorder.outputLocation = "file://" + Quickshell.env("HOME") + "/Pictures/PhotoBooth/" + fname
+                recorder.outputLocation = "file://" + window.photoDir + "/" + fname
                 recorder.record()
             }
             return
@@ -197,17 +201,17 @@ Item {
     function singleShot() {
         window.flashActive = true
         flashTimer.restart()
-        let path = Quickshell.env("HOME") + "/Pictures/PhotoBooth/photo_" + Date.now() + ".jpg"
+        let path = window.photoDir + "/photo_" + Date.now() + ".jpg"
         imageCapture.captureToFile(path)
         addCaptureToRoll(path)
     }
 
     function stitchBurst() {
         let fname = "burst_" + Date.now() + ".jpg"
-        let out = Quickshell.env("HOME") + "/Pictures/PhotoBooth/" + fname
+        let out = window.photoDir + "/" + fname
         
-        let inFiles = []
-        for (let f of window.burstFiles) inFiles.push(f)
+        // Snapshot the array to avoid concurrent burst mutation
+        let inFiles = window.burstFiles.slice()
         
         Components.QsDaemonClient.sendRequest("photobooth", "burst", { inputs: inFiles, output: out }, function(res) {
             // Optimistically add to UI, backend will also persist it
@@ -217,7 +221,7 @@ Item {
     }
 
     function openFolder() {
-        Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && exec nautilus " + Quickshell.env("HOME") + "/Pictures/PhotoBooth"])
+        Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && exec nautilus " + window.photoDir])
     }
 
     // --- Camera ---
@@ -225,16 +229,12 @@ Item {
         id: captureSession
         camera: Camera { 
             id: camera
-            active: window.isSessionActive
+            active: window.visible && window.isSessionActive
         }
         imageCapture: ImageCapture {
             id: imageCapture
-            // Manual refresh handled in singleShot/stitchBurst
         }
-        recorder: MediaRecorder {
-            id: recorder
-            outputLocation: Quickshell.env("HOME") + "/Pictures/PhotoBooth/video_" + Date.now() + ".mp4"
-        }
+        recorder: MediaRecorder { id: recorder }
         videoOutput: cameraOutput
     }
 
@@ -512,6 +512,20 @@ Item {
                     style: Text.Outline
                     styleColor: Qt.rgba(0, 0, 0, 0.6)
                     visible: window.isCountingDown && window.countdown > 0
+                }
+
+                // Burst progress overlay
+                Text {
+                    anchors.centerIn: parent
+                    anchors.verticalCenterOffset: 80
+                    text: "Shot " + window.burstProgress + " / 4"
+                    font.family: "Inter"
+                    font.pixelSize: 28
+                    font.weight: Font.Bold
+                    color: "white"
+                    style: Text.Outline
+                    styleColor: Qt.rgba(0, 0, 0, 0.6)
+                    visible: window.captureMode === "burst" && window.burstCount > 0 && window.burstCount < 4
                 }
 
                 // Flash overlay
@@ -840,12 +854,16 @@ Item {
         } // card
     } // uiRoot
 
-    Keys.onEscapePressed: {
-        Quickshell.execDetached([
-            "bash",
-            Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh",
-            "close"
-        ])
-        event.accepted = true
+    Keys.onPressed: (event) => {
+        if (event.key === Qt.Key_Escape) {
+            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"])
+            event.accepted = true
+        } else if (event.key === Qt.Key_Space) {
+            startCountdown()
+            event.accepted = true
+        } else if (event.key === Qt.Key_M) {
+            window.isMirrored = !window.isMirrored
+            event.accepted = true
+        }
     }
 }
