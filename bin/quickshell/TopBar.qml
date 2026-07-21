@@ -574,6 +574,15 @@ Variants {
                     }
                 }
             }
+            Timer {
+                id: btFallbackPoller
+                interval: 10000
+                running: true
+                repeat: true
+                onTriggered: {
+                    if (!btPoller.running) btPoller.running = true;
+                }
+            }
 
             Process {
                 id: batteryPoller

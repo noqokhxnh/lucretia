@@ -22,5 +22,6 @@ PID2=$!
 read -r _ < "$PIPE" &
 READ_PID=$!
 
-wait $READ_PID 2>/dev/null
+wait $READ_PID 2>/dev/null || true
+sleep 0.5
 

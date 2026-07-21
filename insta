@@ -1,0 +1,1827 @@
+[1mdiff --git a/bin/quickshell/movies/MovieWidget.qml b/bin/quickshell/movies/MovieWidget.qml[m
+[1mdeleted file mode 100644[m
+[1mindex 4f1582b..0000000[m
+[1m--- a/bin/quickshell/movies/MovieWidget.qml[m
+[1m+++ /dev/null[m
+[36m@@ -1,1818 +0,0 @@[m
+[31m-import QtQuick[m
+[31m-import QtQuick.Window[m
+[31m-import QtQuick.Effects[m
+[31m-import QtQuick.Layouts[m
+[31m-import QtQuick.Controls[m
+[31m-import Quickshell[m
+[31m-import Quickshell.Io[m
+[31m-import "../"[m
+[31m-[m
+[31m-Item {[m
+[31m-    id: window[m
+[31m-    focus: true[m
+[31m-[m
+[31m-    Caching { id: paths }[m
+[31m-    readonly property string moviesCache: paths.getCacheDir("movies")[m
+[31m-[m
+[31m-    Scaler {[m
+[31m-        id: scaler[m
+[31m-        currentWidth: Screen.width[m
+[31m-    }[m
+[31m-[m
+[31m-    function s(val) { [m
+[31m-        return scaler.s(val); [m
+[31m-    }[m
+[31m-[m
+[31m-    MatugenColors { id: _theme }[m
+[31m-    readonly property color base: _theme.base[m
+[31m-    readonly property color crust: _theme.crust[m
+[31m-    readonly property color mantle: _theme.mantle[m
+[31m-    readonly property color text: _theme.text[m
+[31m-    readonly property color subtext0: _theme.subtext0[m
+[31m-    readonly property color surface0: _theme.surface0[m
+[31m-    readonly property color surface1: _theme.surface1[m
+[31m-    readonly property color surface2: _theme.surface2[m
+[31m-    readonly property color mauve: _theme.mauve || "#cba6f7"[m
+[31m-    readonly property color blue: _theme.blue || "#89b4fa"[m
+[31m-    readonly property color green: _theme.green || "#a6e3a1"[m
+[31m-    readonly property color red: _theme.red || "#f38ba8"[m
+[31m-[m
+[31m-    // --- STATE MANAGEMENT ---[m
+[31m-    property string currentView: "search" // "search" or "series"[m
+[31m-    property string mediaType: "movie" // "movie" or "tv"[m
+[31m-    property string filterSort: "Default"[m
+[31m-    property bool isSearching: searchInput.text.trim() !== ""[m
+[31m-    property bool isSearchingNetwork: false[m
+[31m-    property bool isSearchMode: window.isSearching[m
+[31m-    property string selectedImdbId: ""[m
+[31m-    property string selectedTitle: ""[m
+[31m-    property string selectedPoster: ""[m
+[31m-    property string selectedDescription: ""[m
+[31m-    property var seriesDataMap: ({})[m
+[31m-    property int currentSeason: 1[m
+[31m-    property bool isLoadingSeries: false[m
+[31m-    property bool trendingMoviesLoaded: false[m
+[31m-    property bool trendingTvLoaded: false[m
+[31m-    property bool isFetchingMovies: false[m
+[31m-    property bool isFetchingTv: false[m
+[31m-    property bool isLoadingPopular: isFetchingMovies || isFetchingTv[m
+[31m-    property var currentFetchResults: [][m
+[31m-    property var rawTrendingMovies: [][m
+[31m-    property var rawTrendingTv: [][m
+[31m-    property real trendingMoviesLastFetch: 0[m
+[31m-    property real trendingTvLastFetch: 0[m
+[31m-    readonly property real trendingCacheMaxAge: 12 * 60 * 60 * 1000[m
+[31m-    property bool seasonSwitching: false[m
+[31m-    property bool stateRestored: false[m
+[31m-    property bool pendingSeriesFocusRestore: false[m
+[31m-[m
+[31m-    Timer {[m
+[31m-        id: safetyLoadingTimer[m
+[31m-        interval: 12000[m
+[31m-        running: window.isLoadingPopular || window.isSearchingNetwork[m
+[31m-        repeat: false[m
+[31m-        onTriggered: {[m
+[31m-            window.isFetchingMovies = false[m
+[31m-            window.isFetchingTv = false[m
+[31m-            window.isSearchingNetwork = false[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Timer {[m
+[31m-        id: searchDebounceTimer[m
+[31m-        interval: 400[m
+[31m-        repeat: false[m
+[31m-        onTriggered: {[m
+[31m-            if (searchInput.text.trim() !== "") {[m
+[31m-                doSearch(searchInput.text)[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Timer {[m
+[31m-        id: seriesFocusRestoreTimer[m
+[31m-        interval: 350[m
+[31m-        repeat: false[m
+[31m-        onTriggered: {[m
+[31m-            if (window.currentView === "series" && !window.isSourceModalOpen) {[m
+[31m-                window.forceActiveFocus()[m
+[31m-                window.pendingSeriesFocusRestore = false[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- SHARED DISK I/O HELPER ---[m
+[31m-    function saveJsonToCache(filename, dataObj) {[m
+[31m-        let jsStr = JSON.stringify(dataObj).replace(/'/g, "'\\''")[m
+[31m-        Quickshell.execDetached(["bash", "-c", "echo '" + jsStr + "' > " + window.moviesCache + "/" + filename])[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- PERSISTENT CACHE IO ---[m
+[31m-    Process {[m
+[31m-        id: readHistoryProc[m
+[31m-        command: ["bash", "-c", "cat " + window.moviesCache + "/qs_movie_history.json 2>/dev/null || echo '[]'"][m
+[31m-        running: false[m
+[31m-        stdout: SplitParser {[m
+[31m-            onRead: (data) => {[m
+[31m-                try {[m
+[31m-                    let parsed = JSON.parse(data.trim())[m
+[31m-                    searchHistoryModel.clear()[m
+[31m-                    for (let i = parsed.length - 1; i >= 0; i--) {[m
+[31m-                        searchHistoryModel.insert(0, { query: parsed[i] })[m
+[31m-                    }[m
+[31m-                } catch(e) {}[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Process {[m
+[31m-        id: readWatchHistoryProc[m
+[31m-        command: ["bash", "-c", "cat " + window.moviesCache + "/qs_movie_watch_history.json 2>/dev/null || echo '[]'"][m
+[31m-        running: false[m
+[31m-        stdout: SplitParser {[m
+[31m-            onRead: (data) => {[m
+[31m-                try {[m
+[31m-                    let parsed = JSON.parse(data.trim())[m
+[31m-                    watchHistoryModel.clear()[m
+[31m-                    for (let i = parsed.length - 1; i >= 0; i--) {[m
+[31m-                        watchHistoryModel.insert(0, parsed[i])[m
+[31m-                    }[m
+[31m-                } catch(e) {}[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    function processTrendingCache(parsed, typeStr, targetModel) {[m
+[31m-        let now = Date.now()[m
+[31m-        let isMovie = typeStr === "movie"[m
+[31m-        let lastFetch = parsed[isMovie ? "moviesLastFetch" : "tvLastFetch"] || 0[m
+[31m-        let items = parsed[isMovie ? "movies" : "tv"][m
+[31m-[m
+[31m-        if (items && items.length > 0) {[m
+[31m-            targetModel.clear()[m
+[31m-            if (isMovie) window.rawTrendingMovies = items; else window.rawTrendingTv = items[m
+[31m-            for (let i = 0; i < items.length; i++) targetModel.append(items[i])[m
+[31m-            [m
+[31m-            if (isMovie) { window.trendingMoviesLoaded = true; window.isFetchingMovies = false; window.trendingMoviesLastFetch = lastFetch } [m
+[31m-            else { window.trendingTvLoaded = true; window.isFetchingTv = false; window.trendingTvLastFetch = lastFetch }[m
+[31m-            [m
+[31m-            if ((now - lastFetch) > window.trendingCacheMaxAge) fetchTrending(typeStr === "movie" ? "movie" : "series")[m
+[31m-        } else {[m
+[31m-            fetchTrending(typeStr === "movie" ? "movie" : "series")[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Process {[m
+[31m-        id: readTrendingCacheProc[m
+[31m-        command: ["bash", "-c", "cat " + window.moviesCache + "/qs_trending_cache.json 2>/dev/null || echo '{}'"][m
+[31m-        running: false[m
+[31m-        stdout: SplitParser {[m
+[31m-            onRead: (data) => {[m
+[31m-                try {[m
+[31m-                    let parsed = JSON.parse(data.trim())[m
+[31m-                    processTrendingCache(parsed, "movie", cachedTrendingMovies)[m
+[31m-                    processTrendingCache(parsed, "tv", cachedTrendingTv)[m
+[31m-                } catch(e) {[m
+[31m-                    fetchTrending("movie")[m
+[31m-                    fetchTrending("series")[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Process {[m
+[31m-        id: readUiStateProc[m
+[31m-        command: ["bash", "-c", "cat " + window.moviesCache + "/qs_ui_state.json 2>/dev/null || echo '{}'"][m
+[31m-        running: false[m
+[31m-        stdout: SplitParser {[m
+[31m-            onRead: (data) => {[m
+[31m-                try {[m
+[31m-                    let s = JSON.parse(data.trim())[m
+[31m-                    if (!s || Object.keys(s).length === 0) {[m
+[31m-                        window.stateRestored = true[m
+[31m-                        return[m
+[31m-                    }[m
+[31m-                    if (s.mediaType) window.mediaType = s.mediaType[m
+[31m-                    if (s.filterSort) {[m
+[31m-                        window.filterSort = s.filterSort[m
+[31m-                        let idx = filterSelector.model.indexOf(s.filterSort)[m
+[31m-                        if (idx >= 0) filterSelector.currentIndex = idx[m
+[31m-                    }[m
+[31m-                    if (s.searchText && s.searchText !== "") searchInput.text = s.searchText[m
+[31m-                    if (s.currentView) window.currentView = s.currentView[m
+[31m-                    if (s.selectedImdbId) window.selectedImdbId = s.selectedImdbId[m
+[31m-                    if (s.selectedTitle) window.selectedTitle = s.selectedTitle[m
+[31m-                    if (s.selectedPoster) window.selectedPoster = s.selectedPoster[m
+[31m-                    if (s.selectedDescription) window.selectedDescription = s.selectedDescription[m
+[31m-                    if (s.currentSeason) window.currentSeason = s.currentSeason[m
+[31m-                    [m
+[31m-                    if (s.isSourceModalOpen && s.pendingMedia && s.pendingMedia.imdbId) {[m
+[31m-                        window.pendingMedia = s.pendingMedia[m
+[31m-                        window.foundSourceName = s.foundSourceName || ""[m
+[31m-                        for (let i = 0; i < sourceModel.count; i++) sourceModel.setProperty(i, "status", "pending")[m
+[31m-                        window.isSourceModalOpen = true[m
+[31m-                        if (s.checkingState === "found" && s.foundSourceName) {[m
+[31m-                            window.checkingState = "found"[m
+[31m-                            for (let i = 0; i < sourceModel.count; i++) {[m
+[31m-                                if (sourceModel.get(i).name === s.foundSourceName) {[m
+[31m-                                    sourceModel.setProperty(i, "status", "success")[m
+[31m-                                    window.currentCheckIndex = i[m
+[31m-                                    break[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        } else {[m
+[31m-                            window.sourceCheckOrder = buildSourceOrder()[m
+[31m-                            window.sourceCheckStep = 0[m
+[31m-                            window.currentCheckIndex = window.sourceCheckOrder[0][m
+[31m-                            window.checkingState = "checking"[m
+[31m-                            checkNextSource()[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                    if (s.currentView === "series" && s.selectedImdbId) {[m
+[31m-                        window.pendingSeriesFocusRestore = true[m
+[31m-                        fetchSeriesData(s.selectedImdbId, s.currentSeason || 1, "", "", true)[m
+[31m-                    }[m
+[31m-                    window.stateRestored = true[m
+[31m-                } catch(e) {[m
+[31m-                    window.stateRestored = true[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    property var sourcePrefs: ({})[m
+[31m-    Process {[m
+[31m-        id: readSourcePrefsProc[m
+[31m-        command: ["bash", "-c", "cat " + window.moviesCache + "/qs_source_prefs.json 2>/dev/null || echo '{}'"][m
+[31m-        running: false[m
+[31m-        stdout: SplitParser {[m
+[31m-            onRead: (data) => {[m
+[31m-                try { window.sourcePrefs = JSON.parse(data.trim()) } [m
+[31m-                catch(e) { window.sourcePrefs = {} }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- SAVING CACHE FUNCTIONS ---[m
+[31m-    function saveUiState() {[m
+[31m-        saveJsonToCache("qs_ui_state.json", {[m
+[31m-            mediaType: window.mediaType, filterSort: window.filterSort, searchText: searchInput.text,[m
+[31m-            currentView: window.currentView, selectedImdbId: window.selectedImdbId,[m
+[31m-            selectedTitle: window.selectedTitle, selectedPoster: window.selectedPoster,[m
+[31m-            selectedDescription: window.selectedDescription, currentSeason: window.currentSeason,[m
+[31m-            isSourceModalOpen: window.isSourceModalOpen, checkingState: window.checkingState,[m
+[31m-            pendingMedia: window.pendingMedia, foundSourceName: window.foundSourceName[m
+[31m-        })[m
+[31m-    }[m
+[31m-[m
+[31m-    function saveHistory() {[m
+[31m-        let arr = [][m
+[31m-        for (let i = 0; i < searchHistoryModel.count; i++) arr.push(searchHistoryModel.get(i).query)[m
+[31m-        saveJsonToCache("qs_movie_history.json", arr)[m
+[31m-    }[m
+[31m-[m
+[31m-    function saveWatchHistory() {[m
+[31m-        let arr = [][m
+[31m-        for (let i = 0; i < watchHistoryModel.count; i++) {[m
+[31m-            let item = watchHistoryModel.get(i)[m
+[31m-            arr.push({ imdbId: item.imdbId, title: item.title, poster: item.poster, type: item.type })[m
+[31m-        }[m
+[31m-        saveJsonToCache("qs_movie_watch_history.json", arr)[m
+[31m-    }[m
+[31m-[m
+[31m-    function saveTrendingCache() {[m
+[31m-        if (cachedTrendingMovies.count === 0 || cachedTrendingTv.count === 0) return[m
+[31m-        let cacheObj = { moviesLastFetch: window.trendingMoviesLastFetch, tvLastFetch: window.trendingTvLastFetch, movies: [], tv: [] }[m
+[31m-        for (let i = 0; i < cachedTrendingMovies.count; i++) {[m
+[31m-            let m = cachedTrendingMovies.get(i)[m
+[31m-            cacheObj.movies.push({ imdbId: m.imdbId, title: m.title, poster: m.poster, type: m.type, year: m.year, rating: m.rating || 0, popularity: i })[m
+[31m-        }[m
+[31m-        for (let i = 0; i < cachedTrendingTv.count; i++) {[m
+[31m-            let t = cachedTrendingTv.get(i)[m
+[31m-            cacheObj.tv.push({ imdbId: t.imdbId, title: t.title, poster: t.poster, type: t.type, year: t.year, rating: t.rating || 0, popularity: i })[m
+[31m-        }[m
+[31m-        saveJsonToCache("qs_trending_cache.json", cacheObj)[m
+[31m-    }[m
+[31m-[m
+[31m-    function saveSourcePref(imdbId, sourceName) {[m
+[31m-        let prefs = window.sourcePrefs[m
+[31m-        prefs[imdbId] = sourceName[m
+[31m-        window.sourcePrefs = prefs[m
+[31m-        saveJsonToCache("qs_source_prefs.json", prefs)[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- SOURCE MODEL ---[m
+[31m-    ListModel {[m
+[31m-        id: sourceModel[m
+[31m-        ListElement { name: "VidSrc.net";    urlMovie: "https://vidsrc.net/embed/movie/%1";                               urlTv: "https://vidsrc.net/embed/tv/%1/%2/%3";                            status: "pending" }[m
+[31m-        ListElement { name: "VidLink";       urlMovie: "https://vidlink.pro/movie/%1?autoplay=1";                         urlTv: "https://vidlink.pro/tv/%1/%2/%3?autoplay=1";                      status: "pending" }[m
+[31m-        ListElement { name: "VidSrc.pro";    urlMovie: "https://vidsrc.pro/embed/movie/%1";                               urlTv: "https://vidsrc.pro/embed/tv/%1/%2/%3";                            status: "pending" }[m
+[31m-        ListElement { name: "VidSrc.in";     urlMovie: "https://vidsrc.in/embed/movie/%1";                                urlTv: "https://vidsrc.in/embed/tv/%1/%2/%3";                             status: "pending" }[m
+[31m-        ListElement { name: "VidSrc.cc";     urlMovie: "https://vidsrc.cc/v2/embed/movie/%1?autoPlay=true";               urlTv: "https://vidsrc.cc/v2/embed/tv/%1/%2/%3?autoPlay=true";            status: "pending" }[m
+[31m-        ListElement { name: "Embed.su";      urlMovie: "https://embed.su/embed/movie/%1";                                 urlTv: "https://embed.su/embed/tv/%1/%2/%3";                              status: "pending" }[m
+[31m-        ListElement { name: "SmashyStream";  urlMovie: "https://player.smashy.stream/movie/%1";                           urlTv: "https://player.smashy.stream/tv/%1?s=%2&e=%3";                    status: "pending" }[m
+[31m-        ListElement { name: "AutoEmbed";     urlMovie: "https://autoembed.to/movie/imdb/%1";                              urlTv: "https://autoembed.to/tv/imdb/%1-%2-%3";                           status: "pending" }[m
+[31m-        ListElement { name: "2Embed";        urlMovie: "https://www.2embed.cc/embed/%1";                                  urlTv: "https://www.2embed.cc/embedtv/%1&s=%2&e=%3";                      status: "pending" }[m
+[31m-        ListElement { name: "MultiEmbed";    urlMovie: "https://multiembed.mov/directstream.php?video_id=%1";             urlTv: "https://multiembed.mov/directstream.php?video_id=%1&s=%2&e=%3";  status: "pending" }[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- ANIMATIONS & FOCUS ---[m
+[31m-    property real introPhase: 0[m
+[31m-    NumberAnimation on introPhase {[m
+[31m-        id: introPhaseAnim[m
+[31m-        from: 0; to: 1; duration: 800; easing.type: Easing.OutQuart; running: true[m
+[31m-    }[m
+[31m-[m
+[31m-    Timer {[m
+[31m-        id: focusTimer[m
+[31m-        interval: 50; running: true; repeat: false[m
+[31m-        onTriggered: {[m
+[31m-            if (window.currentView === "search") searchInput.forceActiveFocus()[m
+[31m-            else window.forceActiveFocus()[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Timer {[m
+[31m-        id: scrollToTopTimer[m
+[31m-        interval: 80; running: false; repeat: false[m
+[31m-        onTriggered: {[m
+[31m-            movieGrid.positionViewAtBeginning()[m
+[31m-            tvGrid.positionViewAtBeginning()[m
+[31m-            searchGrid.positionViewAtBeginning()[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Component.onCompleted: {[m
+[31m-        readHistoryProc.running = true[m
+[31m-        readWatchHistoryProc.running = true[m
+[31m-        readSourcePrefsProc.running = true[m
+[31m-        window.isFetchingMovies = true[m
+[31m-        window.isFetchingTv = true[m
+[31m-        readTrendingCacheProc.running = true[m
+[31m-        readUiStateProc.running = true[m
+[31m-    }[m
+[31m-[m
+[31m-    Connections {[m
+[31m-        target: window[m
+[31m-        function onVisibleChanged() {[m
+[31m-            if (window.visible) {[m
+[31m-                introPhaseAnim.restart()[m
+[31m-                if (!window.isSourceModalOpen && window.currentView === "search") {[m
+[31m-                    focusTimer.restart()[m
+[31m-                    scrollToTopTimer.restart()[m
+[31m-                } else if (window.currentView === "series") {[m
+[31m-                    seriesFocusRestoreTimer.restart()[m
+[31m-                }[m
+[31m-                if (searchHistoryModel.count === 0) readHistoryProc.running = true[m
+[31m-                if (watchHistoryModel.count === 0) readWatchHistoryProc.running = true[m
+[31m-                if (!window.trendingMoviesLoaded) fetchTrending("movie")[m
+[31m-                if (!window.trendingTvLoaded) fetchTrending("series")[m
+[31m-                if (searchInput.text !== "") doSearch(searchInput.text)[m
+[31m-                if (window.currentView === "series" && window.selectedImdbId !== "" && episodeModel.count === 0) {[m
+[31m-                    fetchSeriesData(window.selectedImdbId, window.currentSeason, "", "", true)[m
+[31m-                }[m
+[31m-            } else {[m
+[31m-                saveUiState()[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Keys.onPressed: (event) => {[m
+[31m-        if (window.isSourceModalOpen) {[m
+[31m-            if (event.key === Qt.Key_Escape) { window.closeSourceModal(); event.accepted = true }[m
+[31m-        } else if (window.currentView === "series") {[m
+[31m-            if (event.key === Qt.Key_Escape) {[m
+[31m-                window.currentView = "search"[m
+[31m-                searchInput.forceActiveFocus()[m
+[31m-                event.accepted = true[m
+[31m-            } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {[m
+[31m-                let sCount = seasonModel.count[m
+[31m-                if (sCount > 0) {[m
+[31m-                    let idx = -1[m
+[31m-                    for (let i = 0; i < sCount; i++) { if (seasonModel.get(i).seasonNum === window.currentSeason) { idx = i; break } }[m
+[31m-                    if (idx !== -1) {[m
+[31m-                        let step = event.key === Qt.Key_Tab ? 1 : -1[m
+[31m-                        window.currentSeason = seasonModel.get((idx + step + sCount) % sCount).seasonNum[m
+[31m-                        updateEpisodes(window.currentSeason)[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                event.accepted = true[m
+[31m-            } else if (event.key === Qt.Key_Down) {[m
+[31m-                if (epList.currentIndex < epList.count - 1) epList.currentIndex++; event.accepted = true[m
+[31m-            } else if (event.key === Qt.Key_Up) {[m
+[31m-                if (epList.currentIndex > 0) epList.currentIndex--; event.accepted = true[m
+[31m-            } else if (event.key === Qt.Key_Return) {[m
+[31m-                let ep = episodeModel.get(epList.currentIndex)[m
+[31m-                if (ep) startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, ep.epNum)[m
+[31m-                event.accepted = true[m
+[31m-            }[m
+[31m-        } else if (event.key === Qt.Key_Escape) {[m
+[31m-            saveUiState()[m
+[31m-            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"])[m
+[31m-            event.accepted = true[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    property bool isKeyboardNav: false[m
+[31m-    Timer { id: keyboardNavTimer; interval: 500; repeat: false; onTriggered: window.isKeyboardNav = false }[m
+[31m-[m
+[31m-    ListModel { id: searchHistoryModel }[m
+[31m-    ListModel { id: watchHistoryModel }[m
+[31m-    ListModel { id: cachedTrendingMovies }[m
+[31m-    ListModel { id: cachedTrendingTv }[m
+[31m-    ListModel { id: searchResults }[m
+[31m-    ListModel { id: seasonModel }[m
+[31m-    ListModel { id: episodeModel }[m
+[31m-[m
+[31m-    function addToWatchHistory(item) {[m
+[31m-        for (let i = 0; i < watchHistoryModel.count; i++) {[m
+[31m-            if (watchHistoryModel.get(i).imdbId === item.imdbId) {[m
+[31m-                watchHistoryModel.remove(i)[m
+[31m-                break[m
+[31m-            }[m
+[31m-        }[m
+[31m-        watchHistoryModel.insert(0, item)[m
+[31m-        if (watchHistoryModel.count > 15) watchHistoryModel.remove(15)[m
+[31m-        saveWatchHistory()[m
+[31m-    }[m
+[31m-[m
+[31m-    function addSearchHistory(query) {[m
+[31m-        if (query.trim() === "") return[m
+[31m-        for (let i = 0; i < searchHistoryModel.count; i++) {[m
+[31m-            if (searchHistoryModel.get(i).query.toLowerCase() === query.toLowerCase()) {[m
+[31m-                searchHistoryModel.remove(i)[m
+[31m-                break[m
+[31m-            }[m
+[31m-        }[m
+[31m-        searchHistoryModel.insert(0, { query: query.trim() })[m
+[31m-        if (searchHistoryModel.count > 10) searchHistoryModel.remove(10)[m
+[31m-        saveHistory()[m
+[31m-    }[m
+[31m-[m
+[31m-    // ==========================================[m
+[31m-    // SOURCE CHECKING SYSTEM[m
+[31m-    // ==========================================[m
+[31m-    property bool isSourceModalOpen: false[m
+[31m-    property int currentCheckIndex: 0[m
+[31m-    property var pendingMedia: ({})[m
+[31m-    property string checkingState: "idle"[m
+[31m-    property string foundSourceName: ""[m
+[31m-    property var activeCheckXhr: null[m
+[31m-    readonly property var errorPagePatterns: [[m
+[31m-        "404", "not found", "no results", "video not found", "media not found",[m
+[31m-        "content not found", "page not found", "error 404", "does not exist"[m
+[31m-    ][m
+[31m-[m
+[31m-    function buildSourceUrl(srcIndex) {[m
+[31m-        let src = sourceModel.get(srcIndex)[m
+[31m-        let m = pendingMedia[m
+[31m-        if (m.type === "movie") return src.urlMovie.arg(m.imdbId)[m
+[31m-        return src.urlTv.arg(m.imdbId).arg(m.season).arg(m.ep)[m
+[31m-    }[m
+[31m-[m
+[31m-    function buildSourceOrder() {[m
+[31m-        let order = [][m
+[31m-        let imdbId = pendingMedia.imdbId[m
+[31m-        let preferred = window.sourcePrefs[imdbId] || null[m
+[31m-        let prefIdx = -1[m
+[31m-        if (preferred) {[m
+[31m-            for (let i = 0; i < sourceModel.count; i++) {[m
+[31m-                if (sourceModel.get(i).name === preferred) { prefIdx = i; break }[m
+[31m-            }[m
+[31m-        }[m
+[31m-        if (prefIdx !== -1) order.push(prefIdx)[m
+[31m-        for (let i = 0; i < sourceModel.count; i++) { if (i !== prefIdx) order.push(i) }[m
+[31m-        return order[m
+[31m-    }[m
+[31m-[m
+[31m-    property var sourceCheckOrder: [][m
+[31m-    property int sourceCheckStep: 0[m
+[31m-[m
+[31m-    function startSourceCheck(type, imdbId, title, poster, season, ep) {[m
+[31m-        pendingMedia = { type: type, imdbId: imdbId, title: title, poster: poster, season: season, ep: ep }[m
+[31m-        for (let i = 0; i < sourceModel.count; i++) sourceModel.setProperty(i, "status", "pending")[m
+[31m-        addToWatchHistory({ imdbId: imdbId, title: title, poster: poster, type: type })[m
+[31m-        window.sourceCheckOrder = buildSourceOrder()[m
+[31m-        window.sourceCheckStep = 0[m
+[31m-        window.currentCheckIndex = window.sourceCheckOrder[0][m
+[31m-        window.foundSourceName = ""[m
+[31m-        window.isSourceModalOpen = true[m
+[31m-        window.checkingState = "checking"[m
+[31m-        if (sourceListUI) sourceListUI.positionViewAtBeginning()[m
+[31m-        checkNextSource()[m
+[31m-        saveUiState()[m
+[31m-    }[m
+[31m-[m
+[31m-    function closeSourceModal() {[m
+[31m-        if (window.activeCheckXhr !== null) {[m
+[31m-            try { window.activeCheckXhr.abort() } catch(e) {}[m
+[31m-            window.activeCheckXhr = null[m
+[31m-        }[m
+[31m-        window.isSourceModalOpen = false[m
+[31m-        window.checkingState = "idle"[m
+[31m-        if (window.currentView === "series") window.forceActiveFocus()[m
+[31m-        else searchInput.forceActiveFocus()[m
+[31m-        saveUiState()[m
+[31m-    }[m
+[31m-[m
+[31m-    function skipToNextSource() {[m
+[31m-        if (window.activeCheckXhr !== null) {[m
+[31m-            try { window.activeCheckXhr.abort() } catch(e) {}[m
+[31m-            window.activeCheckXhr = null[m
+[31m-        }[m
+[31m-        sourceModel.setProperty(window.currentCheckIndex, "status", "failed")[m
+[31m-        window.sourceCheckStep++[m
+[31m-        if (window.sourceCheckStep < window.sourceCheckOrder.length) {[m
+[31m-            window.currentCheckIndex = window.sourceCheckOrder[window.sourceCheckStep][m
+[31m-            window.checkingState = "checking"[m
+[31m-            checkNextSource()[m
+[31m-        } else {[m
+[31m-            window.checkingState = "failed_all"[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    function checkNextSource() {[m
+[31m-        if (!window.isSourceModalOpen || window.checkingState !== "checking") return[m
+[31m-        if (window.sourceCheckStep >= window.sourceCheckOrder.length) {[m
+[31m-            window.checkingState = "failed_all"[m
+[31m-            return[m
+[31m-        }[m
+[31m-        [m
+[31m-        window.currentCheckIndex = window.sourceCheckOrder[window.sourceCheckStep][m
+[31m-        sourceModel.setProperty(window.currentCheckIndex, "status", "checking")[m
+[31m-        if (sourceListUI) sourceListUI.positionViewAtIndex(window.currentCheckIndex, ListView.Contain)[m
+[31m-        [m
+[31m-        let idx = window.currentCheckIndex[m
+[31m-        let step = window.sourceCheckStep[m
+[31m-        let url = buildSourceUrl(idx)[m
+[31m-        let xhr = new XMLHttpRequest()[m
+[31m-        window.activeCheckXhr = xhr[m
+[31m-        [m
+[31m-        xhr.open("GET", url, true)[m
+[31m-        xhr.timeout = 6000[m
+[31m-        xhr.onreadystatechange = function() {[m
+[31m-            if (xhr.readyState !== XMLHttpRequest.DONE || !window.isSourceModalOpen || window.checkingState !== "checking" || window.sourceCheckStep !== step) return[m
+[31m-            window.activeCheckXhr = null[m
+[31m-            let code = xhr.status[m
+[31m-            let body = xhr.responseText ? xhr.responseText.toLowerCase() : ""[m
+[31m-            [m
+[31m-            if (code === 404 || code === 410) {[m
+[31m-                sourceModel.setProperty(idx, "status", "failed")[m
+[31m-                window.sourceCheckStep++[m
+[31m-                checkNextSource()[m
+[31m-                return[m
+[31m-            }[m
+[31m-            if (code === 200 && body.length < 3000) {[m
+[31m-                let looksLikeError = false[m
+[31m-                for (let i = 0; i < window.errorPagePatterns.length; i++) {[m
+[31m-                    if (body.indexOf(window.errorPagePatterns[i]) !== -1) {[m
+[31m-                        looksLikeError = true[m
+[31m-                        break[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                if (looksLikeError) {[m
+[31m-                    sourceModel.setProperty(idx, "status", "failed")[m
+[31m-                    window.sourceCheckStep++[m
+[31m-                    checkNextSource()[m
+[31m-                    return[m
+[31m-                }[m
+[31m-            }[m
+[31m-            let isLive = (code === 0) || (code >= 200 && code < 400) || code === 401 || code === 403[m
+[31m-            if (isLive) {[m
+[31m-                sourceModel.setProperty(idx, "status", "success")[m
+[31m-                window.foundSourceName = sourceModel.get(idx).name[m
+[31m-                window.checkingState = "found"[m
+[31m-                saveUiState()[m
+[31m-                Quickshell.execDetached(["xdg-open", url])[m
+[31m-            } else {[m
+[31m-                sourceModel.setProperty(idx, "status", "failed")[m
+[31m-                window.sourceCheckStep++[m
+[31m-                checkNextSource()[m
+[31m-            }[m
+[31m-        }[m
+[31m-        xhr.ontimeout = function() {[m
+[31m-            if (!window.isSourceModalOpen || window.checkingState !== "checking" || window.sourceCheckStep !== step) return[m
+[31m-            window.activeCheckXhr = null[m
+[31m-            sourceModel.setProperty(idx, "status", "failed")[m
+[31m-            window.sourceCheckStep++[m
+[31m-            checkNextSource()[m
+[31m-        }[m
+[31m-        xhr.onerror = function() {[m
+[31m-            if (!window.isSourceModalOpen || window.checkingState !== "checking" || window.sourceCheckStep !== step) return[m
+[31m-            window.activeCheckXhr = null[m
+[31m-            sourceModel.setProperty(idx, "status", "success")[m
+[31m-            window.foundSourceName = sourceModel.get(idx).name[m
+[31m-            window.checkingState = "found"[m
+[31m-            saveUiState()[m
+[31m-            Quickshell.execDetached(["xdg-open", url])[m
+[31m-        }[m
+[31m-        xhr.send()[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- DATA FETCHING & FILTERING ---[m
+[31m-    function fetchTrending(typeStr) {[m
+[31m-        let isMovie = typeStr === "movie"[m
+[31m-        if (isMovie) window.isFetchingMovies = true; else window.isFetchingTv = true[m
+[31m-        [m
+[31m-        var xhr = new XMLHttpRequest()[m
+[31m-        xhr.open("GET", "https://v3-cinemeta.strem.io/catalog/" + typeStr + "/top.json")[m
+[31m-        xhr.onerror = function() { if (isMovie) window.isFetchingMovies = false; else window.isFetchingTv = false }[m
+[31m-        xhr.onreadystatechange = function() {[m
+[31m-            if (xhr.readyState !== XMLHttpRequest.DONE) return[m
+[31m-            if (isMovie) window.isFetchingMovies = false; else window.isFetchingTv = false[m
+[31m-            if (xhr.status === 200) {[m
+[31m-                try {[m
+[31m-                    let res = JSON.parse(xhr.responseText)[m
+[31m-                    if (res && res.metas) {[m
+[31m-                        let rawItems = [][m
+[31m-                        let targetModel = isMovie ? cachedTrendingMovies : cachedTrendingTv[m
+[31m-                        targetModel.clear()[m
+[31m-                        for (let i = 0; i < res.metas.length; i++) {[m
+[31m-                            let item = res.metas[i][m
+[31m-                            if (!item.id || !item.poster) continue[m
+[31m-                            let entry = {[m
+[31m-                                imdbId: item.id,[m
+[31m-                                title: item.name || "Unknown",[m
+[31m-                                poster: item.poster || item.posterShape || item.background || item.logo || "",[m
+[31m-                                type: isMovie ? "movie" : "tv",[m
+[31m-                                year: item.releaseInfo || "N/A",[m
+[31m-                                rating: item.imdbRating || 0,[m
+[31m-                                popularity: i[m
+[31m-                            }[m
+[31m-                            rawItems.push(entry)[m
+[31m-                            targetModel.append(entry)[m
+[31m-                        }[m
+[31m-                        if (isMovie) { window.rawTrendingMovies = rawItems; window.trendingMoviesLastFetch = Date.now(); window.trendingMoviesLoaded = true } [m
+[31m-                        else { window.rawTrendingTv = rawItems; window.trendingTvLastFetch = Date.now(); window.trendingTvLoaded = true }[m
+[31m-                        saveTrendingCache()[m
+[31m-                    }[m
+[31m-                } catch(e) {}[m
+[31m-            }[m
+[31m-        }[m
+[31m-        xhr.send()[m
+[31m-    }[m
+[31m-[m
+[31m-    function getSortValue(item, field) {[m
+[31m-        if (field === "year") return parseInt(item.year || item.releaseInfo || 0) || 0[m
+[31m-        if (field === "title") return (item.title || item.name || "").toString()[m
+[31m-        if (field === "rating") return parseFloat(item.rating || item.imdbRating || 0) || 0[m
+[31m-        return 0[m
+[31m-    }[m
+[31m-[m
+[31m-    function sortItems(items) {[m
+[31m-        let mode = window.filterSort[m
+[31m-        if (mode === "Year (Newest)") items.sort((a, b) => getSortValue(b, "year") - getSortValue(a, "year"))[m
+[31m-        else if (mode === "Year (Oldest)") items.sort((a, b) => getSortValue(a, "year") - getSortValue(b, "year"))[m
+[31m-        else if (mode === "Title (A-Z)") items.sort((a, b) => getSortValue(a, "title").localeCompare(getSortValue(b, "title")))[m
+[31m-        else if (mode === "Title (Z-A)") items.sort((a, b) => getSortValue(b, "title").localeCompare(getSortValue(a, "title")))[m
+[31m-        else if (mode === "Rating (Best)") items.sort((a, b) => getSortValue(b, "rating") - getSortValue(a, "rating"))[m
+[31m-        else if (mode === "Rating (Worst)") items.sort((a, b) => getSortValue(a, "rating") - getSortValue(b, "rating"))[m
+[31m-        return items[m
+[31m-    }[m
+[31m-[m
+[31m-    function applyFiltersToPopular() {[m
+[31m-        let rawMovies = sortItems(window.rawTrendingMovies.slice())[m
+[31m-        let rawTv = sortItems(window.rawTrendingTv.slice())[m
+[31m-        cachedTrendingMovies.clear(); for (let i = 0; i < rawMovies.length; i++) cachedTrendingMovies.append(rawMovies[i])[m
+[31m-        cachedTrendingTv.clear(); for (let i = 0; i < rawTv.length; i++) cachedTrendingTv.append(rawTv[i])[m
+[31m-        movieGrid.positionViewAtBeginning()[m
+[31m-        tvGrid.positionViewAtBeginning()[m
+[31m-    }[m
+[31m-[m
+[31m-    function applyFiltersAndPopulate() {[m
+[31m-        window.isKeyboardNav = false[m
+[31m-        searchResults.clear()[m
+[31m-        let items = sortItems(window.currentFetchResults.slice())[m
+[31m-        for (let i = 0; i < items.length; i++) {[m
+[31m-            let item = items[i][m
+[31m-            if (!item.id) continue[m
+[31m-            searchResults.append({[m
+[31m-                imdbId: item.id, title: item.name || "Unknown", poster: item.poster || "",[m
+[31m-                type: item.type === "series" ? "tv" : "movie", year: item.releaseInfo || "N/A", rating: item.imdbRating || 0[m
+[31m-            })[m
+[31m-        }[m
+[31m-        Qt.callLater(function() {[m
+[31m-            if (searchGrid && searchGrid.count > 0) searchGrid.currentIndex = 0[m
+[31m-            if (movieGrid && movieGrid.count > 0) movieGrid.currentIndex = 0[m
+[31m-            if (tvGrid && tvGrid.count > 0) tvGrid.currentIndex = 0[m
+[31m-        })[m
+[31m-    }[m
+[31m-[m
+[31m-    function doSearch(query) {[m
+[31m-        let q = encodeURIComponent(query.trim())[m
+[31m-        let expectedType = window.mediaType[m
+[31m-        let typeStr = expectedType === "movie" ? "movie" : "series"[m
+[31m-        if (q === "") { searchResults.clear(); window.isSearchingNetwork = false; return }[m
+[31m-        addSearchHistory(query)[m
+[31m-        window.isSearchingNetwork = true[m
+[31m-        searchResults.clear()[m
+[31m-        var xhr = new XMLHttpRequest()[m
+[31m-        xhr.open("GET", "https://v3-cinemeta.strem.io/catalog/" + typeStr + "/top/search=" + q + ".json")[m
+[31m-        xhr.onerror = function() { window.isSearchingNetwork = false }[m
+[31m-        xhr.onreadystatechange = function() {[m
+[31m-            if (xhr.readyState !== XMLHttpRequest.DONE) return[m
+[31m-            if (window.mediaType === expectedType) {[m
+[31m-                window.isSearchingNetwork = false[m
+[31m-                if (xhr.status === 200) {[m
+[31m-                    try {[m
+[31m-                        let res = JSON.parse(xhr.responseText)[m
+[31m-                        if (res && res.metas) {[m
+[31m-                            window.currentFetchResults = res.metas[m
+[31m-                            applyFiltersAndPopulate()[m
+[31m-                            enrichSearchPosters(res.metas, typeStr)[m
+[31m-                        }[m
+[31m-                    } catch(e) {}[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-        xhr.send()[m
+[31m-    }[m
+[31m-[m
+[31m-    function enrichSearchPosters(metas, typeStr) {[m
+[31m-        for (let i = 0; i < metas.length; i++) {[m
+[31m-            let item = metas[i][m
+[31m-            if (item.poster && item.poster !== "") continue[m
+[31m-            let capturedImdbId = item.id[m
+[31m-            ;(function(cImdbId) {[m
+[31m-                var xhr2 = new XMLHttpRequest()[m
+[31m-                xhr2.open("GET", "https://v3-cinemeta.strem.io/meta/" + typeStr + "/" + cImdbId + ".json")[m
+[31m-                xhr2.onreadystatechange = function() {[m
+[31m-                    if (xhr2.readyState !== XMLHttpRequest.DONE) return[m
+[31m-                    if (xhr2.status === 200) {[m
+[31m-                        try {[m
+[31m-                            let res2 = JSON.parse(xhr2.responseText)[m
+[31m-                            if (res2 && res2.meta) {[m
+[31m-                                let poster = res2.meta.poster || res2.meta.background || ""[m
+[31m-                                if (poster !== "") {[m
+[31m-                                    for (let j = 0; j < searchResults.count; j++) {[m
+[31m-                                        if (searchResults.get(j).imdbId === cImdbId) {[m
+[31m-                                            searchResults.setProperty(j, "poster", poster)[m
+[31m-                                            break[m
+[31m-                                        }[m
+[31m-                                    }[m
+[31m-                                    return[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        } catch(e) {}[m
+[31m-                    }[m
+[31m-                    fetchPosterFallback(cImdbId, typeStr)[m
+[31m-                }[m
+[31m-                xhr2.send()[m
+[31m-            })(capturedImdbId)[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    function fetchPosterFallback(imdbId, typeStr) {[m
+[31m-        let rpdbUrl = "https://api.ratingposterdb.com/imdb/poster-default/" + imdbId + ".jpg"[m
+[31m-        var xhrCheck = new XMLHttpRequest()[m
+[31m-        xhrCheck.open("HEAD", rpdbUrl, true)[m
+[31m-        xhrCheck.timeout = 5000[m
+[31m-        xhrCheck.onreadystatechange = function() {[m
+[31m-            if (xhrCheck.readyState !== XMLHttpRequest.DONE) return[m
+[31m-            if (xhrCheck.status === 200) {[m
+[31m-                for (let j = 0; j < searchResults.count; j++) {[m
+[31m-                    if (searchResults.get(j).imdbId === imdbId) {[m
+[31m-                        searchResults.setProperty(j, "poster", rpdbUrl)[m
+[31m-                        break[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-        xhrCheck.onerror = function() { /* silently fail — delegate shows title fallback */ }[m
+[31m-        xhrCheck.send()[m
+[31m-    }[m
+[31m-[m
+[31m-    function fetchAndUpdatePoster(imdbId, typeStr, targetModel) {[m
+[31m-        var xhr = new XMLHttpRequest()[m
+[31m-        let metaType = typeStr === "tv" ? "series" : "movie"[m
+[31m-        xhr.open("GET", "https://v3-cinemeta.strem.io/meta/" + metaType + "/" + imdbId + ".json")[m
+[31m-        xhr.timeout = 6000[m
+[31m-        xhr.onreadystatechange = function() {[m
+[31m-            if (xhr.readyState !== XMLHttpRequest.DONE) return[m
+[31m-            let posterFound = ""[m
+[31m-            if (xhr.status === 200) {[m
+[31m-                try {[m
+[31m-                    let res = JSON.parse(xhr.responseText)[m
+[31m-                    if (res && res.meta) posterFound = res.meta.poster || res.meta.background || ""[m
+[31m-                } catch(e) {}[m
+[31m-            }[m
+[31m-            if (posterFound !== "") {[m
+[31m-                for (let j = 0; j < targetModel.count; j++) {[m
+[31m-                    if (targetModel.get(j).imdbId === imdbId) {[m
+[31m-                        targetModel.setProperty(j, "poster", posterFound)[m
+[31m-                        break[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            } else {[m
+[31m-                fetchPosterFallback(imdbId, metaType)[m
+[31m-            }[m
+[31m-        }[m
+[31m-        xhr.onerror = function() { fetchPosterFallback(imdbId, metaType) }[m
+[31m-        xhr.send()[m
+[31m-    }[m
+[31m-[m
+[31m-    function fetchSeriesData(imdbId, targetSeason, title, poster, isReload) {[m
+[31m-        if (!isReload) {[m
+[31m-            window.selectedImdbId = imdbId[m
+[31m-            window.selectedTitle = title[m
+[31m-            window.selectedPoster = poster[m
+[31m-            window.selectedDescription = ""[m
+[31m-            window.currentView = "series"[m
+[31m-            window.forceActiveFocus()[m
+[31m-        }[m
+[31m-        window.isLoadingSeries = true[m
+[31m-        seasonModel.clear()[m
+[31m-        episodeModel.clear()[m
+[31m-[m
+[31m-        var xhr = new XMLHttpRequest()[m
+[31m-        xhr.open("GET", "https://v3-cinemeta.strem.io/meta/series/" + imdbId + ".json")[m
+[31m-        xhr.onerror = function() { [m
+[31m-            window.isLoadingSeries = false[m
+[31m-            if (isReload && window.pendingSeriesFocusRestore) seriesFocusRestoreTimer.restart()[m
+[31m-        }[m
+[31m-        xhr.onreadystatechange = function() {[m
+[31m-            if (xhr.readyState !== XMLHttpRequest.DONE) return[m
+[31m-            window.isLoadingSeries = false[m
+[31m-            if (xhr.status === 200) {[m
+[31m-                try {[m
+[31m-                    var res = JSON.parse(xhr.responseText)[m
+[31m-                    if (res && res.meta) {[m
+[31m-                        if (!isReload || !window.selectedDescription) window.selectedDescription = res.meta.description || res.meta.synopsis || ""[m
+[31m-                        if ((!window.selectedPoster || window.selectedPoster === "") && res.meta.poster) window.selectedPoster = res.meta.poster[m
+[31m-                        [m
+[31m-                        if (res.meta.videos) {[m
+[31m-                            let seasonsMap = {}[m
+[31m-                            for (let i = 0; i < res.meta.videos.length; i++) {[m
+[31m-                                let v = res.meta.videos[i][m
+[31m-                                if (v.season === 0) continue[m
+[31m-                                if (!seasonsMap[v.season]) seasonsMap[v.season] = [][m
+[31m-                                let epTitle = v.name || v.title || null[m
+[31m-                                if (epTitle && /^(episode\s*\d+|s\d+e\d+|ep\.?\s*\d+)$/i.test(epTitle.toLowerCase().trim())) epTitle = null[m
+[31m-                                seasonsMap[v.season].push({[m
+[31m-                                    ep: v.episode,[m
+[31m-                                    title: epTitle || ("Episode " + v.episode),[m
+[31m-                                    hasRealTitle: epTitle !== null[m
+[31m-                                })[m
+[31m-                            }[m
+[31m-                            let seasonKeys = Object.keys(seasonsMap).map(Number).sort((a, b) => a - b)[m
+[31m-                            for (let i = 0; i < seasonKeys.length; i++) seasonModel.append({ seasonNum: seasonKeys[i] })[m
+[31m-                            window.seriesDataMap = seasonsMap[m
+[31m-                            [m
+[31m-                            let newTargetSeason = (isReload && seasonsMap[targetSeason]) ? targetSeason : (seasonKeys[0] || 1)[m
+[31m-                            window.currentSeason = newTargetSeason[m
+[31m-                            updateEpisodes(newTargetSeason)[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                } catch(e) {}[m
+[31m-            }[m
+[31m-            if (isReload && window.pendingSeriesFocusRestore) seriesFocusRestoreTimer.restart()[m
+[31m-            if (!isReload) saveUiState()[m
+[31m-        }[m
+[31m-        xhr.send()[m
+[31m-    }[m
+[31m-[m
+[31m-    function loadSeriesDetails(imdbId, title, poster) {[m
+[31m-        fetchSeriesData(imdbId, 1, title, poster, false)[m
+[31m-    }[m
+[31m-[m
+[31m-    function updateEpisodes(seasonNum) {[m
+[31m-        window.seasonSwitching = true[m
+[31m-        seasonContentSwapTimer.targetSeason = seasonNum[m
+[31m-        seasonContentSwapTimer.restart()[m
+[31m-    }[m
+[31m-[m
+[31m-    Timer {[m
+[31m-        id: seasonContentSwapTimer[m
+[31m-        property int targetSeason: 1[m
+[31m-        interval: 220[m
+[31m-        repeat: false[m
+[31m-        onTriggered: {[m
+[31m-            episodeModel.clear()[m
+[31m-            let eps = window.seriesDataMap[targetSeason][m
+[31m-            if (eps) {[m
+[31m-                eps.sort((a, b) => a.ep - b.ep)[m
+[31m-                for (let i = 0; i < eps.length; i++) {[m
+[31m-                    episodeModel.append({ epNum: eps[i].ep, epTitle: eps[i].title, hasRealTitle: eps[i].hasRealTitle || false })[m
+[31m-                }[m
+[31m-            }[m
+[31m-            epList.currentIndex = 0[m
+[31m-            epList.positionViewAtBeginning()[m
+[31m-            seasonFadeInTimer.restart()[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Timer { id: seasonFadeInTimer; interval: 30; repeat: false; onTriggered: window.seasonSwitching = false }[m
+[31m-[m
+[31m-    function getActiveGrid() {[m
+[31m-        if (window.isSearchMode) return searchGrid[m
+[31m-        if (window.mediaType === "movie") return movieGrid[m
+[31m-        return tvGrid[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- SHARED STYLES ---[m
+[31m-    component CustomComboBox: ComboBox {[m
+[31m-        id: control[m
+[31m-        font.family: "JetBrains Mono"; font.pixelSize: window.s(14)[m
+[31m-        delegate: ItemDelegate {[m
+[31m-            width: control.width; height: window.s(36)[m
+[31m-            contentItem: Text { text: modelData || model.name; color: window.text; font: control.font; verticalAlignment: Text.AlignVCenter }[m
+[31m-            background: Rectangle { color: control.highlightedIndex === index ? window.surface1 : "transparent"; radius: window.s(10) }[m
+[31m-        }[m
+[31m-        indicator: Canvas {[m
+[31m-            id: canvas[m
+[31m-            x: control.width - width - control.rightPadding; y: control.topPadding + (control.availableHeight - height) / 2[m
+[31m-            width: 12; height: 8; contextType: "2d"[m
+[31m-            Connections { target: control; function onPressedChanged() { canvas.requestPaint() } }[m
+[31m-            onPaint: { var ctx = canvas.getContext("2d"); ctx.reset(); ctx.moveTo(0, 0); ctx.lineTo(width, 0); ctx.lineTo(width / 2, height); ctx.fillStyle = window.subtext0; ctx.fill() }[m
+[31m-        }[m
+[31m-        contentItem: Text { leftPadding: window.s(10); rightPadding: control.indicator.width + control.spacing; text: control.currentText; font: control.font; color: window.text; verticalAlignment: Text.AlignVCenter; elide: Text.ElideRight }[m
+[31m-        background: Rectangle { implicitWidth: window.s(180); implicitHeight: window.s(36); color: window.surface0; border.color: control.activeFocus ? window.surface2 : window.surface1; border.width: control.visualFocus ? 2 : 1; radius: window.s(10) }[m
+[31m-        popup: Popup {[m
+[31m-            y: control.height + window.s(4); width: control.width; implicitHeight: contentItem.implicitHeight; padding: window.s(4)[m
+[31m-            contentItem: ListView { clip: true; implicitHeight: contentHeight; model: control.popup.visible ? control.delegateModel : null; currentIndex: control.highlightedIndex; ScrollIndicator.vertical: ScrollIndicator { } }[m
+[31m-            background: Rectangle { color: window.crust; border.color: window.surface1; radius: window.s(14) }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    component PosterDelegate: Rectangle {[m
+[31m-        width: window.s(120); height: width * 1.5[m
+[31m-        radius: window.s(10); color: window.crust; clip: true[m
+[31m-        property bool isHovered: posterMouse.containsMouse[m
+[31m-        Image {[m
+[31m-            id: posterImg[m
+[31m-            anchors.fill: parent[m
+[31m-            source: model.poster !== "" ? model.poster : ""[m
+[31m-            fillMode: Image.PreserveAspectCrop[m
+[31m-            asynchronous: true[m
+[31m-            smooth: true[m
+[31m-            cache: true[m
+[31m-            sourceSize.width: window.s(240)[m
+[31m-            sourceSize.height: window.s(360)[m
+[31m-            visible: status === Image.Ready[m
+[31m-        }[m
+[31m-        Rectangle {[m
+[31m-            anchors.fill: parent[m
+[31m-            color: window.surface0[m
+[31m-            visible: model.poster === "" || posterImg.status === Image.Error || posterImg.status === Image.Null[m
+[31m-            radius: window.s(10)[m
+[31m-            Column {[m
+[31m-                anchors.centerIn: parent[m
+[31m-                width: parent.width - window.s(10)[m
+[31m-                spacing: window.s(6)[m
+[31m-                Text {[m
+[31m-                    anchors.horizontalCenter: parent.horizontalCenter[m
+[31m-                    text: model.type === "tv" ? "📺" : "🎬"[m
+[31m-                    font.pixelSize: window.s(22)[m
+[31m-                }[m
+[31m-                Text {[m
+[31m-                    width: parent.width[m
+[31m-                    text: model.title || "Unknown"[m
+[31m-                    color: window.subtext0[m
+[31m-                    font.family: "JetBrains Mono"[m
+[31m-                    font.pixelSize: window.s(11)[m
+[31m-                    wrapMode: Text.WordWrap[m
+[31m-                    horizontalAlignment: Text.AlignHCenter[m
+[31m-                    maximumLineCount: 4[m
+[31m-                    elide: Text.ElideRight[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-        Rectangle {[m
+[31m-            anchors.fill: parent; radius: window.s(10)[m
+[31m-            color: window.mediaType === "tv" ? window.blue : window.mauve[m
+[31m-            opacity: parent.isHovered ? 0.3 : 0[m
+[31m-            Behavior on opacity { NumberAnimation { duration: 200 } }[m
+[31m-        }[m
+[31m-        MouseArea {[m
+[31m-            id: posterMouse; anchors.fill: parent; hoverEnabled: true[m
+[31m-            onClicked: {[m
+[31m-                if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0)[m
+[31m-                else loadSeriesDetails(model.imdbId, model.title, model.poster)[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    Component {[m
+[31m-        id: dashboardHeaderComp[m
+[31m-        Item {[m
+[31m-            width: GridView.view.width[m
+[31m-            property bool hasSearch: searchHistoryModel.count > 0[m
+[31m-            property bool hasWatch: watchHistoryModel.count > 0[m
+[31m-            readonly property real searchSectionH: hasSearch ? (window.s(16) + window.s(12) + window.s(32) + window.s(28)) : 0[m
+[31m-            readonly property real watchSectionH: hasWatch ? (window.s(16) + window.s(12) + window.s(200) + window.s(28)) : 0[m
+[31m-            readonly property real popularLabelH: window.s(16) + window.s(16)[m
+[31m-            height: searchSectionH + watchSectionH + popularLabelH[m
+[31m-            Column {[m
+[31m-                width: parent.width[m
+[31m-                spacing: 0[m
+[31m-                Item {[m
+[31m-                    width: parent.width[m
+[31m-                    height: parent.parent.searchSectionH[m
+[31m-                    visible: parent.parent.hasSearch[m
+[31m-                    Column {[m
+[31m-                        width: parent.width[m
+[31m-                        spacing: window.s(12)[m
+[31m-                        Text {[m
+[31m-                            text: "Recent Searches"[m
+[31m-                            color: window.text[m
+[31m-                            font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(16)[m
+[31m-                        }[m
+[31m-                        ListView {[m
+[31m-                            width: parent.width; height: window.s(32)[m
+[31m-                            orientation: ListView.Horizontal; spacing: window.s(8)[m
+[31m-                            model: searchHistoryModel; clip: true; interactive: false[m
+[31m-                            add: Transition {[m
+[31m-                                ParallelAnimation {[m
+[31m-                                    NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 400 }[m
+[31m-                                    NumberAnimation { property: "x"; from: -window.s(20); duration: 400; easing.type: Easing.OutQuart }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                            remove: Transition { NumberAnimation { property: "opacity"; to: 0; duration: 200 } }[m
+[31m-                            displaced: Transition { NumberAnimation { property: "x"; duration: 300; easing.type: Easing.OutQuart } }[m
+[31m-                            delegate: Rectangle {[m
+[31m-                                width: queryText.width + window.s(35); height: window.s(32)[m
+[31m-                                radius: window.s(8); color: window.surface0[m
+[31m-                                border.color: histMouse.containsMouse ? window.surface2 : window.surface1[m
+[31m-                                Text {[m
+[31m-                                    id: queryText; text: model.query; color: window.text[m
+[31m-                                    font.family: "JetBrains Mono"; font.pixelSize: window.s(13)[m
+[31m-                                    anchors.left: parent.left; anchors.leftMargin: window.s(10)[m
+[31m-                                    anchors.verticalCenter: parent.verticalCenter[m
+[31m-                                }[m
+[31m-                                MouseArea {[m
+[31m-                                    id: histMouse; anchors.fill: parent; hoverEnabled: true[m
+[31m-                                    onClicked: { searchInput.text = model.query; doSearch(model.query) }[m
+[31m-                                }[m
+[31m-                                Rectangle {[m
+[31m-                                    width: window.s(20); height: window.s(20); radius: window.s(10)[m
+[31m-                                    color: closeMouse.containsMouse ? window.surface1 : "transparent"[m
+[31m-                                    anchors.right: parent.right; anchors.rightMargin: window.s(5)[m
+[31m-                                    anchors.verticalCenter: parent.verticalCenter[m
+[31m-                                    Text { text: "×"; anchors.centerIn: parent; color: window.subtext0; font.pixelSize: window.s(14) }[m
+[31m-                                    MouseArea {[m
+[31m-                                        id: closeMouse; anchors.fill: parent; hoverEnabled: true[m
+[31m-                                        onClicked: { searchHistoryModel.remove(index); window.saveHistory() }[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Item {[m
+[31m-                    width: parent.width[m
+[31m-                    height: parent.parent.watchSectionH[m
+[31m-                    visible: parent.parent.hasWatch[m
+[31m-                    Column {[m
+[31m-                        width: parent.width[m
+[31m-                        spacing: window.s(12)[m
+[31m-                        Text {[m
+[31m-                            text: "Watch History"[m
+[31m-                            color: window.text[m
+[31m-                            font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(16)[m
+[31m-                        }[m
+[31m-                        ListView {[m
+[31m-                            width: parent.width; height: window.s(200)[m
+[31m-                            orientation: ListView.Horizontal; spacing: window.s(15)[m
+[31m-                            model: watchHistoryModel; clip: true[m
+[31m-                            delegate: PosterDelegate {}[m
+[31m-                            ScrollBar.horizontal: ScrollBar {[m
+[31m-                                active: true[m
+[31m-                                contentItem: Rectangle { radius: window.s(2); color: window.surface2 }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Item {[m
+[31m-                    width: parent.width[m
+[31m-                    height: parent.parent.popularLabelH[m
+[31m-                    Text {[m
+[31m-                        anchors.top: parent.top; anchors.topMargin: window.s(4)[m
+[31m-                        text: window.mediaType === "movie" ? "Popular Movies" : "Popular TV Shows"[m
+[31m-                        color: window.text[m
+[31m-                        font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(16)[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-[m
+[31m-    // --- UI LAYOUT ---[m
+[31m-    Rectangle {[m
+[31m-        id: mainBg[m
+[31m-        width: parent.width; height: parent.height[m
+[31m-        anchors.bottom: parent.bottom; anchors.horizontalCenter: parent.horizontalCenter[m
+[31m-        radius: window.s(14)[m
+[31m-        color: Qt.rgba(window.base.r, window.base.g, window.base.b, 0.95)[m
+[31m-        border.color: Qt.rgba(window.text.r, window.text.g, window.text.b, 0.08)[m
+[31m-        border.width: 1[m
+[31m-        clip: true[m
+[31m-        transform: Translate { y: (1 - window.introPhase) * window.s(50) }[m
+[31m-        opacity: window.introPhase[m
+[31m-        ColumnLayout {[m
+[31m-            anchors.fill: parent[m
+[31m-            spacing: 0[m
+[31m-            visible: window.currentView === "search"[m
+[31m-            Rectangle {[m
+[31m-                Layout.alignment: Qt.AlignTop; Layout.fillWidth: true; Layout.preferredHeight: window.s(120); color: "transparent"[m
+[31m-                ColumnLayout {[m
+[31m-                    anchors.fill: parent; anchors.margins: window.s(15); spacing: window.s(10)[m
+[31m-                    RowLayout {[m
+[31m-                        Layout.fillWidth: true; spacing: window.s(15)[m
+[31m-                        Rectangle {[m
+[31m-                            Layout.preferredWidth: window.s(200); Layout.preferredHeight: window.s(36); radius: window.s(10); color: window.surface0[m
+[31m-                            Rectangle {[m
+[31m-                                id: tabHighlight[m
+[31m-                                width: parent.width / 2 - window.s(4); height: parent.height - window.s(8)[m
+[31m-                                y: window.s(4); radius: window.s(8); color: window.mediaType === "movie" ? window.mauve : window.blue; z: 0[m
+[31m-                                property real targetX: window.mediaType === "movie" ? window.s(4) : (parent.width / 2)[m
+[31m-                                property real actualX: targetX[m
+[31m-                                Behavior on actualX { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }[m
+[31m-                                x: actualX[m
+[31m-                            }[m
+[31m-                            RowLayout {[m
+[31m-                                anchors.fill: parent; spacing: 0[m
+[31m-                                MouseArea {[m
+[31m-                                    Layout.fillWidth: true; Layout.fillHeight: true[m
+[31m-                                    onClicked: { window.mediaType = "movie"; if (searchInput.text !== "") doSearch(searchInput.text) }[m
+[31m-                                    Text { anchors.centerIn: parent; text: "Movies"; font.family: "JetBrains Mono"; font.weight: window.mediaType === "movie" ? Font.Bold : Font.Medium; font.pixelSize: window.s(13); color: window.mediaType === "movie" ? window.crust : window.text }[m
+[31m-                                }[m
+[31m-                                MouseArea {[m
+[31m-                                    Layout.fillWidth: true; Layout.fillHeight: true[m
+[31m-                                    onClicked: { window.mediaType = "tv"; if (searchInput.text !== "") doSearch(searchInput.text) }[m
+[31m-                                    Text { anchors.centerIn: parent; text: "TV Shows"; font.family: "JetBrains Mono"; font.weight: window.mediaType === "tv" ? Font.Bold : Font.Medium; font.pixelSize: window.s(13); color: window.mediaType === "tv" ? window.crust : window.text }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                        Item { Layout.fillWidth: true }[m
+[31m-                        CustomComboBox {[m
+[31m-                            id: filterSelector[m
+[31m-                            Layout.preferredWidth: window.s(180)[m
+[31m-                            model: ["Default", "Year (Newest)", "Year (Oldest)", "Title (A-Z)", "Title (Z-A)", "Rating (Best)", "Rating (Worst)"][m
+[31m-                            onActivated: {[m
+[31m-                                window.filterSort = currentText[m
+[31m-                                applyFiltersAndPopulate()[m
+[31m-                                applyFiltersToPopular()[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                    TextField {[m
+[31m-                        id: searchInput[m
+[31m-                        Layout.fillWidth: true; Layout.preferredHeight: window.s(42)[m
+[31m-                        background: Rectangle {[m
+[31m-                            color: searchInput.activeFocus ? Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.6) : window.surface0[m
+[31m-                            radius: window.s(10); border.color: searchInput.activeFocus ? window.surface2 : "transparent"[m
+[31m-                            Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                        }[m
+[31m-                        color: window.text; font.family: "JetBrains Mono"; font.pixelSize: window.s(15); leftPadding: window.s(15)[m
+[31m-                        placeholderText: "Search"[m
+[31m-                        placeholderTextColor: window.subtext0; verticalAlignment: TextInput.AlignVCenter[m
+[31m-                        onTextChanged: {[m
+[31m-                            if (text.trim() === "") { searchResults.clear(); window.isSearchingNetwork = false; searchDebounceTimer.stop() }[m
+[31m-                            else searchDebounceTimer.restart()[m
+[31m-                        }[m
+[31m-                        Keys.onRightPressed: {[m
+[31m-                            window.isKeyboardNav = true; keyboardNavTimer.restart()[m
+[31m-                            let g = getActiveGrid()[m
+[31m-                            if (g && g.count > 0 && g.currentIndex < g.count - 1) g.currentIndex++[m
+[31m-                            event.accepted = true[m
+[31m-                        }[m
+[31m-                        Keys.onLeftPressed: {[m
+[31m-                            window.isKeyboardNav = true; keyboardNavTimer.restart()[m
+[31m-                            let g = getActiveGrid()[m
+[31m-                            if (g && g.count > 0 && g.currentIndex > 0) g.currentIndex--[m
+[31m-                            event.accepted = true[m
+[31m-                        }[m
+[31m-                        Keys.onDownPressed: {[m
+[31m-                            window.isKeyboardNav = true; keyboardNavTimer.restart()[m
+[31m-                            let g = getActiveGrid()[m
+[31m-                            if (g && g.count > 0) {[m
+[31m-                                let columns = Math.max(1, Math.floor(g.width / g.cellWidth))[m
+[31m-                                if (g.currentIndex + columns < g.count) g.currentIndex += columns[m
+[31m-                            }[m
+[31m-                            event.accepted = true[m
+[31m-                        }[m
+[31m-                        Keys.onUpPressed: {[m
+[31m-                            window.isKeyboardNav = true; keyboardNavTimer.restart()[m
+[31m-                            let g = getActiveGrid()[m
+[31m-                            if (g && g.count > 0) {[m
+[31m-                                let columns = Math.max(1, Math.floor(g.width / g.cellWidth))[m
+[31m-                                if (g.currentIndex - columns >= 0) g.currentIndex -= columns[m
+[31m-                            }[m
+[31m-                            event.accepted = true[m
+[31m-                        }[m
+[31m-                        Keys.onTabPressed: { window.mediaType = window.mediaType === "movie" ? "tv" : "movie"; if (text.trim() !== "") doSearch(text); event.accepted = true }[m
+[31m-                        Keys.onBacktabPressed: { window.mediaType = window.mediaType === "movie" ? "tv" : "movie"; if (text.trim() !== "") doSearch(text); event.accepted = true }[m
+[31m-                        Keys.onReturnPressed: {[m
+[31m-                            if (text.trim() !== "" && searchResults.count === 0 && !window.isSearchingNetwork) {[m
+[31m-                                doSearch(text)[m
+[31m-                            } else if (window.isKeyboardNav) {[m
+[31m-                                let g = getActiveGrid()[m
+[31m-                                if (g && g.count > 0 && g.currentIndex >= 0 && g.currentIndex < g.count) {[m
+[31m-                                    let item = g.model.get(g.currentIndex)[m
+[31m-                                    if (item) {[m
+[31m-                                        if (item.type === "movie") startSourceCheck("movie", item.imdbId, item.title, item.poster, 0, 0)[m
+[31m-                                        else loadSeriesDetails(item.imdbId, item.title, item.poster)[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                            event.accepted = true[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-            Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.5) }[m
+[31m-            Item {[m
+[31m-                Layout.fillWidth: true; Layout.fillHeight: true[m
+[31m-                Rectangle {[m
+[31m-                    anchors.fill: parent[m
+[31m-                    color: Qt.rgba(window.base.r, window.base.g, window.base.b, 0.8)[m
+[31m-                    visible: window.isSearchingNetwork || (!window.isSearchMode && window.isLoadingPopular)[m
+[31m-                    z: 10[m
+[31m-                    ColumnLayout {[m
+[31m-                        anchors.centerIn: parent; spacing: window.s(15)[m
+[31m-                        Item {[m
+[31m-                            Layout.alignment: Qt.AlignHCenter[m
+[31m-                            width: window.s(34); height: window.s(34)[m
+[31m-                            property real spinAngle: 0[m
+[31m-                            NumberAnimation on spinAngle {[m
+[31m-                                from: 0; to: 360; duration: 900[m
+[31m-                                loops: Animation.Infinite; running: true[m
+[31m-                                easing.type: Easing.Linear[m
+[31m-                            }[m
+[31m-                            Canvas {[m
+[31m-                                anchors.fill: parent[m
+[31m-                                property real angle: parent.spinAngle[m
+[31m-                                onAngleChanged: requestPaint()[m
+[31m-                                onPaint: {[m
+[31m-                                    var ctx = getContext("2d")[m
+[31m-                                    ctx.reset()[m
+[31m-                                    var cx = width / 2, cy = height / 2, r = width / 2 - 3[m
+[31m-                                    var startRad = (parent.spinAngle - 90) * Math.PI / 180[m
+[31m-                                    var endRad = startRad + 1.7 * Math.PI[m
+[31m-                                    ctx.beginPath()[m
+[31m-                                    ctx.arc(cx, cy, r, startRad, endRad)[m
+[31m-                                    ctx.strokeStyle = window.mauve[m
+[31m-                                    ctx.lineWidth = 3[m
+[31m-                                    ctx.lineCap = "round"[m
+[31m-                                    ctx.stroke()[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                        Text { Layout.alignment: Qt.AlignHCenter; text: "Loading..."; color: window.text; font.family: "JetBrains Mono"; font.pixelSize: window.s(14) }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Item {[m
+[31m-                    anchors.fill: parent; anchors.margins: window.s(15); visible: !window.isSearchingNetwork[m
+[31m-                    Component {[m
+[31m-                        id: gridHighlightComp[m
+[31m-                        Item {[m
+[31m-                            z: 0[m
+[31m-                            Rectangle {[m
+[31m-                                color: window.surface0; border.color: window.surface1; border.width: 1; radius: window.s(10)[m
+[31m-                                property real actX: parent.GridView.view.currentItem ? parent.GridView.view.currentItem.x + window.s(5) : 0[m
+[31m-                                property real actY: parent.GridView.view.currentItem ? parent.GridView.view.currentItem.y + window.s(5) : 0[m
+[31m-                                x: actX; y: actY; width: parent.GridView.view.cellWidth - window.s(10); height: parent.GridView.view.cellHeight - window.s(10)[m
+[31m-                                Behavior on actX { enabled: window.isKeyboardNav; NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }[m
+[31m-                                Behavior on actY { enabled: window.isKeyboardNav; NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }[m
+[31m-                                opacity: parent.GridView.view.count > 0 && parent.GridView.view.currentIndex >= 0 ? 1 : 0[m
+[31m-                                Behavior on opacity { NumberAnimation { duration: 300 } }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                    Component {[m
+[31m-                        id: mediaGridDelegate[m
+[31m-                        Item {[m
+[31m-                            width: GridView.view.cellWidth; height: GridView.view.cellHeight; z: 1[m
+[31m-                            Rectangle {[m
+[31m-                                anchors.fill: parent; anchors.margins: window.s(5); radius: window.s(10); color: "transparent"[m
+[31m-                                property bool isActive: index === parent.parent.GridView.view.currentIndex[m
+[31m-                                ColumnLayout {[m
+[31m-                                    anchors.fill: parent; anchors.margins: window.s(10); spacing: window.s(8)[m
+[31m-                                    Rectangle {[m
+[31m-                                        Layout.fillWidth: true; Layout.fillHeight: true; radius: window.s(8); color: window.crust; clip: true[m
+[31m-                                        scale: parent.parent.isActive && window.isKeyboardNav ? 1.03 : 1.0[m
+[31m-                                        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }[m
+[31m-                                        Image {[m
+[31m-                                            id: gridImage[m
+[31m-                                            anchors.fill: parent[m
+[31m-                                            source: model.poster !== "" ? model.poster : ""[m
+[31m-                                            fillMode: Image.PreserveAspectCrop[m
+[31m-                                            asynchronous: true; smooth: true; cache: true[m
+[31m-                                            visible: status === Image.Ready[m
+[31m-                                        }[m
+[31m-                                        Rectangle {[m
+[31m-                                            anchors.fill: parent; color: window.surface0[m
+[31m-                                            visible: model.poster === "" || gridImage.status === Image.Error || gridImage.status === Image.Loading[m
+[31m-                                            radius: window.s(8)[m
+[31m-                                            property bool isLoading: model.poster !== "" && gridImage.status === Image.Loading[m
+[31m-                                            Rectangle {[m
+[31m-                                                anchors.fill: parent; radius: window.s(8); color: "transparent"[m
+[31m-                                                visible: parent.isLoading[m
+[31m-                                                Rectangle {[m
+[31m-                                                    width: parent.width * 0.4; height: parent.height[m
+[31m-                                                    color: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.4)[m
+[31m-                                                    property real shimX: -parent.parent.width[m
+[31m-                                                    x: shimX[m
+[31m-                                                    NumberAnimation on shimX {[m
+[31m-                                                        from: -parent.parent.width[m
+[31m-                                                        to: parent.parent.width * 1.5[m
+[31m-                                                        duration: 1200; loops: Animation.Infinite[m
+[31m-                                                        running: parent.parent.parent.isLoading[m
+[31m-                                                        easing.type: Easing.InOutSine[m
+[31m-                                                    }[m
+[31m-                                                }[m
+[31m-                                            }[m
+[31m-                                            Text { anchors.centerIn: parent; width: parent.width - window.s(10); text: model.title || "Unknown"; color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(12); wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; visible: !parent.isLoading }[m
+[31m-                                        }[m
+[31m-                                        Rectangle {[m
+[31m-                                            anchors.fill: parent; radius: window.s(8)[m
+[31m-                                            color: window.mediaType === "tv" ? window.blue : window.mauve[m
+[31m-                                            opacity: parent.parent.parent.isActive ? 0.2 : 0[m
+[31m-                                            Behavior on opacity { NumberAnimation { duration: 200 } }[m
+[31m-                                        }[m
+[31m-                                    }[m
+[31m-                                    Text {[m
+[31m-                                        Layout.fillWidth: true; text: model.title; font.family: "JetBrains Mono"; font.pixelSize: window.s(12); font.weight: Font.Bold[m
+[31m-                                        color: parent.parent.isActive ? window.text : window.subtext0[m
+[31m-                                        wrapMode: Text.Wrap; maximumLineCount: 2; elide: Text.ElideRight; lineHeight: 1.1; horizontalAlignment: Text.AlignHCenter[m
+[31m-                                        Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                                    }[m
+[31m-                                    Text { Layout.fillWidth: true; text: model.year !== "N/A" ? model.year : ""; font.family: "JetBrains Mono"; font.pixelSize: window.s(11); color: window.surface2; horizontalAlignment: Text.AlignHCenter; visible: text !== "" }[m
+[31m-                                }[m
+[31m-                                MouseArea {[m
+[31m-                                    anchors.fill: parent; hoverEnabled: true[m
+[31m-                                    onEntered: { window.isKeyboardNav = false; parent.parent.GridView.view.currentIndex = index }[m
+[31m-                                    onClicked: {[m
+[31m-                                        if (model.type === "movie") startSourceCheck("movie", model.imdbId, model.title, model.poster, 0, 0)[m
+[31m-                                        else loadSeriesDetails(model.imdbId, model.title, model.poster)[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                    GridView {[m
+[31m-                        id: searchGrid[m
+[31m-                        anchors.fill: parent; visible: window.isSearchMode[m
+[31m-                        model: searchResults; cellWidth: Math.floor(width / 5); cellHeight: cellWidth * 1.5 + window.s(60)[m
+[31m-                        boundsBehavior: Flickable.StopAtBounds; highlightFollowsCurrentItem: false; clip: true[m
+[31m-                        ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2 } }[m
+[31m-                        Behavior on contentY { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }[m
+[31m-                        add: Transition { ParallelAnimation { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 400; easing.type: Easing.OutQuart } NumberAnimation { property: "y"; from: y + window.s(30); duration: 500; easing.type: Easing.OutQuart } NumberAnimation { property: "scale"; from: 0.9; to: 1; duration: 500; easing.type: Easing.OutBack } } }[m
+[31m-                        highlight: gridHighlightComp; delegate: mediaGridDelegate[m
+[31m-                    }[m
+[31m-                    GridView {[m
+[31m-                        id: movieGrid[m
+[31m-                        anchors.fill: parent; visible: !window.isSearchMode && window.mediaType === "movie"[m
+[31m-                        model: cachedTrendingMovies; cellWidth: Math.floor(width / 10); cellHeight: cellWidth * 1.5 + window.s(60)[m
+[31m-                        header: dashboardHeaderComp; boundsBehavior: Flickable.StopAtBounds; highlightFollowsCurrentItem: false; clip: true[m
+[31m-                        ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2 } }[m
+[31m-                        Behavior on contentY { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }[m
+[31m-                        highlight: gridHighlightComp; delegate: mediaGridDelegate[m
+[31m-                    }[m
+[31m-                    GridView {[m
+[31m-                        id: tvGrid[m
+[31m-                        anchors.fill: parent; visible: !window.isSearchMode && window.mediaType === "tv"[m
+[31m-                        model: cachedTrendingTv; cellWidth: Math.floor(width / 10); cellHeight: cellWidth * 1.5 + window.s(60)[m
+[31m-                        header: dashboardHeaderComp; boundsBehavior: Flickable.StopAtBounds; highlightFollowsCurrentItem: false; clip: true[m
+[31m-                        ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2 } }[m
+[31m-                        Behavior on contentY { NumberAnimation { duration: 300; easing.type: Easing.OutQuart } }[m
+[31m-                        highlight: gridHighlightComp; delegate: mediaGridDelegate[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-        // ==========================================[m
+[31m-        // SERIES VIEW[m
+[31m-        // ==========================================[m
+[31m-        RowLayout {[m
+[31m-            anchors.fill: parent; anchors.margins: window.s(20); spacing: window.s(25)[m
+[31m-            visible: window.currentView === "series"[m
+[31m-            ColumnLayout {[m
+[31m-                Layout.preferredWidth: window.s(220); Layout.minimumWidth: window.s(220); Layout.maximumWidth: window.s(220)[m
+[31m-                Layout.fillHeight: true; spacing: window.s(12)[m
+[31m-                Rectangle {[m
+[31m-                    Layout.fillWidth: true; Layout.preferredHeight: window.s(300); radius: window.s(14); color: window.crust; clip: true[m
+[31m-                    Image {[m
+[31m-                        anchors.fill: parent[m
+[31m-                        source: window.selectedPoster !== "" ? window.selectedPoster : ""[m
+[31m-                        fillMode: Image.PreserveAspectCrop[m
+[31m-                        asynchronous: true; smooth: true; cache: true[m
+[31m-                        sourceSize.width: window.s(440); sourceSize.height: window.s(600)[m
+[31m-                        visible: status === Image.Ready[m
+[31m-                    }[m
+[31m-                    Rectangle {[m
+[31m-                        anchors.fill: parent; color: window.surface0; radius: window.s(14)[m
+[31m-                        visible: window.selectedPoster === "" || parent.children[0].status === Image.Error || parent.children[0].status === Image.Loading[m
+[31m-                        Text { anchors.centerIn: parent; width: parent.width - window.s(10); text: window.selectedTitle; color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(14); wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Text {[m
+[31m-                    Layout.fillWidth: true; text: window.selectedTitle[m
+[31m-                    font.family: "JetBrains Mono"; font.pixelSize: window.s(16); font.weight: Font.Bold[m
+[31m-                    color: window.text; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter[m
+[31m-                    maximumLineCount: 3; elide: Text.ElideRight[m
+[31m-                }[m
+[31m-                Flickable {[m
+[31m-                    Layout.fillWidth: true[m
+[31m-                    Layout.preferredHeight: Math.min(window.s(120), descText.implicitHeight + window.s(8))[m
+[31m-                    Layout.maximumHeight: window.s(120)[m
+[31m-                    visible: window.selectedDescription !== ""[m
+[31m-                    clip: true; contentHeight: descText.implicitHeight[m
+[31m-                    ScrollBar.vertical: ScrollBar { contentItem: Rectangle { radius: window.s(2); color: window.surface2; implicitWidth: window.s(3) } }[m
+[31m-                    Text {[m
+[31m-                        id: descText[m
+[31m-                        width: parent.width - window.s(8)[m
+[31m-                        text: window.selectedDescription[m
+[31m-                        font.family: "JetBrains Mono"; font.pixelSize: window.s(11)[m
+[31m-                        color: window.subtext0; wrapMode: Text.WordWrap; lineHeight: 1.4[m
+[31m-                        Behavior on opacity { NumberAnimation { duration: 400 } }[m
+[31m-                        opacity: window.selectedDescription !== "" ? 1 : 0[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Rectangle {[m
+[31m-                    Layout.fillWidth: true; Layout.preferredHeight: window.s(45); radius: window.s(10)[m
+[31m-                    property bool isHovered: backMouse.containsMouse[m
+[31m-                    color: isHovered ? window.surface2 : window.surface1[m
+[31m-                    Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                    Text { anchors.centerIn: parent; text: "← Back"; font.family: "JetBrains Mono"; font.pixelSize: window.s(14); font.weight: Font.Medium; color: window.text }[m
+[31m-                    MouseArea { id: backMouse; anchors.fill: parent; hoverEnabled: true; onClicked: { window.currentView = "search"; searchInput.forceActiveFocus(); saveUiState() } }[m
+[31m-                }[m
+[31m-                Item { Layout.fillHeight: true }[m
+[31m-            }[m
+[31m-            ColumnLayout {[m
+[31m-                Layout.fillWidth: true; Layout.fillHeight: true; spacing: window.s(12)[m
+[31m-                Item {[m
+[31m-                    Layout.fillWidth: true; Layout.preferredHeight: window.s(44)[m
+[31m-                    ListView {[m
+[31m-                        id: seasonList[m
+[31m-                        anchors.fill: parent[m
+[31m-                        orientation: ListView.Horizontal; model: seasonModel; spacing: window.s(8); clip: true[m
+[31m-                        Behavior on contentX { NumberAnimation { duration: 350; easing.type: Easing.OutQuart } }[m
+[31m-                        delegate: Rectangle {[m
+[31m-                            width: seasonLabelText.width + window.s(28); height: window.s(38); radius: window.s(10)[m
+[31m-                            property bool isActive: window.currentSeason === model.seasonNum[m
+[31m-                            color: isActive ? (window.mediaType === "tv" ? window.blue : window.mauve) : window.surface0[m
+[31m-                            border.color: isActive ? color : window.surface1; border.width: 1[m
+[31m-                            Behavior on color { ColorAnimation { duration: 280; easing.type: Easing.OutQuart } }[m
+[31m-                            Behavior on border.color { ColorAnimation { duration: 280; easing.type: Easing.OutQuart } }[m
+[31m-                            scale: isActive ? 1.04 : 1.0[m
+[31m-                            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }[m
+[31m-                            Text {[m
+[31m-                                id: seasonLabelText[m
+[31m-                                anchors.centerIn: parent[m
+[31m-                                text: "S" + model.seasonNum[m
+[31m-                                font.family: "JetBrains Mono"; font.pixelSize: window.s(13); font.weight: isActive ? Font.Bold : Font.Medium[m
+[31m-                                color: isActive ? window.crust : window.text[m
+[31m-                                Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                            }[m
+[31m-                            MouseArea {[m
+[31m-                                anchors.fill: parent[m
+[31m-                                onClicked: {[m
+[31m-                                    if (window.currentSeason !== model.seasonNum) {[m
+[31m-                                        window.currentSeason = model.seasonNum[m
+[31m-                                        updateEpisodes(model.seasonNum)[m
+[31m-                                        saveUiState()[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Qt.rgba(window.surface1.r, window.surface1.g, window.surface1.b, 0.5) }[m
+[31m-                Item {[m
+[31m-                    Layout.fillWidth: true; Layout.fillHeight: true[m
+[31m-                    ListView {[m
+[31m-                        id: epList[m
+[31m-                        anchors.fill: parent[m
+[31m-                        model: episodeModel; spacing: window.s(6); clip: true[m
+[31m-                        opacity: window.seasonSwitching ? 0 : 1[m
+[31m-                        Behavior on opacity {[m
+[31m-                            NumberAnimation {[m
+[31m-                                duration: window.seasonSwitching ? 180 : 250[m
+[31m-                                easing.type: window.seasonSwitching ? Easing.InQuad : Easing.OutQuad[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                        transform: Translate {[m
+[31m-                            y: window.seasonSwitching ? window.s(8) : 0[m
+[31m-                            Behavior on y {[m
+[31m-                                NumberAnimation {[m
+[31m-                                    duration: window.seasonSwitching ? 180 : 280[m
+[31m-                                    easing.type: window.seasonSwitching ? Easing.InQuad : Easing.OutQuart[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                        ScrollBar.vertical: ScrollBar { active: true; contentItem: Rectangle { radius: window.s(2); color: window.surface2; implicitWidth: window.s(4) } }[m
+[31m-                        Text {[m
+[31m-                            anchors.centerIn: parent[m
+[31m-                            visible: window.isLoadingSeries[m
+[31m-                            text: "Fetching episodes..."[m
+[31m-                            color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(13)[m
+[31m-                        }[m
+[31m-                        highlight: Rectangle {[m
+[31m-                            color: window.surface0; border.color: window.surface2; border.width: 1; radius: window.s(10); z: 0[m
+[31m-                            Behavior on y { NumberAnimation { duration: 200; easing.type: Easing.OutQuart } }[m
+[31m-                        }[m
+[31m-                        highlightFollowsCurrentItem: true[m
+[31m-                        highlightMoveVelocity: -1[m
+[31m-                        delegate: Item {[m
+[31m-                            width: ListView.view.width; height: window.s(58); z: 1[m
+[31m-                            property bool isCurrent: ListView.isCurrentItem[m
+[31m-                            Rectangle {[m
+[31m-                                anchors.fill: parent; radius: window.s(10)[m
+[31m-                                color: epMouse.containsMouse || isCurrent ? window.surface0 : "transparent"[m
+[31m-                                border.color: epMouse.containsMouse || isCurrent ? window.surface2 : "transparent"; border.width: 1[m
+[31m-                                Behavior on color { ColorAnimation { duration: 150 } }[m
+[31m-                                Behavior on border.color { ColorAnimation { duration: 150 } }[m
+[31m-                                RowLayout {[m
+[31m-                                    anchors.fill: parent; anchors.margins: window.s(10); spacing: window.s(12)[m
+[31m-                                    Rectangle {[m
+[31m-                                        Layout.preferredWidth: window.s(36); Layout.preferredHeight: window.s(36)[m
+[31m-                                        radius: window.s(8)[m
+[31m-                                        color: isCurrent || epMouse.containsMouse ? window.blue : window.surface1[m
+[31m-                                        Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                                        Text {[m
+[31m-                                            anchors.centerIn: parent[m
+[31m-                                            text: model.epNum[m
+[31m-                                            font.family: "JetBrains Mono"; font.pixelSize: window.s(13); font.weight: Font.Bold[m
+[31m-                                            color: isCurrent || epMouse.containsMouse ? window.crust : window.subtext0[m
+[31m-                                            Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                                        }[m
+[31m-                                    }[m
+[31m-                                    Column {[m
+[31m-                                        Layout.fillWidth: true; spacing: window.s(2)[m
+[31m-                                        Text {[m
+[31m-                                            width: parent.width[m
+[31m-                                            text: model.epTitle[m
+[31m-                                            font.family: "JetBrains Mono"[m
+[31m-                                            font.pixelSize: model.hasRealTitle ? window.s(13) : window.s(12)[m
+[31m-                                            font.weight: model.hasRealTitle ? Font.Medium : Font.Normal[m
+[31m-                                            color: model.hasRealTitle ? window.text : window.subtext0[m
+[31m-                                            elide: Text.ElideRight[m
+[31m-                                        }[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                                MouseArea {[m
+[31m-                                    id: epMouse; anchors.fill: parent; hoverEnabled: true[m
+[31m-                                    onClicked: {[m
+[31m-                                        epList.currentIndex = index[m
+[31m-                                        startSourceCheck("tv", window.selectedImdbId, window.selectedTitle, window.selectedPoster, window.currentSeason, model.epNum)[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-    // ==========================================[m
+[31m-    // SOURCE CHECKER MODAL OVERLAY[m
+[31m-    // ==========================================[m
+[31m-    Rectangle {[m
+[31m-        id: sourceModalOverlay[m
+[31m-        anchors.fill: parent[m
+[31m-        color: Qt.rgba(0, 0, 0, 0.7)[m
+[31m-        opacity: window.isSourceModalOpen ? 1 : 0[m
+[31m-        visible: opacity > 0[m
+[31m-        Behavior on opacity { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }[m
+[31m-        z: 100[m
+[31m-        MouseArea {[m
+[31m-            anchors.fill: parent[m
+[31m-            onClicked: window.closeSourceModal()[m
+[31m-        }[m
+[31m-        Rectangle {[m
+[31m-            width: window.s(480); height: window.s(600)[m
+[31m-            anchors.centerIn: parent[m
+[31m-            radius: window.s(14)[m
+[31m-            color: window.base[m
+[31m-            border.color: window.surface2[m
+[31m-            border.width: 1[m
+[31m-            clip: true[m
+[31m-            scale: window.isSourceModalOpen ? 1.0 : 0.92[m
+[31m-            Behavior on scale { NumberAnimation { duration: 280; easing.type: Easing.OutBack } }[m
+[31m-            MouseArea { anchors.fill: parent }[m
+[31m-            ColumnLayout {[m
+[31m-                anchors.fill: parent; spacing: 0[m
+[31m-                // Header[m
+[31m-                Rectangle {[m
+[31m-                    Layout.fillWidth: true; Layout.preferredHeight: window.s(75); color: window.surface0[m
+[31m-                    Rectangle { width: parent.width; height: 1; color: window.surface1; anchors.bottom: parent.bottom }[m
+[31m-                    RowLayout {[m
+[31m-                        anchors.fill: parent; anchors.margins: window.s(16)[m
+[31m-                        ColumnLayout {[m
+[31m-                            Layout.fillWidth: true; spacing: window.s(4)[m
+[31m-                            Text {[m
+[31m-                                text: window.checkingState === "checking" ? "Finding Stream..."[m
+[31m-                                    : window.checkingState === "found"    ? "Stream Ready!"[m
+[31m-                                    :                                       "No Streams Found"[m
+[31m-                                color: window.checkingState === "found"      ? window.green[m
+[31m-                                     : window.checkingState === "failed_all" ? window.red[m
+[31m-                                     :                                         window.text[m
+[31m-                                font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(17)[m
+[31m-                                Behavior on color { ColorAnimation { duration: 300 } }[m
+[31m-                            }[m
+[31m-                            Text {[m
+[31m-                                text: window.pendingMedia.title || "Loading..."[m
+[31m-                                color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(12)[m
+[31m-                                elide: Text.ElideRight; Layout.fillWidth: true[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                        Rectangle {[m
+[31m-                            Layout.preferredWidth: window.s(32); Layout.preferredHeight: window.s(32); radius: window.s(8)[m
+[31m-                            color: modalCloseMouse.containsMouse ? window.surface2 : "transparent"[m
+[31m-                            Behavior on color { ColorAnimation { duration: 150 } }[m
+[31m-                            Text { anchors.centerIn: parent; text: "×"; color: window.subtext0; font.pixelSize: window.s(20) }[m
+[31m-                            MouseArea { id: modalCloseMouse; anchors.fill: parent; hoverEnabled: true; onClicked: window.closeSourceModal() }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                // Body[m
+[31m-                Item {[m
+[31m-                    Layout.fillWidth: true; Layout.fillHeight: true[m
+[31m-                    ListView {[m
+[31m-                        id: sourceListUI[m
+[31m-                        anchors.fill: parent; anchors.margins: window.s(14)[m
+[31m-                        model: sourceModel; spacing: window.s(8); clip: true[m
+[31m-                        visible: window.checkingState !== "failed_all"[m
+[31m-                        delegate: Rectangle {[m
+[31m-                            width: ListView.view.width; height: window.s(52); radius: window.s(10)[m
+[31m-                            color: {[m
+[31m-                                if (model.status === "checking") return Qt.rgba(window.blue.r,  window.blue.g,  window.blue.b,  0.12)[m
+[31m-                                if (model.status === "success")  return Qt.rgba(window.green.r, window.green.g, window.green.b, 0.12)[m
+[31m-                                if (model.status === "failed")   return Qt.rgba(window.red.r,   window.red.g,   window.red.b,   0.07)[m
+[31m-                                return window.surface0[m
+[31m-                            }[m
+[31m-                            border.color: {[m
+[31m-                                if (model.status === "checking") return window.blue[m
+[31m-                                if (model.status === "success")  return window.green[m
+[31m-                                if (model.status === "failed")   return Qt.rgba(window.red.r, window.red.g, window.red.b, 0.3)[m
+[31m-                                return window.surface1[m
+[31m-                            }[m
+[31m-                            border.width: (model.status === "checking" || model.status === "success") ? 2 : 1[m
+[31m-                            Behavior on color { ColorAnimation { duration: 250 } }[m
+[31m-                            Behavior on border.color { ColorAnimation { duration: 250 } }[m
+[31m-                            RowLayout {[m
+[31m-                                anchors.fill: parent; anchors.leftMargin: window.s(14); anchors.rightMargin: window.s(10)[m
+[31m-                                anchors.topMargin: 0; anchors.bottomMargin: 0[m
+[31m-                                spacing: window.s(10)[m
+[31m-                                Text {[m
+[31m-                                    text: "★"[m
+[31m-                                    font.pixelSize: window.s(13)[m
+[31m-                                    color: window.mauve[m
+[31m-                                    opacity: (window.sourcePrefs[window.pendingMedia.imdbId || ""] || "") === model.name ? 1 : 0[m
+[31m-                                    Behavior on opacity { NumberAnimation { duration: 200 } }[m
+[31m-                                    Layout.preferredWidth: window.s(16)[m
+[31m-                                }[m
+[31m-                                Text {[m
+[31m-                                    text: model.name[m
+[31m-                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(14)[m
+[31m-                                    color: model.status === "checking" ? window.blue[m
+[31m-                                         : model.status === "success"  ? window.green[m
+[31m-                                         : model.status === "failed"   ? Qt.rgba(window.red.r, window.red.g, window.red.b, 0.7)[m
+[31m-                                         :                               window.text[m
+[31m-                                    Layout.fillWidth: true[m
+[31m-                                    Behavior on color { ColorAnimation { duration: 200 } }[m
+[31m-                                }[m
+[31m-                                Item {[m
+[31m-                                    Layout.preferredWidth: window.s(22); Layout.preferredHeight: window.s(22)[m
+[31m-                                    Rectangle {[m
+[31m-                                        anchors.fill: parent; radius: width / 2[m
+[31m-                                        color: "transparent"; border.color: window.surface2; border.width: 2[m
+[31m-                                        visible: model.status === "pending"[m
+[31m-                                    }[m
+[31m-                                    Item {[m
+[31m-                                        anchors.fill: parent[m
+[31m-                                        visible: model.status === "checking"[m
+[31m-                                        property real spinAngle: 0[m
+[31m-                                        NumberAnimation on spinAngle {[m
+[31m-                                            from: 0; to: 360; duration: 700[m
+[31m-                                            loops: Animation.Infinite[m
+[31m-                                            running: model.status === "checking"[m
+[31m-                                            easing.type: Easing.Linear[m
+[31m-                                        }[m
+[31m-                                        Canvas {[m
+[31m-                                            anchors.fill: parent[m
+[31m-                                            property real angle: parent.spinAngle[m
+[31m-                                            onAngleChanged: requestPaint()[m
+[31m-                                            onPaint: {[m
+[31m-                                                var ctx = getContext("2d")[m
+[31m-                                                ctx.reset()[m
+[31m-                                                var cx = width / 2, cy = height / 2, r = width / 2 - 2[m
+[31m-                                                var startRad = (parent.spinAngle - 90) * Math.PI / 180[m
+[31m-                                                var endRad   = startRad + 1.6 * Math.PI[m
+[31m-                                                ctx.beginPath()[m
+[31m-                                                ctx.arc(cx, cy, r, startRad, endRad)[m
+[31m-                                                ctx.strokeStyle = window.blue[m
+[31m-                                                ctx.lineWidth = 2.5[m
+[31m-                                                ctx.lineCap = "round"[m
+[31m-                                                ctx.stroke()[m
+[31m-                                            }[m
+[31m-                                        }[m
+[31m-                                    }[m
+[31m-                                    Text {[m
+[31m-                                        anchors.centerIn: parent[m
+[31m-                                        text: "✗"; color: Qt.rgba(window.red.r, window.red.g, window.red.b, 0.7)[m
+[31m-                                        font.weight: Font.Bold; font.pixelSize: window.s(14)[m
+[31m-                                        visible: model.status === "failed"[m
+[31m-                                    }[m
+[31m-                                    Text {[m
+[31m-                                        anchors.centerIn: parent[m
+[31m-                                        text: "✓"; color: window.green[m
+[31m-                                        font.weight: Font.Bold; font.pixelSize: window.s(14)[m
+[31m-                                        visible: model.status === "success"[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                    ColumnLayout {[m
+[31m-                        anchors.centerIn: parent; width: parent.width - window.s(40); spacing: window.s(20)[m
+[31m-                        visible: window.checkingState === "failed_all"[m
+[31m-                        Text {[m
+[31m-                            Layout.fillWidth: true[m
+[31m-                            text: "All stream sources failed for this title."[m
+[31m-                            color: window.subtext0; font.family: "JetBrains Mono"; font.pixelSize: window.s(13)[m
+[31m-                            wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter; lineHeight: 1.3[m
+[31m-                        }[m
+[31m-                        Rectangle {[m
+[31m-                            Layout.fillWidth: true; Layout.preferredHeight: window.s(45); radius: window.s(10)[m
+[31m-                            color: fmhyMouse.containsMouse ? window.blue : window.surface1[m
+[31m-                            Behavior on color { ColorAnimation { duration: 150 } }[m
+[31m-                            Text { anchors.centerIn: parent; text: "Browse Alternative Sites"; font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(13); color: fmhyMouse.containsMouse ? window.crust : window.text }[m
+[31m-                            MouseArea {[m
+[31m-                                id: fmhyMouse; anchors.fill: parent; hoverEnabled: true[m
+[31m-                                onClicked: { Quickshell.execDetached(["xdg-open", "https://fmhy.net/video#streaming-sites"]); window.closeSourceModal() }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-                Rectangle {[m
+[31m-                    Layout.fillWidth: true[m
+[31m-                    Layout.preferredHeight: window.checkingState === "found" ? window.s(80) : 0[m
+[31m-                    color: window.surface0; clip: true[m
+[31m-                    Behavior on Layout.preferredHeight { NumberAnimation { duration: 280; easing.type: Easing.OutQuart } }[m
+[31m-                    Rectangle { width: parent.width; height: 1; color: window.surface1; anchors.top: parent.top }[m
+[31m-                    RowLayout {[m
+[31m-                        anchors.fill: parent; anchors.margins: window.s(14); spacing: window.s(10)[m
+[31m-                        Rectangle {[m
+[31m-                            Layout.fillWidth: true; Layout.preferredHeight: window.s(48); radius: window.s(10)[m
+[31m-                            property bool isPreferred: (window.sourcePrefs[window.pendingMedia.imdbId || ""] || "") === window.foundSourceName[m
+[31m-                            color: markWorksMouse.containsMouse[m
+[31m-                                ? Qt.rgba(window.green.r, window.green.g, window.green.b, 0.25)[m
+[31m-                                : Qt.rgba(window.green.r, window.green.g, window.green.b, isPreferred ? 0.20 : 0.10)[m
+[31m-                            border.color: isPreferred ? window.green : Qt.rgba(window.green.r, window.green.g, window.green.b, 0.4)[m
+[31m-                            border.width: isPreferred ? 2 : 1[m
+[31m-                            Behavior on color { ColorAnimation { duration: 150 } }[m
+[31m-                            ColumnLayout {[m
+[31m-                                anchors.centerIn: parent; spacing: window.s(2)[m
+[31m-                                Text {[m
+[31m-                                    Layout.alignment: Qt.AlignHCenter[m
+[31m-                                    text: parent.parent.isPreferred ? "★ Preferred Source" : "Mark as Working"[m
+[31m-                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(12)[m
+[31m-                                    color: window.green[m
+[31m-                                }[m
+[31m-                                Text {[m
+[31m-                                    Layout.alignment: Qt.AlignHCenter[m
+[31m-                                    text: window.foundSourceName !== "" ? window.foundSourceName : ""[m
+[31m-                                    font.family: "JetBrains Mono"; font.pixelSize: window.s(10)[m
+[31m-                                    color: Qt.rgba(window.green.r, window.green.g, window.green.b, 0.7)[m
+[31m-                                    visible: text !== ""[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                            MouseArea {[m
+[31m-                                id: markWorksMouse; anchors.fill: parent; hoverEnabled: true[m
+[31m-                                onClicked: {[m
+[31m-                                    if (window.pendingMedia.imdbId && window.foundSourceName !== "") {[m
+[31m-                                        saveSourcePref(window.pendingMedia.imdbId, window.foundSourceName)[m
+[31m-                                    }[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                        }[m
+[31m-                        Rectangle {[m
+[31m-                            Layout.preferredWidth: window.s(110); Layout.preferredHeight: window.s(48); radius: window.s(10)[m
+[31m-                            color: tryNextMouse2.containsMouse ? window.surface2 : window.surface1[m
+[31m-                            border.color: window.surface2; border.width: 1[m
+[31m-                            Behavior on color { ColorAnimation { duration: 150 } }[m
+[31m-                            ColumnLayout {[m
+[31m-                                anchors.centerIn: parent; spacing: window.s(2)[m
+[31m-                                Text {[m
+[31m-                                    Layout.alignment: Qt.AlignHCenter[m
+[31m-                                    text: "Try Next"[m
+[31m-                                    font.family: "JetBrains Mono"; font.weight: Font.Bold; font.pixelSize: window.s(12)[m
+[31m-                                    color: window.text[m
+[31m-                                }[m
+[31m-                                Text {[m
+[31m-                                    Layout.alignment: Qt.AlignHCenter[m
+[31m-                                    text: "Not working?"[m
+[31m-                                    font.family: "JetBrains Mono"; font.pixelSize: window.s(10)[m
+[31m-                                    color: window.subtext0[m
+[31m-                                }[m
+[31m-                            }[m
+[31m-                            MouseArea { id: tryNextMouse2; anchors.fill: parent; hoverEnabled: true; onClicked: window.skipToNextSource() }[m
+[31m-                        }[m
+[31m-                    }[m
+[31m-                }[m
+[31m-            }[m
+[31m-        }[m
+[31m-    }[m
+[31m-}[m
+[1mdiff --git a/install.sh b/install.sh[m
+[1mold mode 100644[m
+[1mnew mode 100755[m

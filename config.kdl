@@ -122,7 +122,7 @@ binds {
     // --- Application Launchers ---
     Super+Return { spawn "foot"; }
     Super+F { spawn "firefox"; }
-    Super+W { spawn "brave"; }
+    Super+W { spawn "zen-browser"; }
     Super+E { spawn "nautilus"; }
     
     // --- Quickshell Panel Toggles ---
@@ -142,7 +142,6 @@ binds {
     Super+Shift+V { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "volume"; }
     Super+Shift+Alt+H { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "guide"; }
     Super+D { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "dashboard"; }
-    Super+Shift+D { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "services"; }
     Super+Shift+M { spawn "bash" "/home/khxnh/.config/niri/bin/qs_manager.sh" "toggle" "monitors"; }
     // --- SwayOSD Controls ---
     Caps_Lock { spawn "sleep" "0.1" "&&" "swayosd-client" "--caps-lock"; }
