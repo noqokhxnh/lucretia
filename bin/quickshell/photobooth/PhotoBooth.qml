@@ -230,7 +230,7 @@ Item {
         }
         imageCapture: ImageCapture {
             id: imageCapture
-            onFileSaved: (id, path) => {
+            onFileSaved: {
                 // Only auto-add for single shot; burst handles UI via stitchBurst callback
                 if (!window._burstInProgress) {
                     addCaptureToRoll(path)
@@ -793,7 +793,7 @@ Item {
         } // card
     } // uiRoot
 
-    Keys.onPressed: (event) => {
+    Keys.onPressed: {
         if (event.key === Qt.Key_Escape) {
             Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"])
             event.accepted = true
