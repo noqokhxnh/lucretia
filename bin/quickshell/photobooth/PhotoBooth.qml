@@ -857,14 +857,15 @@ Item {
         } // card
     } // uiRoot
 
+    Keys.onEscapePressed: {
+        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"])
+        event.accepted = true
+    }
+
+    Keys.onSpacePressed: startCountdown()
+
     Keys.onPressed: {
-        if (event.key === Qt.Key_Escape) {
-            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"])
-            event.accepted = true
-        } else if (event.key === Qt.Key_Space) {
-            startCountdown()
-            event.accepted = true
-        } else if (event.key === Qt.Key_M) {
+        if (event.key === Qt.Key_M) {
             window.isMirrored = !window.isMirrored
             event.accepted = true
         }
