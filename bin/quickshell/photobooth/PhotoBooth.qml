@@ -530,16 +530,19 @@ Item {
                         onClicked: {
                             masterWindow.disableMorph = false
                             let screen = Quickshell.screens[0]
-                            if (masterWindow.animW >= screen.width - 20) {
-                                masterWindow.animW = 860
-                                masterWindow.animH = 760
-                                masterWindow.animX = (screen.width - 860) / 2
-                                masterWindow.animY = (screen.height - 760) / 2
+                            let defaultW = 860, defaultH = 760
+                            let zoomW = Math.min(1000, screen.width - 80)
+                            let zoomH = Math.min(900, screen.height - 80)
+                            if (masterWindow.animW > defaultW + 20) {
+                                masterWindow.animW = defaultW
+                                masterWindow.animH = defaultH
+                                masterWindow.animX = (screen.width - defaultW) / 2
+                                masterWindow.animY = (screen.height - defaultH) / 2
                             } else {
-                                masterWindow.animX = 0
-                                masterWindow.animY = 0
-                                masterWindow.animW = screen.width
-                                masterWindow.animH = screen.height
+                                masterWindow.animW = zoomW
+                                masterWindow.animH = zoomH
+                                masterWindow.animX = (screen.width - zoomW) / 2
+                                masterWindow.animY = (screen.height - zoomH) / 2
                             }
                         }
                     }
