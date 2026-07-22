@@ -21,7 +21,7 @@ Item {
     implicitHeight: mainCard.height || 600
 
     property bool _init: false
-    property string updaterBin: paths.getRunDir("updater") + "/updater_backend"
+    property string updaterBin: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/updater/updater_backend"
 
     // --- Responsive Scaling Logic ---
     Scaler {
@@ -128,7 +128,13 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 let out = this.text ? this.text.trim() : "";
-                if (out !== "") window.remoteVersion = out;
+                if (out !== "") {
+                    window.remoteVersion = out;
+                    // Expand UI immediately when we have version info
+                    if (!window.uiExpanded && window.localVersion !== out) {
+                        window.uiExpanded = true;
+                    }
+                }
             }
         }
     }
@@ -143,7 +149,7 @@ Item {
                 let url = this.text ? this.text.trim() : "";
                 if (url !== "" && url.startsWith("http")) {
                     window.videoUrl = url;
-                    window.uiExpanded = true;
+                    if (!window.uiExpanded) window.uiExpanded = true;
                     videoDownloadProcess.running = true;
                 }
             }

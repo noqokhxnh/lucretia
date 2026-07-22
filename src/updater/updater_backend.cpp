@@ -19,20 +19,34 @@ size_t WriteCallback(void* contents, size_t size, size_t nmemb, void* userp) {
     return size * nmemb;
 }
 
-CurlResponse fetch_url(CURL* curl, const std::string& url) {
+CurlResponse fetch_url(CURL* curl, const std::string& url, bool head_only = false) {
     std::string readBuffer;
     long response_code = 0;
 
     curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     curl_easy_setopt(curl, CURLOPT_USERAGENT, "updater");
     curl_easy_setopt(curl, CURLOPT_TIMEOUT, 10L);
     curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
 
+    if (head_only) {
+        curl_easy_setopt(curl, CURLOPT_NOBODY, 1L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, nullptr);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, nullptr);
+    } else {
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    }
+
     CURLcode res = curl_easy_perform(curl);
     if (res == CURLE_OK) {
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+    }
+
+    // Reset for next request
+    if (head_only) {
+        curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
     }
 
     return {readBuffer, response_code};
@@ -103,8 +117,8 @@ void cmd_video(CURL* curl) {
         }
 
         if (!best_url.empty()) {
-            // HEAD-check the URL
-            auto head = fetch_url(curl, best_url);
+            // HEAD-check the URL (don't download the full video)
+            auto head = fetch_url(curl, best_url, true);
             if (head.status_code >= 200 && head.status_code < 400) {
                 std::cout << best_url << std::endl;
             }
@@ -121,7 +135,6 @@ void cmd_commits(CURL* curl) {
     auto local_v = parse_ver(local);
 
     if (local_v == ZERO_VER) {
-        // Unknown version: just print latest commit
         auto resp = fetch_url(curl,
             "https://api.github.com/repos/" + repo + "/commits/main");
         try {
@@ -135,10 +148,10 @@ void cmd_commits(CURL* curl) {
 
     std::string found_ref;
 
-    // 1. Try tags
+    // 1. Try tags first (fast, small payload)
     {
         auto resp = fetch_url(curl,
-            "https://api.github.com/repos/" + repo + "/tags?per_page=20");
+            "https://api.github.com/repos/" + repo + "/tags?per_page=30");
         if (resp.status_code == 200) {
             try {
                 auto tags = json::parse(resp.data);
@@ -154,7 +167,7 @@ void cmd_commits(CURL* curl) {
         }
     }
 
-    // 2. Fallback: releases
+    // 2. Fallback: releases (only if no tag found)
     if (found_ref.empty()) {
         auto resp = fetch_url(curl,
             "https://api.github.com/repos/" + repo + "/releases?per_page=10");
@@ -172,20 +185,14 @@ void cmd_commits(CURL* curl) {
         }
     }
 
+    // 3. If we found a ref, compare directly — skip the "no ref" fallback
     if (found_ref.empty()) {
-        // No matching tag/release: just print latest commit
-        auto resp = fetch_url(curl,
-            "https://api.github.com/repos/" + repo + "/commits/main");
-        try {
-            auto data = json::parse(resp.data);
-            std::cout << data["commit"]["message"].get<std::string>() << std::endl;
-        } catch (...) {
-            std::cout << "No changelog available" << std::endl;
-        }
-        return;
+        // No matching tag/release: compare with earliest known version
+        // Use v0.0.1 as baseline to get all recent commits
+        found_ref = "v0.0.1";
     }
 
-    // 3. Compare found_ref...main
+    // 4. Compare found_ref...main
     auto resp = fetch_url(curl,
         "https://api.github.com/repos/" + repo + "/compare/" + found_ref + "...main");
     if (resp.status_code != 200) {
@@ -200,8 +207,10 @@ void cmd_commits(CURL* curl) {
             std::cout << "No changelog available" << std::endl;
             return;
         }
-        for (const auto& c : commits) {
-            std::cout << c["commit"]["message"].get<std::string>() << std::endl;
+        // Limit to last 20 commits to keep popup fast
+        int start = std::max(0, (int)commits.size() - 20);
+        for (int i = start; i < (int)commits.size(); i++) {
+            std::cout << commits[i]["commit"]["message"].get<std::string>() << std::endl;
             std::cout << "---SPLIT---" << std::endl;
         }
     } catch (...) {
