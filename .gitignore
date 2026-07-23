@@ -28,4 +28,5 @@ hyprland.conf
 .deepseek/
 .opencode/*
 .mimocode/*
+.nodeterm/
 insta

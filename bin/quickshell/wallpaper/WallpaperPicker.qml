@@ -186,7 +186,7 @@ Item {
                         awww img -o "$TARGET_MONITORS" "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
                     fi
                     
-                    ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $FINAL_THUMB" >> ${logFile}; matugen image "$FINAL_THUMB" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+                    ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; matugen image "$DEST_FILE" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
                 `;
                 Quickshell.execDetached(["bash", "-c", applyScript]);
             } else {
@@ -228,7 +228,7 @@ Item {
                             awww img -o "$TARGET_MONITORS" "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
                         fi
                         
-                        ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $FINAL_THUMB" >> ${logFile}; matugen image "$FINAL_THUMB" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+                        ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; matugen image "$DEST_FILE" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
                     fi
                 `;
                 Quickshell.execDetached(["bash", "-c", downloadScript]);
@@ -277,7 +277,7 @@ Item {
             pkill mpvpaper || true
             
             ${wallpaperCmd}
-            ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON ${escThumb}" >> ${logFile}; matugen image "${escThumb}" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "${escReload}" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+            ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON ${isVideo ? escThumb : escOriginal}" >> ${logFile}; matugen image "${isVideo ? escThumb : escOriginal}" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "${escReload}" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
         `;
         Quickshell.execDetached(["bash", "-c", fullScript]);
     }

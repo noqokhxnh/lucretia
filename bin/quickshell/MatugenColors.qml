@@ -77,7 +77,7 @@ Item {
     Process {
         id: themeWatcher
         running: true
-        command: ["bash", "-c", "while [ ! -f '" + root._colorsFile + "' ]; do sleep 1; done; exec inotifywait -qq -e close_write,modify,move_self,delete_self '" + root._colorsFile + "' 2>/dev/null"]
+        command: ["bash", "-c", "while [ ! -f '" + root._colorsFile + "' ]; do sleep 1; done; exec inotifywait -q -e close_write,modify,move_self,delete_self --format '%e' '" + root._colorsFile + "' 2>/dev/null"]
         stdout: StdioCollector {
             onStreamFinished: {
                 themeReader.running = false;
@@ -85,6 +85,18 @@ Item {
                 themeWatcher.running = false;
                 themeWatcher.running = true;
             }
+        }
+    }
+
+    // Fallback poll timer: re-reads the file every 3s as safety net
+    Timer {
+        id: pollTimer
+        interval: 3000
+        running: true
+        repeat: true
+        onTriggered: {
+            themeReader.running = false;
+            themeReader.running = true;
         }
     }
 }

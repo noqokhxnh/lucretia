@@ -5,6 +5,11 @@ include optional=true "colors.kdl"
 
 prefer-no-csd
 
+// Tắt popup "Important Hotkeys" mỗi khi khởi động
+hotkey-overlay {
+    skip-at-startup
+}
+
 input {
     keyboard {
         xkb {
@@ -35,7 +40,7 @@ layout {
         proportion 0.66667
     }
     
-    default-column-width { proportion 0.5; }
+    default-column-width { proportion 0.8; }
     
     focus-ring {
         width 4
@@ -124,23 +129,23 @@ binds {
     Super+E { spawn "nautilus"; }
     
     // --- Quickshell Panel Toggles ---
-    Super+Shift+Alt+R { spawn "bash" "$HOME/.config/niri/bin/reload.sh"; }
-    Super+V { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "clipboard"; }
-    Super+Shift+P { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "movies"; }
-    Super+A { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "applauncher"; }
-    Super+Shift+I { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "settings"; }
-    Super+Shift+Q { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "music"; }
-    Super+Shift+B { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "battery"; }
-    Super+Shift+W { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "wallpaper"; }
-    Super+Shift+C { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "calendar"; }
-    Super+C { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "photobooth"; }
-    Super+Shift+N { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "network"; }
-    Super+N { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "notes"; }
-    Super+Shift+T { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "focustime"; }
-    Super+Shift+V { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "volume"; }
-    Super+Shift+Alt+H { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "guide"; }
-    Super+D { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "dashboard"; }
-    Super+Shift+M { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "toggle" "monitors"; }
+    Super+Shift+Alt+R { spawn "bash" "-c" "$HOME/.config/niri/bin/reload.sh"; }
+    Super+V { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle clipboard"; }
+    Super+Shift+P { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle movies"; }
+    Super+A { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle applauncher"; }
+    Super+Shift+I { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle settings"; }
+    Super+Shift+Q { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle music"; }
+    Super+Shift+B { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle battery"; }
+    Super+Shift+W { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle wallpaper"; }
+    Super+Shift+C { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle calendar"; }
+    Super+C { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle photobooth"; }
+    Super+Shift+N { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle network"; }
+    Super+N { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle notes"; }
+    Super+Shift+T { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle focustime"; }
+    Super+Shift+V { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle volume"; }
+    Super+Shift+Alt+H { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle guide"; }
+    Super+D { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle dashboard"; }
+    Super+Shift+M { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle monitors"; }
     // --- SwayOSD Controls ---
     Caps_Lock { spawn "sleep" "0.1" "&&" "swayosd-client" "--caps-lock"; }
     XF86MonBrightnessDown { spawn "swayosd-client" "--brightness" "lower"; }
@@ -151,41 +156,41 @@ binds {
     XF86AudioRaiseVolume { spawn "swayosd-client" "--output-volume" "raise"; }
     
     // --- Screenshot Controls ---
-    Print { spawn "$HOME/.config/niri/bin/screenshot.sh"; }
-    Super+Shift+S { spawn "$HOME/.config/niri/bin/screenshot.sh"; }
-    Shift+Print { spawn "$HOME/.config/niri/bin/screenshot.sh" "--edit"; }
-    Super+Print { spawn "$HOME/.config/niri/bin/screenshot.sh" "--full"; }
-    Super+Shift+Print { spawn "$HOME/.config/niri/bin/screenshot.sh" "--full" "--edit"; }
+    Print { spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh"; }
+    Super+Shift+S { spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh"; }
+    Shift+Print { spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh --edit"; }
+    Super+Print { spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh --full"; }
+    Super+Shift+Print { spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh --full --edit"; }
     
     // --- Lock and Media Controls ---
-    XF86PowerOff { spawn "bash" "$HOME/.config/niri/bin/lock.sh"; }
-    Super+comma { spawn "bash" "$HOME/.config/niri/bin/lock.sh"; }
+    XF86PowerOff { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
+    Super+comma { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
     Super+Space { spawn "playerctl" "play-pause"; }
     XF86AudioPause { spawn "playerctl" "play-pause"; }
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
     
     // --- Workspaces navigation & column move ---
-    Super+1 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "1"; }
-    Super+2 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "2"; }
-    Super+3 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "3"; }
-    Super+4 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "4"; }
-    Super+5 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "5"; }
-    Super+6 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "6"; }
-    Super+7 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "7"; }
-    Super+8 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "8"; }
-    Super+9 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "9"; }
-    Super+0 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "10"; }
+    Super+1 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 1"; }
+    Super+2 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 2"; }
+    Super+3 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 3"; }
+    Super+4 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 4"; }
+    Super+5 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 5"; }
+    Super+6 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 6"; }
+    Super+7 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 7"; }
+    Super+8 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 8"; }
+    Super+9 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 9"; }
+    Super+0 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 10"; }
     
-    Super+Shift+1 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "1" "move"; }
-    Super+Shift+2 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "2" "move"; }
-    Super+Shift+3 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "3" "move"; }
-    Super+Shift+4 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "4" "move"; }
-    Super+Shift+5 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "5" "move"; }
-    Super+Shift+6 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "6" "move"; }
-    Super+Shift+7 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "7" "move"; }
-    Super+Shift+8 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "8" "move"; }
-    Super+Shift+9 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "9" "move"; }
-    Super+Shift+0 { spawn "bash" "$HOME/.config/niri/bin/qs_manager.sh" "10" "move"; }
+    Super+Shift+1 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 1 move"; }
+    Super+Shift+2 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 2 move"; }
+    Super+Shift+3 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 3 move"; }
+    Super+Shift+4 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 4 move"; }
+    Super+Shift+5 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 5 move"; }
+    Super+Shift+6 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 6 move"; }
+    Super+Shift+7 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 7 move"; }
+    Super+Shift+8 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 8 move"; }
+    Super+Shift+9 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 9 move"; }
+    Super+Shift+0 { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh 10 move"; }
     
     Super+grave { fullscreen-window; }
     
@@ -195,7 +200,8 @@ binds {
 spawn-at-startup "/usr/lib/polkit-kde-authentication-agent-1"
 spawn-at-startup "awww-daemon"
 spawn-at-startup "$HOME/.config/niri/bin/swayidle.sh"
-spawn-at-startup "quickshell" "-p" "$HOME/.config/niri/bin/quickshell/Shell.qml"
+spawn-at-startup "swayosd-server" "--top-margin" "0.9" "--style" "/home/khxnh/.config/swayosd/style.css"
+spawn-at-startup "quickshell" "-p" "/home/khxnh/.config/niri/bin/quickshell/Shell.qml"
 spawn-at-startup "$HOME/.config/niri/bin/init.sh"
 spawn-at-startup "playerctld"
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"

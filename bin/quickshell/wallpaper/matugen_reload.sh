@@ -100,6 +100,8 @@ if command -v gsettings &> /dev/null; then
     gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 fi
 
+# Quickshell automatically watches qs_colors.json and updates colors live without full shell reload
+
 # Reload compositor to apply color changes
 if [ "$XDG_CURRENT_DESKTOP" = "Hyprland" ] && command -v hyprctl &> /dev/null; then
     hyprctl reload
