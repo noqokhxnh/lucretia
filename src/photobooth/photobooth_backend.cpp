@@ -55,11 +55,19 @@ int main(int argc, char *argv[]) {
         for (int i = 2; i < 6; ++i) inputs << argv[i];
         QString output = argv[6];
 
+        bool mirror = false;
+        // Check if the first arg after output has --mirror flag
+        // Format: burst <img1> <img2> <img3> <img4> <output> [--mirror]
+        if (argc >= 8 && strcmp(argv[7], "--mirror") == 0) {
+            mirror = true;
+        }
+
         QList<QImage> images;
         int maxW = 0, maxH = 0;
         for (const QString &path : inputs) {
             QImage img(path);
             if (img.isNull()) continue;
+            if (mirror) img = img.flipped(Qt::Horizontal);
             images << img;
             maxW = qMax(maxW, img.width());
             maxH = qMax(maxH, img.height());
@@ -88,6 +96,18 @@ int main(int argc, char *argv[]) {
             std::cout << output.toStdString() << std::endl;
         }
         
+    } else if (cmd == "mirror") {
+        if (argc < 3) return 1;
+        QString path = argv[2];
+        QImage img(path);
+        if (img.isNull()) {
+            std::cerr << "mirror: cannot open " << path.toStdString() << std::endl;
+            return 1;
+        }
+        img = img.flipped(Qt::Horizontal); // horizontal flip
+        img.save(path, "JPG", 95);
+        std::cout << "mirrored" << std::endl;
+
     } else if (cmd == "setup") {
         QString home = qgetenv("HOME");
         QDir().mkpath(home + "/Pictures/PhotoBooth");

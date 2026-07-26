@@ -1515,16 +1515,17 @@ private:
             if (action == "burst") {
                 QJsonArray inFiles = req["inputs"].toArray();
                 QString outImg = req["output"].toString();
+                bool mirror = req["mirror"].toBool(false);
 
-                std::thread([this, client, reqId, inFiles, outImg]() {
+                std::thread([this, client, reqId, inFiles, outImg, mirror]() {
                     QStringList inputs;
                     for (auto f : inFiles) inputs << f.toString();
-                    QString res = handlePhotoboothBurst(inputs, outImg);
+                    QString res = handlePhotoboothBurst(inputs, outImg, mirror);
                     QMetaObject::invokeMethod(this, [this, client, reqId, res]() {
                         sendResponse(client, reqId, res);
                     });
                 }).detach();
-            } 
+            }
             else if (action == "setup") {
                 QString home = qgetenv("HOME");
                 QDir().mkpath(home + "/Pictures/PhotoBooth");
@@ -1541,7 +1542,23 @@ private:
             else if (action == "get_session") {
                 sendResponse(client, reqId, getPhotoboothSession());
             }
+            else if (action == "mirror") {
+                QString path = req["path"].toString();
+                if (!path.isEmpty()) {
+                    QImage img(path);
+                    if (!img.isNull()) {
+                        img = img.flipped(Qt::Horizontal);
+                        img.save(path, "JPG", 95);
+                        sendResponse(client, reqId, "mirrored");
+                    } else {
+                        sendResponse(client, reqId, "error: cannot open image");
+                    }
+                } else {
+                    sendResponse(client, reqId, "error: no path");
+                }
+            }
         }
+
         // ---------------------------------------------------------------------
         // FOCUSTIME ROUTING
         // ---------------------------------------------------------------------
@@ -2075,12 +2092,13 @@ private:
         return QJsonArray();
     }
 
-    QString handlePhotoboothBurst(const QStringList& inputs, const QString& output) {
+    QString handlePhotoboothBurst(const QStringList& inputs, const QString& output, bool mirror = false) {
         QList<QImage> images;
         int maxW = 0, maxH = 0;
         for (const QString &path : inputs) {
             QImage img(path);
             if (img.isNull()) continue;
+            if (mirror) img = img.flipped(Qt::Horizontal);
             images << img;
             maxW = qMax(maxW, img.width());
             maxH = qMax(maxH, img.height());

@@ -47,6 +47,7 @@ Item {
 
     property int  burstCount: 0
     property var  burstFiles: []
+    property var  pendingSinglePath: ""
 
 
 
@@ -198,8 +199,8 @@ Item {
         window.flashActive = true
         flashTimer.restart()
         let path = Quickshell.env("HOME") + "/Pictures/PhotoBooth/photo_" + Date.now() + ".jpg"
+        window.pendingSinglePath = path
         imageCapture.captureToFile(path)
-        addCaptureToRoll(path)
     }
 
     function stitchBurst() {
@@ -209,7 +210,7 @@ Item {
         let inFiles = []
         for (let f of window.burstFiles) inFiles.push(f)
         
-        Components.QsDaemonClient.sendRequest("photobooth", "burst", { inputs: inFiles, output: out }, function(res) {
+        Components.QsDaemonClient.sendRequest("photobooth", "burst", { inputs: inFiles, output: out, mirror: window.isMirrored }, function(res) {
             // Optimistically add to UI, backend will also persist it
             clipRollModel.insert(0, { name: fname, path: "file://" + out })
             window.burstFiles = []
@@ -229,7 +230,20 @@ Item {
         }
         imageCapture: ImageCapture {
             id: imageCapture
+            quality: ImageCapture.VeryHighQuality
             // Manual refresh handled in singleShot/stitchBurst
+            onImageSaved: (id, path) => {
+                // Only handle single-shot captures here (burst has its own flow)
+                if (path !== window.pendingSinglePath) return
+                window.pendingSinglePath = ""
+                if (window.isMirrored) {
+                    Components.QsDaemonClient.sendRequest("photobooth", "mirror", { path: path }, function(res) {
+                        window.addCaptureToRoll(path)
+                    })
+                } else {
+                    window.addCaptureToRoll(path)
+                }
+            }
         }
         recorder: MediaRecorder {
             id: recorder
