@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "watchers" as Watchers
-import "overview" as OverviewModule
+// import "overview" as OverviewModule (removed)
 
 ShellRoot {
     Connections {
@@ -79,7 +79,7 @@ ShellRoot {
                 TopBar {}
                 Floating {}
                 Keycast {}
-                OverviewModule.Overview {}
+                // OverviewModule.Overview {} (removed)
             }
         }
     }

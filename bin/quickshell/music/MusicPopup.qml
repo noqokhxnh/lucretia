@@ -70,6 +70,9 @@ Item {
     property bool userToggledPlay: false
     property bool userIsSkipping: false
     property string skippedTitle: ""
+
+    // GUARANTEED instant icon update — bypasses var binding reactivity issues
+    property bool displayIsPlaying: false
     
     // ANTI-JITTER LOCK: Prevents background polling from reverting UI during processing
     property real lastEqUpdate: 0
@@ -122,11 +125,16 @@ Item {
     // --- GLOBAL PLAY/PAUSE EVENT LISTENER ---
     property string lastMusicStatus: "Stopped"
     onMusicDataChanged: {
-        if (musicData && musicData.status && musicData.status !== lastMusicStatus) {
-            if (musicData.status === "Playing") {
-                playPulse.trigger();
+        if (musicData && musicData.status) {
+            // Keep displayIsPlaying in sync with actual data
+            root.displayIsPlaying = (musicData.status === "Playing");
+
+            if (musicData.status !== lastMusicStatus) {
+                if (musicData.status === "Playing") {
+                    playPulse.trigger();
+                }
+                lastMusicStatus = musicData.status;
             }
-            lastMusicStatus = musicData.status;
         }
     }
 
@@ -220,27 +228,25 @@ Item {
     }
         // --- UTILITIES & OPTIMISTIC UPDATES ---
     function execCmd(cmdStr) {
-        if (cmdStr.includes("preset ")) {
-            let name = cmdStr.split("preset ")[1].trim();
-            Components.QsDaemonClient.sendRequest("music", "preset", { name: name });
+        // All music controls go through playerctl directly — no daemon round-trip
+        if (cmdStr.includes("play-pause")) {
+            var p = Qt.createQmlObject('import Quickshell.Io; Process { command: ["playerctl", "play-pause"]; running: true; onExited: (c) => destroy() }', root);
+        } else if (cmdStr.includes("next")) {
+            var p = Qt.createQmlObject('import Quickshell.Io; Process { command: ["playerctl", "next"]; running: true; onExited: (c) => destroy() }', root);
+        } else if (cmdStr.includes("prev")) {
+            var p = Qt.createQmlObject('import Quickshell.Io; Process { command: ["playerctl", "previous"]; running: true; onExited: (c) => destroy() }', root);
         } else if (cmdStr.includes("seek ")) {
             let parts = cmdStr.split("seek ")[1].trim().split(" ");
-            let pos = parts[0];
-            let len = parts[1] || "0";
-            Components.QsDaemonClient.sendRequest("music", "control", { command: "seek", arg1: pos, arg2: len });
-        } else if (cmdStr.includes("prev")) {
-            Components.QsDaemonClient.sendRequest("music", "control", { command: "prev" });
-        } else if (cmdStr.includes("play-pause")) {
-            Components.QsDaemonClient.sendRequest("music", "control", { command: "play-pause" });
-        } else if (cmdStr.includes("next")) {
-            Components.QsDaemonClient.sendRequest("music", "control", { command: "next" });
+            let pct = parts[0]; let len = parts[1] || "0";
+            let target = (len * pct) / 100.0;
+            var p = Qt.createQmlObject('import Quickshell.Io; Process { command: ["playerctl", "position", "' + target.toFixed(2) + '"]; running: true; onExited: (c) => destroy() }', root);
+        } else if (cmdStr.includes("preset ")) {
+            Components.QsDaemonClient.sendRequest("music", "preset", { name: cmdStr.split("preset ")[1].trim() });
         } else if (cmdStr.includes("apply")) {
             Components.QsDaemonClient.sendRequest("music", "apply", {});
         } else if (cmdStr.includes("set_band ")) {
             let parts = cmdStr.split("set_band ")[1].trim().split(" ");
-            let band = parts[0];
-            let val = parts[1];
-            Components.QsDaemonClient.sendRequest("music", "set_band", { band: band, val: val });
+            Components.QsDaemonClient.sendRequest("music", "set_band", { band: parts[0], val: parts[1] });
         }
     }
 
@@ -272,10 +278,10 @@ Item {
         }
     }
 
-    // --- DATA POLLING ---
+    // --- DATA POLLING: Direct playerctl via Process (bypasses daemon) ---
     Timer {
         id: seekDebounceTimer
-        interval: 2500 
+        interval: 2500
         onTriggered: root.userIsSeeking = false
     }
 
@@ -299,26 +305,85 @@ Item {
         });
     }
 
-    Connections {
-        target: Components.QsDaemonClient
-        
-        function onMusicStateReceived(payload) {
-            if (payload) {
-                if (root.userToggledPlay) {
-                    let dataCopy = Object.assign({}, payload);
-                    dataCopy.status = root.musicData.status;
-                    root.musicData = dataCopy;
-                } else if (root.userIsSkipping) {
-                    if (payload.title !== root.musicData.title && payload.title !== root.skippedTitle && payload.title !== "Loading...") {
-                        root.userIsSkipping = false;
-                        root.musicData = payload;
+    // 500ms poll — same pattern as the reference repo
+    Timer {
+        id: musicPollTimer
+        interval: 500
+        running: true
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: {
+            if (!musicPollProc.running) musicPollProc.running = true;
+        }
+    }
+
+    Process {
+        id: musicPollProc
+        running: true
+        command: ["bash", "-c", "STATUS=$(playerctl status 2>/dev/null); if [ \"$STATUS\" = \"Playing\" ] || [ \"$STATUS\" = \"Paused\" ]; then META=$(playerctl metadata --format 'TITLE={{title}}\nARTIST={{artist}}\nLEN={{mpris:length}}\nPOS={{position}}\nART={{mpris:artUrl}}\nPN={{playerName}}' 2>/dev/null); echo \"$STATUS|$META\"; else echo \"Stopped|\"; fi"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                var raw = (this.text || "").trim();
+                var pipeIdx = raw.indexOf("|");
+                if (pipeIdx < 0) return;
+                var status = raw.substring(0, pipeIdx);
+                var meta = raw.substring(pipeIdx + 1);
+
+                if (status === "Playing" || status === "Paused") {
+                    var lines = meta.split("\n");
+                    var fields = {};
+                    for (var i = 0; i < lines.length; i++) {
+                        var eq = lines[i].indexOf("=");
+                        if (eq > 0) fields[lines[i].substring(0, eq)] = lines[i].substring(eq + 1);
                     }
+
+                    var title = fields["TITLE"] || "Unknown";
+                    var artist = fields["ARTIST"] || "Unknown";
+                    var lenMicro = parseInt(fields["LEN"]) || 1000000;
+                    var posMicro = parseInt(fields["POS"]) || 0;
+                    var artUrl = fields["ART"] || "";
+                    var playerName = fields["PN"] || "";
+
+                    var lenSec = Math.floor(lenMicro / 1000000);
+                    var posSec = Math.floor(posMicro / 1000000);
+                    var pct = lenSec > 0 ? Math.floor((posSec * 100) / lenSec) : 0;
+                    if (pct > 100) pct = 100;
+
+                    var lenStr = String(Math.floor(lenSec / 60)).padStart(2, "0") + ":" + String(lenSec % 60).padStart(2, "0");
+                    var posStr = String(Math.floor(posSec / 60)).padStart(2, "0") + ":" + String(posSec % 60).padStart(2, "0");
+
+                    var newData = Object.assign({}, root.musicData, {
+                        title: title, artist: artist, status: status,
+                        percent: pct, length: lenSec, position: posSec,
+                        lengthStr: lenStr, positionStr: posStr, timeStr: posStr + " / " + lenStr,
+                        source: playerName, playerName: playerName
+                    });
+
+                    if (root.userToggledPlay) newData.status = root.musicData.status;
+                    if (root.userIsSkipping) {
+                        if (newData.title !== root.musicData.title && newData.title !== root.skippedTitle && newData.title !== "Loading...") {
+                            root.userIsSkipping = false;
+                        } else {
+                            return;
+                        }
+                    }
+
+                    root.musicData = newData;
                 } else {
-                    root.musicData = payload;
+                    if (!root.userToggledPlay) {
+                        root.musicData = Object.assign({}, root.musicData, {
+                            status: "Stopped", percent: 0, title: "Not Playing", artist: ""
+                        });
+                    }
                 }
             }
         }
-        
+    }
+
+    Connections {
+        target: Components.QsDaemonClient
+
+        // EQ still comes from daemon
         function onEqStateReceived(payload) {
             if (Date.now() - root.lastEqUpdate < 2000) return;
             if (payload) {
@@ -910,6 +975,10 @@ Item {
                                 onClicked: {
                                     root.userToggledPlay = true;
                                     playDebounceTimer.restart();
+
+                                    // INSTANT icon flip — no binding delay possible
+                                    root.displayIsPlaying = !root.displayIsPlaying;
+
                                     var temp = Object.assign({}, root.musicData);
                                     temp.status = (temp.status === "Playing" ? "Paused" : "Playing");
                                     root.musicData = temp;
@@ -952,7 +1021,7 @@ Item {
 
                                 Text { 
                                     anchors.centerIn: parent
-                                    text: root.musicData.status === "Playing" ? "" : ""
+                                    text: root.displayIsPlaying ? "" : ""
                                     color: parent.pressed ? root.pink : root.mauve
                                     font.family: "Iosevka Nerd Font"
                                     font.pixelSize: root.s(42) 

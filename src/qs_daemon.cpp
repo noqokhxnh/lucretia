@@ -1281,7 +1281,7 @@ public:
         // Periodically broadcast music position/track state to subscribed clients
         QTimer* musicTimer = new QTimer(this);
         connect(musicTimer, &QTimer::timeout, this, &DaemonServer::broadcastMusicData);
-        musicTimer->start(5000);
+        musicTimer->start(2000);
     }
 
 private slots:
@@ -1410,6 +1410,8 @@ private:
             } else if (action == "control") {
                 musicSvc->handleControl(req["command"].toString(), req["arg1"].toString(), req["arg2"].toString());
                 sendResponse(client, reqId, "controlled");
+                // Immediately push the updated state to all subscribers instead of waiting for the polling timer
+                broadcastMusicData();
             } else if (action == "get_eq") {
                 sendResponse(client, reqId, musicSvc->getEqState());
             } else if (action == "set_band") {

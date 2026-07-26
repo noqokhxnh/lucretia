@@ -618,6 +618,15 @@ Variants {
                     }
                 }
             }
+            Timer {
+                id: batteryFallbackPoller
+                interval: 30000
+                running: true
+                repeat: true
+                onTriggered: {
+                    if (!batteryPoller.running) batteryPoller.running = true;
+                }
+            }
 
             Process {
                 id: weatherPoller

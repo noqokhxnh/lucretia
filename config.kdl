@@ -33,6 +33,7 @@ input {
 layout {
     gaps 12
     center-focused-column "never"
+    background-color "transparent"
     
     preset-column-widths {
         proportion 0.33333
@@ -85,6 +86,12 @@ window-rule {
     match title=r#"Counter-Strike 2"#
     match app-id=r#"^cs2$"#
     open-fullscreen true
+}
+
+// --- Overview: place wallpaper into backdrop ---
+layer-rule {
+    match namespace="^awww-daemon$"
+    place-within-backdrop true
 }
 
 binds {
