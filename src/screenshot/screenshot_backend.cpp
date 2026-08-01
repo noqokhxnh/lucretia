@@ -24,6 +24,7 @@
 #include <ctime>
 #include <iostream>
 #include <vector>
+#include <string>
 #include <climits>
 #include <algorithm>
 
@@ -467,9 +468,19 @@ static void scan_qr(const char* inputPath) {
                 min_x=std::min(min_x,px); max_x=std::max(max_x,px);
                 min_y=std::min(min_y,py); max_y=std::max(max_y,py);
             }
+            // Escape payload like the old Python parser: '\' -> '\\', '\n' -> literal "\n", drop '\r'.
+            std::string data = sym->get_data();
+            std::string encoded;
+            encoded.reserve(data.size());
+            for (char c : data) {
+                if (c == '\\')      encoded += "\\\\";
+                else if (c == '\n') encoded += "\\n";
+                else if (c == '\r') continue;
+                else                encoded += c;
+            }
             std::cout << min_x << ',' << min_y << ','
                       << (max_x-min_x) << ',' << (max_y-min_y)
-                      << "|||" << sym->get_data() << '\n';
+                      << "|||" << encoded << '\n';
         }
         return true;
     };

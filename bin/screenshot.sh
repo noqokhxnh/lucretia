@@ -47,7 +47,7 @@ if ! command -v notify-send &> /dev/null; then
     exit 1
 fi
 
-REQUIRED_CMDS=("gpu-screen-recorder" "grim" "satty" "wl-copy" "pactl" "quickshell" "zbarimg" "python3")
+REQUIRED_CMDS=("gpu-screen-recorder" "grim" "satty" "wl-copy" "pactl" "quickshell")
 MISSING_CMDS=()
 
 for cmd in "${REQUIRED_CMDS[@]}"; do
@@ -121,70 +121,19 @@ if [ "$SCAN_QR_MODE" = true ]; then
     
     echo "=== QR SCAN INITIATED $(date) ===" > "$DEBUG_LOG"
     
-    if ! command -v zbarimg &> /dev/null; then
-        echo -e "0,0,0,0|||ERROR: zbarimg is not installed. Please install it." > "$RES_FILE"
+    # C++ backend (libpng + zbar) — replaces the old zbarimg + python XML parse pipeline
+    SB_BIN="$(dirname "${BASH_SOURCE[0]}")/quickshell/screenshot/screenshot_backend"
+    if [ ! -x "$SB_BIN" ]; then
+        echo -e "0,0,0,0|||ERROR: screenshot_backend is not built. Please install it." > "$RES_FILE"
         exit 1
     fi
 
     TMP_IMG="$QS_RUN_SCREENSHOT/qr_temp_$$.png"
     grim -g "$GEOMETRY" "$TMP_IMG"
     
-    export XML_OUT=$(zbarimg --xml -q "$TMP_IMG" 2>>"$DEBUG_LOG")
+    "$SB_BIN" scan "$TMP_IMG" > "$RES_FILE" 2>>"$DEBUG_LOG"
     
-    if [ -n "$XML_OUT" ]; then
-        python3 << 'EOF' > "$RES_FILE"
-import os, sys, logging, re
-import xml.etree.ElementTree as ET
-
-debug_log = os.environ.get("DEBUG_LOG", "/tmp/qs_qr_debug.log")
-logging.basicConfig(filename=debug_log, level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
-
-raw_xml = os.environ.get("XML_OUT", "")
-if not raw_xml.strip():
-    print("0,0,0,0|||ERROR: Empty output from zbarimg. See log.")
-    sys.exit(0)
-
-try:
-    xml_clean = re.sub(r'\sxmlns="[^"]+"', '', raw_xml)
-    xml_clean = re.sub(r"\sxmlns='[^']+'", '', xml_clean)
-    tree = ET.fromstring(xml_clean)
-    
-    found_any = False
-    for elem in tree.iter():
-        if elem.tag.endswith('symbol'):
-            found_any = True
-            data_text = ''
-            min_x, min_y, max_x, max_y = float('inf'), float('inf'), -float('inf'), -float('inf')
-            
-            for child in elem:
-                if child.tag.endswith('data'):
-                    data_text = child.text if child.text else ''
-                elif child.tag.endswith('polygon'):
-                    pts_str = child.get('points', '')
-                    if pts_str:
-                        pt_pairs = pts_str.replace('+', '').split(' ')
-                        for pair in pt_pairs:
-                            if ',' in pair:
-                                try:
-                                    x_str, y_str = pair.split(',')
-                                    x, y = int(x_str), int(y_str)
-                                    min_x = min(min_x, x)
-                                    max_x = max(max_x, x)
-                                    min_y = min(min_y, y)
-                                    max_y = max(max_y, y)
-                                except ValueError:
-                                    pass
-            
-            if min_x == float('inf'): min_x, min_y, max_x, max_y = 0, 0, 0, 0
-            w, h = max_x - min_x, max_y - min_y
-            encoded = data_text.replace('\\', '\\\\').replace('\n', '\\n').replace('\r', '')
-            print(f"{int(min_x)},{int(min_y)},{int(w)},{int(h)}|||{encoded}")
-
-    if not found_any: print("0,0,0,0|||NOT_FOUND")
-except Exception as e:
-    print(f"0,0,0,0|||ERROR: XML Parse failure: {e}. Check log.")
-EOF
-    else
+    if [ ! -s "$RES_FILE" ]; then
         echo -e "0,0,0,0|||NOT_FOUND" > "$RES_FILE"
     fi
     
