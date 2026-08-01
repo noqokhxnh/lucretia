@@ -63,33 +63,6 @@ namespace fs = std::filesystem;
 // -----------------------------------------------------------------------------
 // GLOBAL VARS & CONFIG
 // -----------------------------------------------------------------------------
-const std::pair<QColor, QColor> GRADIENTS[] = {
-    {QColor("#cba6f7"), QColor("#89b4fa")}, // Catppuccin Pastel (Mauve to Blue)
-    {QColor("#f38ba8"), QColor("#cba6f7")}, // Catppuccin Sunset (Red to Mauve)
-    {QColor("#f72585"), QColor("#7209b7")}, // Cyber Neon (Pink to Purple)
-    {QColor("#3a7bd5"), QColor("#3a6073")}, // Premium Slate Blue
-    {QColor("#00c6ff"), QColor("#0072ff")}, // Vibrant Azure
-    {QColor("#ff007f"), QColor("#7f00ff")}, // Electric Magenta to Violet
-    {QColor("#a1c4fd"), QColor("#c2e9fb")}, // Elegant Ice Blue
-    {QColor("#111726"), QColor("#2d3c59")}, // Luxury Stealth Navy
-    {QColor("#fc6767"), QColor("#ec008c")}, // Warm Neon Sunset
-    {QColor("#642B73"), QColor("#C6426E")}, // Plum Velvet
-    {QColor("#243B55"), QColor("#141E30")}, // Matte Space Gray
-    {QColor("#00F260"), QColor("#0575E6")}, // Mint Aurora to Deep Sea
-    {QColor("#fa709a"), QColor("#fee140")}, // Soft Coral Pink to Lemon
-    {QColor("#1e3c72"), QColor("#2a5298")}, // Deep Royal Navy
-    {QColor("#ee0979"), QColor("#ff6a00")}, // High-voltage Citrus
-    {QColor("#8A2387"), QColor("#E94057")}, // Cosmic Berry
-    {QColor("#ff758c"), QColor("#ff7eb3")}, // Sweet Rose Water
-    {QColor("#ff9900"), QColor("#ff5b00")}, // Golden Ember
-    {QColor("#4facfe"), QColor("#00f2fe")}, // Cool Aqua
-    {QColor("#b224ef"), QColor("#7579ff")}, // Psychedelic Violet
-    {QColor("#0250c5"), QColor("#d43f8d")}, // Intense Purple-Pink
-    {QColor("#85FFBD"), QColor("#FFFB7D")}, // Fresh Spring Mint
-    {QColor("#130CB7"), QColor("#52E5E7")}, // Futuristic Deep Blue to Cyan
-    {QColor("#F40076"), QColor("#DF580A")}  // Ignite Orange-Pink
-};
-constexpr int GRADIENT_COUNT = sizeof(GRADIENTS) / sizeof(GRADIENTS[0]);
 
 std::map<std::string, std::string> LANG_MAP = {
     {"vi", "vi"}, {"viet", "vi"}, {"vietnamese", "vi"}, {"tieng viet", "vi"},
@@ -1578,9 +1551,9 @@ private:
                 QString output = req["output"].toString();
 
                 std::thread([this, client, reqId, input, output]() {
-                    handleScreenshotBeautify(input, output);
-                    QMetaObject::invokeMethod(this, [this, client, reqId]() {
-                        sendResponse(client, reqId, "ok");
+                    QString res = handleScreenshotBeautify(input, output);
+                    QMetaObject::invokeMethod(this, [this, client, reqId, res]() {
+                        sendResponse(client, reqId, res);
                     });
                 }).detach();
             } 
@@ -2130,108 +2103,25 @@ private:
     }
 
     // 6. SCREENSHOTS & QR SCAN
-    void handleScreenshotBeautify(const QString& inputPath, const QString& outputPath) {
-        QImage input;
-        if (!input.load(inputPath)) return;
+    QString handleScreenshotBeautify(const QString& inputPath, const QString& outputPath) {
+        if (!QFile::exists(inputPath))
+            return "error: input image missing";
 
-        int iw = input.width();
-        double scale = (iw > 1600) ? 1.0 : (iw > 1000) ? 1.5 : 2.0;
-
-        QImage screenshot;
-        if (scale == 1.0) {
-            screenshot = std::move(input);
-        } else {
-            screenshot = input.scaled(
-                (int)(iw * scale), (int)(input.height() * scale),
-                Qt::IgnoreAspectRatio, Qt::FastTransformation
-            );
-            input = QImage();
+        // Single source of truth: the C++ libpng backend (screenshot_backend beautify).
+        QString bin = QCoreApplication::applicationDirPath() + "/screenshot/screenshot_backend";
+        QProcess proc;
+        proc.start(bin, {"beautify", inputPath, outputPath});
+        if (!proc.waitForStarted(5000))
+            return "error: beautify backend not found";
+        if (!proc.waitForFinished(30000)) {
+            proc.kill();
+            return "error: beautify timed out";
         }
-
-        const int sw = screenshot.width();
-        const int sh = screenshot.height();
-        const int bar_h  = (int)(32 * scale);
-        const int padding = (int)(60 * scale);
-        const int radius  = (int)(14 * scale);
-        const int b_rad   = (int)(7  * scale);
-        const int combined_h = sh + bar_h;
-
-        // Round window image
-        QImage combined(sw, combined_h, QImage::Format_ARGB32_Premultiplied);
-        combined.fill(Qt::transparent);
-
-        {
-            QPainter p(&combined);
-            p.setRenderHint(QPainter::Antialiasing);
-
-            QPainterPath path;
-            path.addRoundedRect(0, 0, sw, combined_h, radius, radius);
-            p.setClipPath(path);
-
-            p.fillRect(0, 0, sw, bar_h, QColor("#1e1e1e"));
-
-            // macOS Traffic lights
-            p.setPen(Qt::NoPen);
-            const int btn_y  = (int)(16 * scale);
-            const int btn_d  = b_rad * 2;
-            p.setBrush(QColor("#FF5F56"));
-            p.drawEllipse((int)(24 * scale) - b_rad, btn_y - b_rad, btn_d, btn_d);
-            p.setBrush(QColor("#FFBD2E"));
-            p.drawEllipse((int)(46 * scale) - b_rad, btn_y - b_rad, btn_d, btn_d);
-            p.setBrush(QColor("#27C93F"));
-            p.drawEllipse((int)(68 * scale) - b_rad, btn_y - b_rad, btn_d, btn_d);
-
-            p.drawImage(0, bar_h, screenshot);
-        }
-        screenshot = QImage();
-
-        // Final composite
-        const int final_w = sw + padding * 2;
-        const int final_h = combined_h + padding * 2;
-
-        QImage finalImg(final_w, final_h, QImage::Format_RGB32);
-
-        {
-            QPainter p_f(&finalImg);
-
-            // Select Gradient
-            std::srand((unsigned)std::time(nullptr));
-            const auto& gp = GRADIENTS[std::rand() % GRADIENT_COUNT];
-
-            QLinearGradient grad(0, 0, final_w, final_h);
-            grad.setColorAt(0, gp.first);
-            grad.setColorAt(1, gp.second);
-            p_f.fillRect(finalImg.rect(), grad);
-
-            // Smooth blurred shadow (8x downscale box blur approach)
-            constexpr int BLK = 8;
-            const int ssw = (final_w + BLK - 1) / BLK;
-            const int ssh = (final_h + BLK - 1) / BLK;
-
-            QImage shadowBuf(ssw, ssh, QImage::Format_ARGB32_Premultiplied);
-            shadowBuf.fill(Qt::transparent);
-            {
-                QPainter ps(&shadowBuf);
-                ps.setRenderHint(QPainter::Antialiasing);
-                ps.setBrush(QColor(0, 0, 0, 100));
-                ps.setPen(Qt::NoPen);
-                ps.drawRoundedRect(
-                    QRectF((double)padding / BLK,
-                           (double)(padding + 10 * scale) / BLK,
-                           (double)sw / BLK,
-                           (double)combined_h / BLK),
-                    (double)radius / BLK, (double)radius / BLK
-                );
-            }
-            p_f.drawImage(QRect(0, 0, final_w, final_h),
-                          shadowBuf.scaled(final_w, final_h,
-                                           Qt::IgnoreAspectRatio,
-                                           Qt::SmoothTransformation));
-
-            p_f.drawImage(padding, padding, combined);
-        }
-
-        finalImg.save(outputPath, "PNG", 50);
+        if (proc.exitStatus() != QProcess::NormalExit || proc.exitCode() != 0)
+            return "error: beautify failed (exit " + QString::number(proc.exitCode()) + ")";
+        if (!QFile::exists(outputPath) || QFileInfo(outputPath).size() <= 0)
+            return "error: output file missing";
+        return "ok";
     }
 
     QString handleScreenshotScanQr(const QString& inputPath) {

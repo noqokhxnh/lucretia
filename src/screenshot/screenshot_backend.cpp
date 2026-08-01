@@ -25,6 +25,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <functional>
 #include <climits>
 #include <algorithm>
 
@@ -154,15 +155,18 @@ static inline void blend_over(uint8_t* dst, uint8_t sr, uint8_t sg, uint8_t sb, 
 
 static void draw_ellipse(Image& img, int cx, int cy, int rx, int ry,
                           uint8_t r, uint8_t g, uint8_t b) {
+    const double maxr = (double)std::max(rx, ry);
     for (int dy = -ry; dy <= ry; ++dy) {
         for (int dx = -rx; dx <= rx; ++dx) {
             double nx = (double)dx / rx;
             double ny = (double)dy / ry;
-            if (nx*nx + ny*ny > 1.0) continue;
+            double d2 = nx*nx + ny*ny;
+            if (d2 > 1.0) continue;
             int px = cx + dx, py = cy + dy;
             if (px < 0 || py < 0 || px >= img.w || py >= img.h) continue;
-            uint8_t* p = img.at(px, py);
-            p[0]=r; p[1]=g; p[2]=b; p[3]=255;
+            // Antialiased edge: coverage ramps over ~1px near the outline
+            double cov = std::clamp((1.0 - std::sqrt(d2)) * maxr + 0.5, 0.0, 1.0);
+            blend_over(img.at(px, py), r, g, b, (uint8_t)(cov * 255.0 + 0.5));
         }
     }
 }
@@ -176,12 +180,12 @@ static void apply_rounded_mask(Image& img, int radius) {
     int w = img.w, h = img.h;
     for (int y = 0; y < h; ++y) {
         for (int x = 0; x < w; ++x) {
-            // Corner SDF
+            // Corner SDF with a smooth 1px edge: coverage 1 inside, 0 outside
             int cx = std::max(0, std::max(radius - x - 1, x - (w - radius)));
             int cy = std::max(0, std::max(radius - y - 1, y - (h - radius)));
-            if (cx*cx + cy*cy > radius*radius) {
-                img.at(x, y)[3] = 0;
-            }
+            double dist = std::sqrt((double)cx * cx + (double)cy * cy);
+            double cov = std::clamp((double)radius - dist + 0.5, 0.0, 1.0);
+            img.at(x, y)[3] = (uint8_t)(img.at(x, y)[3] * cov + 0.5);
         }
     }
 }
@@ -225,76 +229,6 @@ static void fill_gradient(Image& img, Color3 c0, Color3 c1) {
 // Nhanh hơn Gaussian nhưng trông vẫn mịn ổn
 // ─────────────────────────────────────────────────────────────────────────────
 
-static void draw_shadow(Image& dst, int x0, int y0, int sw, int sh,
-                         int radius_px, int blur, uint8_t alpha) {
-    // Tạo shadow buffer nhỏ rồi scale up — như code Qt cũ (BLK=8)
-    constexpr int BLK = 8;
-    int bw = (dst.w + BLK - 1) / BLK;
-    int bh = (dst.h + BLK - 1) / BLK;
-
-    std::vector<float> shadow(bw * bh, 0.0f);
-
-    // Vẽ filled rect vào buffer nhỏ
-    int bx0 = x0 / BLK, by0 = (y0 + 10) / BLK;  // offset shadow xuống 10px
-    int bx1 = (x0 + sw) / BLK, by1 = (y0 + sh) / BLK;
-    int br  = radius_px / BLK;
-
-    for (int by = by0; by <= by1 && by < bh; ++by) {
-        for (int bx = bx0; bx <= bx1 && bx < bw; ++bx) {
-            // Rounded corner check
-            int lcx = std::max(0, std::max(bx0 + br - bx - 1, bx - (bx1 - br)));
-            int lcy = std::max(0, std::max(by0 + br - by - 1, by - (by1 - br)));
-            if (lcx*lcx + lcy*lcy <= br*br) {
-                shadow[by * bw + bx] = 1.0f;
-            }
-        }
-    }
-
-    // Box blur 2 lần trên buffer nhỏ
-    std::vector<float> tmp(bw * bh, 0.0f);
-    int bblur = std::max(1, blur / BLK);
-    for (int pass = 0; pass < 2; ++pass) {
-        // horizontal
-        for (int by = 0; by < bh; ++by) {
-            float sum = 0; int cnt = 0;
-            for (int bx = -bblur; bx <= bblur; ++bx) {
-                int nx = bx;
-                if (nx >= 0 && nx < bw) { sum += shadow[by*bw+nx]; cnt++; }
-            }
-            for (int bx = 0; bx < bw; ++bx) {
-                tmp[by*bw+bx] = cnt > 0 ? sum/cnt : 0;
-                int add = bx+bblur+1; if (add < bw) { sum += shadow[by*bw+add]; cnt++; }
-                int rem = bx-bblur;   if (rem >= 0) { sum -= shadow[by*bw+rem]; cnt--; }
-            }
-        }
-        // vertical
-        for (int bx = 0; bx < bw; ++bx) {
-            float sum = 0; int cnt = 0;
-            for (int by = -bblur; by <= bblur; ++by) {
-                int ny = by;
-                if (ny >= 0 && ny < bh) { sum += tmp[ny*bw+bx]; cnt++; }
-            }
-            for (int by = 0; by < bh; ++by) {
-                shadow[by*bw+bx] = cnt > 0 ? sum/cnt : 0;
-                int add = by+bblur+1; if (add < bh) { sum += tmp[add*bw+bx]; cnt++; }
-                int rem = by-bblur;   if (rem >= 0) { sum -= tmp[rem*bw+bx]; cnt--; }
-            }
-        }
-    }
-
-    // Upscale và blend vào dst
-    for (int y = 0; y < dst.h; ++y) {
-        uint8_t* drow = dst.row(y);
-        int by = std::min(y / BLK, bh - 1);
-        for (int x = 0; x < dst.w; ++x) {
-            int bx = std::min(x / BLK, bw - 1);
-            float v = shadow[by * bw + bx];
-            if (v <= 0.001f) continue;
-            uint8_t sa = (uint8_t)(v * alpha);
-            blend_over(drow + x*4, 0, 0, 0, sa);
-        }
-    }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Composite: vẽ src (RGBA) lên dst tại offset (ox, oy)
@@ -361,20 +295,28 @@ constexpr int GRADIENT_COUNT = (int)(sizeof(GRADIENTS)/sizeof(GRADIENTS[0]));
 // BEAUTIFY
 // ─────────────────────────────────────────────────────────────────────────────
 
-static void beautify(const char* inputPath, const char* outputPath) {
-    Image input = load_png(inputPath);
-    if (!input.ok()) { std::cerr << "Failed to load: " << inputPath << '\n'; return; }
 
-    const int sw = input.w;
-    const int sh = input.h;
-    const double uiScale = std::max(1.0, sw / 1920.0);
-    const int bar_h   = (int)(32 * uiScale);
-    const int padding = (int)(60 * uiScale);
-    const int radius  = (int)(14 * uiScale);
-    const int b_rad   = (int)(7  * uiScale);
+// -----------------------------------------------------------------------------
+// BEAUTIFY (single source of truth; the Qt daemon execs this binary)
+// -----------------------------------------------------------------------------
+
+static bool beautify(const char* inputPath, const char* outputPath) {
+    Image input = load_png(inputPath);
+    if (!input.ok()) { std::cerr << "Failed to load: " << inputPath << '\n'; return false; }
+
+    // Native-resolution output (no content upscaling): zooming stays as
+    // sharp as the source capture.
+    Image src = std::move(input);
+
+    const int sw = src.w;
+    const int sh = src.h;
+    const int bar_h   = 32;
+    const int padding = 60;
+    const int radius  = 14;
+    const int b_rad   = 7;
     const int combined_h = sh + bar_h;
 
-    // ── Bước 1: Decorated window (title bar + screenshot) ────────────────
+    // -- Buoc 1: Decorated window (title bar + screenshot) --
     Image combined;
     combined.w = sw; combined.h = combined_h;
     combined.px.assign((size_t)sw * combined_h * 4, 0);
@@ -393,24 +335,23 @@ static void beautify(const char* inputPath, const char* outputPath) {
         }
     }
 
-    // Copy screenshot vào bên dưới title bar
+    // Copy screenshot xuong duoi title bar
     for (int y = 0; y < sh; ++y) {
-        memcpy(combined.row(bar_h + y), input.row(y), sw * 4);
-        // Đảm bảo alpha = 255 (grim output thường là RGB)
+        memcpy(combined.row(bar_h + y), src.row(y), sw * 4);
         uint8_t* r = combined.row(bar_h + y);
         for (int x = 0; x < sw; ++x) r[x*4+3] = 255;
     }
 
     // Traffic light buttons
-    const int btn_y = (int)(16 * uiScale);
-    draw_ellipse(combined, (int)(24*uiScale), btn_y, b_rad, b_rad, 0xFF, 0x5F, 0x56);
-    draw_ellipse(combined, (int)(46*uiScale), btn_y, b_rad, b_rad, 0xFF, 0xBD, 0x2E);
-    draw_ellipse(combined, (int)(68*uiScale), btn_y, b_rad, b_rad, 0x27, 0xC9, 0x3F);
+    const int btn_y = 16;
+    draw_ellipse(combined, 24, btn_y, b_rad, b_rad, 0xFF, 0x5F, 0x56);
+    draw_ellipse(combined, 46, btn_y, b_rad, b_rad, 0xFF, 0xBD, 0x2E);
+    draw_ellipse(combined, 68, btn_y, b_rad, b_rad, 0x27, 0xC9, 0x3F);
 
     // Rounded corners mask
     apply_rounded_mask(combined, radius);
 
-    // ── Bước 2: Final image với gradient + shadow ────────────────────────
+    // -- Buoc 2: Final image voi gradient + shadow --
     const int final_w = sw + padding * 2;
     const int final_h = combined_h + padding * 2;
 
@@ -418,19 +359,17 @@ static void beautify(const char* inputPath, const char* outputPath) {
     finalImg.w = final_w; finalImg.h = final_h;
     finalImg.px.resize((size_t)final_w * final_h * 4);
 
-    // Random gradient
-    std::srand((unsigned)std::time(nullptr));
-    int gi = std::rand() % GRADIENT_COUNT;
+    // Deterministic gradient: hash of the input path. Same file -> same look;
+    // different captures -> variety. No randomness.
+    std::size_t hsh = std::hash<std::string>{}(std::string(inputPath));
+    int gi = (int)(hsh % GRADIENT_COUNT);
     fill_gradient(finalImg, hex(GRADIENTS[gi].a), hex(GRADIENTS[gi].b));
-
-    // Shadow
-    draw_shadow(finalImg, padding, padding, sw, combined_h, radius, 24, 110);
 
     // Composite decorated window
     composite(finalImg, combined, padding, padding);
 
-    // ── Bước 3: Save ─────────────────────────────────────────────────────
-    save_png_rgb(outputPath, finalImg, 1);
+    // -- Buoc 3: Save --
+    return save_png_rgb(outputPath, finalImg, 1);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -511,7 +450,7 @@ int main(int argc, char* argv[]) {
     if (argc < 2) return 1;
     const char* cmd = argv[1];
     if (cmd[0] == 'b' && argc >= 4) {
-        beautify(argv[2], argv[3]);
+        return beautify(argv[2], argv[3]) ? 0 : 1;
     } else if (cmd[0] == 's' && argc >= 3) {
         scan_qr(argv[2]);
     } else {

@@ -652,7 +652,7 @@ PanelWindow {
 
             AnimWrap {
                 isShown: !root.isVideoMode; contentWidth: s(36)
-                ToolbarBtn { iconTxt: "󰐃"; onClicked: root.executeCapture(false, false, true) }
+                ToolbarBtn { iconTxt: "󰁨"; onClicked: root.executeCapture(false, false, true) }
             }
 
             AnimWrap {
@@ -974,6 +974,50 @@ PanelWindow {
                 root.showQrPopup = true;
     }
 
+    // Retry daemon requests once the socket reconnects: the daemon restarts
+    // on its own, and QsDaemonClient reports null while disconnected.
+    Timer {
+        id: daemonRetryTimer
+        interval: 1200
+        repeat: false
+        property var pending: null
+        onTriggered: {
+            if (daemonRetryTimer.pending) {
+                let p = daemonRetryTimer.pending
+                daemonRetryTimer.pending = null
+                p()
+            }
+        }
+    }
+
+    function sendBeautifyRequest(input, output, filename, attempt) {
+        Components.QsDaemonClient.sendRequest("screenshot", "beautify", { input: input, output: output }, function(res) {
+            if (res === null && attempt < 3) {
+                daemonRetryTimer.pending = () => root.sendBeautifyRequest(input, output, filename, attempt + 1)
+                daemonRetryTimer.start()
+                return
+            }
+            let ok = (res === "ok");
+            let errTxt = (res === null || res === undefined) ? "daemon unreachable" : res;
+            let cmd = ok
+                ? `wl-copy < "${filename}" && notify-send -a "Screenshot" -i "${filename}" "Screenshot Beautified" "Saved to ${root.saveDir}"`
+                : `notify-send -u critical -a "Screenshot" "Error" "Beautify failed: ${errTxt}"`
+            Quickshell.execDetached(["bash", "-c", cmd])
+            Qt.quit()
+        })
+    }
+
+    function sendScanQrRequest(input, attempt) {
+        Components.QsDaemonClient.sendRequest("screenshot", "scan_qr", { input: input }, function(res) {
+            if (res === null && attempt < 3) {
+                daemonRetryTimer.pending = () => root.sendScanQrRequest(input, attempt + 1)
+                daemonRetryTimer.start()
+                return
+            }
+            root.handleQrScanResult(res)
+        })
+    }
+
         function performQrScan() {
         if (!root.hasSelection || !root.screen) {
             Quickshell.execDetached(["notify-send", "-a", "Screenshot", "QR Scanner", "Invalid selection or screen."])
@@ -991,7 +1035,7 @@ PanelWindow {
                 Quickshell.execDetached(["notify-send", "-a", "Screenshot", "QR Scanner", "Capture failed (exit " + exitCode + ")"])
                 return
             }
-            Components.QsDaemonClient.sendRequest("screenshot", "scan_qr", { input: tmpImg }, root.handleQrScanResult)
+            root.sendScanQrRequest(tmpImg, 1)
         }
         captureProc.running = true
         
@@ -1049,10 +1093,7 @@ PanelWindow {
                         Qt.quit()
                         return
                     }
-                    Components.QsDaemonClient.sendRequest("screenshot", "beautify", { input: tmpImg, output: filename }, function(res) {
-                        Quickshell.execDetached(["bash", "-c", `wl-copy < "${filename}" && notify-send -a "Screenshot" -i "${filename}" "Screenshot Beautified" "Saved to ${root.saveDir}"`])
-                        Qt.quit()
-                    })
+                    root.sendBeautifyRequest(tmpImg, filename, filename, 1)
                 }
                 captureProc.running = true
             }
