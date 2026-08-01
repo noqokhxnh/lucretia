@@ -41,7 +41,7 @@ layout {
         proportion 0.66667
     }
     
-    default-column-width { proportion 0.8; }
+    default-column-width { proportion 0.9; }
     
     focus-ring {
         width 4
@@ -131,7 +131,7 @@ binds {
     
     // --- Application Launchers ---
     Super+Return { spawn "foot"; }
-    Super+F { spawn "firefox"; }
+    Super+F {fullscreen-window; }
     Super+W { spawn "zen-browser"; }
     Super+E { spawn "nautilus"; }
     
