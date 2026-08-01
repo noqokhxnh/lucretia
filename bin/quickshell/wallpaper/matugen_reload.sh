@@ -1,39 +1,19 @@
 #!/usr/bin/env bash
 
 # ------------------------------------------------------------------------------
-# 1. Flatten Matugen v4.0 Nested JSON for Quickshell
+# 1. Flatten Matugen v4.0 Nested JSON for Quickshell (C++ helper)
 # ------------------------------------------------------------------------------
 # Updated to match your config.toml output path
+SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+FLATTEN_BIN="$SCRIPT_DIR/flatten_colors"
 QS_JSON="$HOME/.config/niri/bin/quickshell/qs_colors.json"
 
-python3 -c '
-import json
-import sys
+# Build the C++ helper on demand if it is missing (e.g. fresh clone).
+if [ ! -x "$FLATTEN_BIN" ]; then
+    bash "$SCRIPT_DIR/compile_flatten.sh" >/dev/null
+fi
 
-def flatten_colors(obj):
-    if isinstance(obj, dict):
-        if "color" in obj and isinstance(obj["color"], str):
-            return obj["color"]
-        return {k: flatten_colors(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [flatten_colors(x) for x in obj]
-    return obj
-
-target_file = sys.argv[1]
-try:
-    with open(target_file, "r") as f:
-        data = json.load(f)
-    
-    flat_data = flatten_colors(data)
-    
-    with open(target_file, "w") as f:
-        json.dump(flat_data, f, indent=4)
-        
-except FileNotFoundError:
-    pass
-except Exception as e:
-    print(f"Error flattening JSON: {e}")
-' "$QS_JSON"
+"$FLATTEN_BIN" "$QS_JSON"
 
 # ------------------------------------------------------------------------------
 # 2. Flatten Matugen v4.0 Output in Standard Text Configs

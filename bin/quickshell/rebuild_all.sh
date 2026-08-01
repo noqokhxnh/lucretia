@@ -76,4 +76,10 @@ if [ -f "updater/compile_updater.sh" ]; then
     (cd updater && bash compile_updater.sh >/dev/null)
 fi
 
+# 12. Compile wallpaper flatten_colors (Matugen JSON flattener)
+if [ -f "wallpaper/compile_flatten.sh" ]; then
+    echo "-> Compiling flatten_colors..."
+    (cd wallpaper && bash compile_flatten.sh >/dev/null)
+fi
+
 echo "=== All Quickshell C++ components rebuilt successfully! ==="
