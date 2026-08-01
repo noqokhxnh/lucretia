@@ -870,17 +870,24 @@ PanelWindow {
         }
     }
 
-        function performQrScan() {
-        if (!root.hasSelection || !root.screen) {
-            Quickshell.execDetached(["notify-send", "-a", "Screenshot", "QR Scanner", "Invalid selection or screen."])
-            return
+    // Quickshell execDetached has NO callback overload (Quickshell 0.3.0):
+    // a second argument is silently dropped. Use a Process with onExited instead,
+    // otherwise the QR scan / beautify chain would never continue.
+    Process {
+        id: captureProc
+        running: false
+        command: []
+        property var onCaptureDone: null
+        onExited: (exitCode, exitStatus) => {
+            if (captureProc.onCaptureDone) {
+                let cb = captureProc.onCaptureDone
+                captureProc.onCaptureDone = null
+                cb(exitCode)
+            }
         }
-        root.isScanningQr = true; root.showQrPopup = false; qrModel.clear()
-        
-        let tmpImg = paths.getRunDir("screenshot") + "/qr_temp.png"
-        
-        Quickshell.execDetached(["grim", "-g", root.geometryString, tmpImg], (proc) => {
-            Components.QsDaemonClient.sendRequest("screenshot", "scan_qr", { input: tmpImg }, function(res) {
+    }
+
+    function handleQrScanResult(res) {
                 root.isScanningQr = false
                 qrModel.clear()
         
@@ -965,8 +972,28 @@ PanelWindow {
 
                 root.isQrSuccess = anySuccess;
                 root.showQrPopup = true;
-            });
-        });
+    }
+
+        function performQrScan() {
+        if (!root.hasSelection || !root.screen) {
+            Quickshell.execDetached(["notify-send", "-a", "Screenshot", "QR Scanner", "Invalid selection or screen."])
+            return
+        }
+        root.isScanningQr = true; root.showQrPopup = false; qrModel.clear()
+        
+        let tmpImg = paths.getRunDir("screenshot") + "/qr_temp.png"
+        
+        captureProc.command = ["grim", "-g", root.geometryString, tmpImg]
+        captureProc.onCaptureDone = (exitCode) => {
+            if (exitCode !== 0) {
+                root.isScanningQr = false
+                root.showQrPopup = false
+                Quickshell.execDetached(["notify-send", "-a", "Screenshot", "QR Scanner", "Capture failed (exit " + exitCode + ")"])
+                return
+            }
+            Components.QsDaemonClient.sendRequest("screenshot", "scan_qr", { input: tmpImg }, root.handleQrScanResult)
+        }
+        captureProc.running = true
         
         Quickshell.execDetached(["notify-send", "-a", "Screenshot", "QR Scanner", "Scanning selected area..."])
     }   
@@ -1015,12 +1042,19 @@ PanelWindow {
             let filename = root.saveDir + "/Screenshot_" + timestamp + ".png"
             
             captureTimer.pendingCallback = () => {
-                Quickshell.execDetached(["grim", "-g", root.geometryString, tmpImg], (p) => {
+                captureProc.command = ["grim", "-g", root.geometryString, tmpImg]
+                captureProc.onCaptureDone = (exitCode) => {
+                    if (exitCode !== 0) {
+                        Quickshell.execDetached(["notify-send", "-a", "Screenshot", "Capture failed (exit " + exitCode + ")"])
+                        Qt.quit()
+                        return
+                    }
                     Components.QsDaemonClient.sendRequest("screenshot", "beautify", { input: tmpImg, output: filename }, function(res) {
                         Quickshell.execDetached(["bash", "-c", `wl-copy < "${filename}" && notify-send -a "Screenshot" -i "${filename}" "Screenshot Beautified" "Saved to ${root.saveDir}"`])
                         Qt.quit()
                     })
-                })
+                }
+                captureProc.running = true
             }
             captureTimer.start()
             return
