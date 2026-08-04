@@ -12,7 +12,6 @@
 #include <QImage>
 #include <QTextStream>
 #include <iostream>
-#include <thread>
 #include <climits>
 #include <zbar.h>
 #include <nlohmann/json.hpp>
@@ -31,6 +30,199 @@ static std::map<std::string, std::string> LANG_MAP = {
     {"it", "it"}, {"pt", "pt"}, {"ru", "ru"}, {"ar", "ar"}, {"th", "th"}
 };
 
+// -----------------------------------------------------------------------------
+// COMMAND HANDLER IMPLEMENTATIONS (Command Pattern)
+// -----------------------------------------------------------------------------
+class SysDataHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        if (action == "subscribe") {
+            server->addSysSubscriber(client);
+            server->sendResponse(client, reqId, "subscribed");
+        } else if (action == "unsubscribe") {
+            server->removeSysSubscriber(client);
+            server->sendResponse(client, reqId, "unsubscribed");
+        }
+    }
+};
+
+class MusicHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* musicSvc = server->getMusicSvc();
+        if (action == "subscribe") {
+            server->addMusicSubscriber(client);
+            server->sendResponse(client, reqId, "subscribed");
+        } else if (action == "unsubscribe") {
+            server->removeMusicSubscriber(client);
+            server->sendResponse(client, reqId, "unsubscribed");
+        } else if (action == "fetch") {
+            server->sendResponse(client, reqId, musicSvc->fetchState());
+        } else if (action == "control") {
+            musicSvc->handleControl(req["command"].toString(), req["arg1"].toString(), req["arg2"].toString());
+            server->sendResponse(client, reqId, "controlled");
+        } else if (action == "get_eq") {
+            server->sendResponse(client, reqId, musicSvc->getEqState());
+        } else if (action == "set_band") {
+            musicSvc->setEqBand(req["band"].toString(), req["val"].toString());
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "preset") {
+            musicSvc->applyPreset(req["name"].toString());
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "apply") {
+            musicSvc->applyEq();
+            server->sendResponse(client, reqId, "applied");
+        }
+    }
+};
+
+class ClipboardHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* cbMgr = server->getClipboardManager();
+        if (action == "fetch") {
+            int offset = req.contains("offset") ? req["offset"].toInt() : 0;
+            int limit = req.contains("limit") ? req["limit"].toInt() : 24;
+            QString cacheDir = req["cache_dir"].toString();
+            server->sendResponse(client, reqId, cbMgr->fetchClipboard(offset, limit, cacheDir));
+        } else if (action == "toggle-pin") {
+            cbMgr->togglePin(req["item_id"].toString(), req["cache_dir"].toString());
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "delete") {
+            cbMgr->deleteItem(req["item_id"].toString());
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "decode") {
+            server->sendResponse(client, reqId, cbMgr->decodeItem(req["item_id"].toString()));
+        }
+    }
+};
+
+class AppsHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        if (action == "search") {
+            server->sendResponse(client, reqId, server->getAppIndexer()->searchApps(req["query"].toString()));
+        } else if (action == "tools") {
+            QString mode = req["mode"].toString();
+            QString query = req["query"].toString();
+            QString extra = req["extra"].toString();
+            server->handleToolsRequest(client, reqId, mode, query, extra);
+        }
+    }
+};
+
+class ServicesHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* svcMgr = server->getServiceManager();
+        if (action == "list") {
+            server->sendResponse(client, reqId, svcMgr->listServices());
+        } else if (action == "control") {
+            svcMgr->controlService(req["unit"].toString(), req["command"].toString(), req["is_user"].toBool());
+            server->sendResponse(client, reqId, "ok");
+        }
+    }
+};
+
+class FocusHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        if (action == "get_stats" || action == "get") {
+            server->sendResponse(client, reqId, server->getFocusSvc()->handleStats(req));
+        }
+    }
+};
+
+class PhotoboothHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        if (action == "burst") {
+            QJsonArray inFiles = req["inputs"].toArray();
+            QString outImg = req["output"].toString();
+            bool mirror = req["mirror"].toBool(false);
+
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, inFiles, outImg, mirror]() {
+                QStringList inputs;
+                for (auto f : inFiles) inputs << f.toString();
+                QString res = server->handlePhotoboothBurst(inputs, outImg, mirror);
+                QMetaObject::invokeMethod(server, [server, client, reqId, res]() {
+                    server->sendResponse(client, reqId, res);
+                });
+            }));
+        } else if (action == "setup") {
+            QString home = qgetenv("HOME");
+            QDir().mkpath(home + "/Pictures/PhotoBooth");
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "start_session") {
+            QFile::remove(server->getPhotoboothSessionPath());
+            server->sendResponse(client, reqId, QJsonArray());
+        } else if (action == "add_to_session") {
+            server->registerPhotoboothSession(req["path"].toString());
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "get_session") {
+            server->sendResponse(client, reqId, server->getPhotoboothSession());
+        } else if (action == "mirror") {
+            QString path = req["path"].toString();
+            if (!path.isEmpty()) {
+                QImage img(path);
+                if (!img.isNull()) {
+                    img = img.flipped(Qt::Horizontal);
+                    img.save(path, "JPG", 95);
+                    server->sendResponse(client, reqId, "mirrored");
+                } else {
+                    server->sendResponse(client, reqId, "error: cannot open image");
+                }
+            } else {
+                server->sendResponse(client, reqId, "error: no path");
+            }
+        }
+    }
+};
+
+class ScreenshotHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        if (action == "beautify") {
+            QString input = req["input"].toString();
+            QString output = req["output"].toString();
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, input, output]() {
+                QString res = server->handleScreenshotBeautify(input, output);
+                QMetaObject::invokeMethod(server, [server, client, reqId, res]() {
+                    server->sendResponse(client, reqId, res);
+                });
+            }));
+        } else if (action == "qr_scan" || action == "scan_qr") {
+            QString inputPath = req["path"].toString();
+            if (inputPath.isEmpty()) inputPath = req["input"].toString();
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, inputPath]() {
+                QString res = server->handleScreenshotScanQr(inputPath);
+                QMetaObject::invokeMethod(server, [server, client, reqId, res]() {
+                    server->sendResponse(client, reqId, res);
+                });
+            }));
+        }
+    }
+};
+
+class WallpaperHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        if (action == "extract_colors") {
+            QString thumbsDir = req["thumbs_dir"].toString();
+            QString markerDir = req["marker_dir"].toString();
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, thumbsDir, markerDir]() {
+                server->handleWallpaperExtractColors(thumbsDir, markerDir);
+                QMetaObject::invokeMethod(server, [server, client, reqId]() {
+                    server->sendResponse(client, reqId, "ok");
+                });
+            }));
+        }
+    }
+};
+
+// -----------------------------------------------------------------------------
+// DAEMON SERVER IMPLEMENTATION
+// -----------------------------------------------------------------------------
 DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     sysDataSvc = new SysDataService(this);
     musicSvc = new MusicService(this);
@@ -40,6 +232,8 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     mediaProcessor = new MediaProcessor(this);
     clipboardManager = new ClipboardManager(this);
     netManager = new QNetworkAccessManager(this);
+
+    registerHandlers();
 
     server = new QLocalServer(this);
     QString sockPath = "/tmp/quickshell_qs_daemon.sock";
@@ -58,6 +252,37 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     QTimer* musicTimer = new QTimer(this);
     connect(musicTimer, &QTimer::timeout, this, &DaemonServer::broadcastMusicData);
     musicTimer->start(2000);
+}
+
+void DaemonServer::registerHandlers() {
+    auto sysH = std::make_shared<SysDataHandler>();
+    handlers["sysdata"] = sysH;
+
+    auto musicH = std::make_shared<MusicHandler>();
+    handlers["music"] = musicH;
+
+    auto cbH = std::make_shared<ClipboardHandler>();
+    handlers["clipboard"] = cbH;
+
+    auto appsH = std::make_shared<AppsHandler>();
+    handlers["apps"] = appsH;
+    handlers["applauncher"] = appsH;
+
+    auto svcH = std::make_shared<ServicesHandler>();
+    handlers["services"] = svcH;
+
+    auto focusH = std::make_shared<FocusHandler>();
+    handlers["focustime"] = focusH;
+
+    auto pbH = std::make_shared<PhotoboothHandler>();
+    handlers["photobooth"] = pbH;
+
+    auto ssH = std::make_shared<ScreenshotHandler>();
+    handlers["screenshot"] = ssH;
+    handlers["media"] = ssH;
+
+    auto wpH = std::make_shared<WallpaperHandler>();
+    handlers["wallpaper"] = wpH;
 }
 
 void DaemonServer::onNewConnection() {
@@ -457,153 +682,10 @@ void DaemonServer::processRequest(QLocalSocket* client, const QByteArray& rawJso
     QString target = req["target"].toString();
     QString action = req["action"].toString();
 
-    if (target == "sysdata") {
-        if (action == "subscribe") {
-            if (!sysSubscribers.contains(client)) sysSubscribers.append(client);
-            sendResponse(client, reqId, "subscribed");
-        } else if (action == "unsubscribe") {
-            sysSubscribers.removeAll(client);
-            sendResponse(client, reqId, "unsubscribed");
-        }
-    } 
-    else if (target == "music") {
-        if (action == "subscribe") {
-            if (!musicSubscribers.contains(client)) musicSubscribers.append(client);
-            sendResponse(client, reqId, "subscribed");
-        } else if (action == "unsubscribe") {
-            musicSubscribers.removeAll(client);
-            sendResponse(client, reqId, "unsubscribed");
-        } else if (action == "fetch") {
-            sendResponse(client, reqId, musicSvc->fetchState());
-        } else if (action == "control") {
-            musicSvc->handleControl(req["command"].toString(), req["arg1"].toString(), req["arg2"].toString());
-            sendResponse(client, reqId, "controlled");
-            broadcastMusicData();
-        } else if (action == "get_eq") {
-            sendResponse(client, reqId, musicSvc->getEqState());
-        } else if (action == "set_band") {
-            musicSvc->setEqBand(req["band"].toString(), req["val"].toString());
-            sendResponse(client, reqId, "ok");
-        } else if (action == "preset") {
-            musicSvc->applyPreset(req["name"].toString());
-            sendResponse(client, reqId, "ok");
-        } else if (action == "apply") {
-            musicSvc->applyEq();
-            sendResponse(client, reqId, "applied");
-        }
-    }
-    else if (target == "clipboard") {
-        if (action == "fetch") {
-            int offset = req.contains("offset") ? req["offset"].toInt() : 0;
-            int limit = req.contains("limit") ? req["limit"].toInt() : 24;
-            QString cacheDir = req["cache_dir"].toString();
-            sendResponse(client, reqId, clipboardManager->fetchClipboard(offset, limit, cacheDir));
-        } else if (action == "toggle-pin") {
-            clipboardManager->togglePin(req["item_id"].toString(), req["cache_dir"].toString());
-            sendResponse(client, reqId, "ok");
-        } else if (action == "delete") {
-            clipboardManager->deleteItem(req["item_id"].toString());
-            sendResponse(client, reqId, "ok");
-        } else if (action == "decode") {
-            sendResponse(client, reqId, clipboardManager->decodeItem(req["item_id"].toString()));
-        }
-    }
-    else if (target == "apps" || target == "applauncher") {
-        if (action == "search") {
-            sendResponse(client, reqId, appIndexer->searchApps(req["query"].toString()));
-        } else if (action == "tools") {
-            QString mode = req["mode"].toString();
-            QString query = req["query"].toString();
-            QString extra = req["extra"].toString();
-            handleToolsRequest(client, reqId, mode, query, extra);
-        }
-    }
-    else if (target == "services") {
-        if (action == "list") {
-            sendResponse(client, reqId, serviceManager->listServices());
-        } else if (action == "control") {
-            serviceManager->controlService(req["unit"].toString(), req["command"].toString(), req["is_user"].toBool());
-            sendResponse(client, reqId, "ok");
-        }
-    }
-    else if (target == "focustime") {
-        if (action == "get_stats" || action == "get") {
-            sendResponse(client, reqId, focusSvc->handleStats(req));
-        }
-    }
-    else if (target == "photobooth") {
-        if (action == "burst") {
-            QJsonArray inFiles = req["inputs"].toArray();
-            QString outImg = req["output"].toString();
-            bool mirror = req["mirror"].toBool(false);
-
-            std::thread([this, client, reqId, inFiles, outImg, mirror]() {
-                QStringList inputs;
-                for (auto f : inFiles) inputs << f.toString();
-                QString res = handlePhotoboothBurst(inputs, outImg, mirror);
-                QMetaObject::invokeMethod(this, [this, client, reqId, res]() {
-                    sendResponse(client, reqId, res);
-                });
-            }).detach();
-        } else if (action == "setup") {
-            QString home = qgetenv("HOME");
-            QDir().mkpath(home + "/Pictures/PhotoBooth");
-            sendResponse(client, reqId, "ok");
-        } else if (action == "start_session") {
-            QFile::remove(getPhotoboothSessionPath());
-            sendResponse(client, reqId, QJsonArray());
-        } else if (action == "add_to_session") {
-            registerPhotoboothSession(req["path"].toString());
-            sendResponse(client, reqId, "ok");
-        } else if (action == "get_session") {
-            sendResponse(client, reqId, getPhotoboothSession());
-        } else if (action == "mirror") {
-            QString path = req["path"].toString();
-            if (!path.isEmpty()) {
-                QImage img(path);
-                if (!img.isNull()) {
-                    img = img.flipped(Qt::Horizontal);
-                    img.save(path, "JPG", 95);
-                    sendResponse(client, reqId, "mirrored");
-                } else {
-                    sendResponse(client, reqId, "error: cannot open image");
-                }
-            } else {
-                sendResponse(client, reqId, "error: no path");
-            }
-        }
-    }
-    else if (target == "media" || target == "screenshot") {
-        if (action == "beautify") {
-            QString input = req["input"].toString();
-            QString output = req["output"].toString();
-            std::thread([this, client, reqId, input, output]() {
-                QString res = handleScreenshotBeautify(input, output);
-                QMetaObject::invokeMethod(this, [this, client, reqId, res]() {
-                    sendResponse(client, reqId, res);
-                });
-            }).detach();
-        } else if (action == "qr_scan" || action == "scan_qr") {
-            QString inputPath = req["path"].toString();
-            if (inputPath.isEmpty()) inputPath = req["input"].toString();
-            std::thread([this, client, reqId, inputPath]() {
-                QString res = handleScreenshotScanQr(inputPath);
-                QMetaObject::invokeMethod(this, [this, client, reqId, res]() {
-                    sendResponse(client, reqId, res);
-                });
-            }).detach();
-        }
-    }
-    else if (target == "wallpaper") {
-        if (action == "extract_colors") {
-            QString thumbsDir = req["thumbs_dir"].toString();
-            QString markerDir = req["marker_dir"].toString();
-            std::thread([this, client, reqId, thumbsDir, markerDir]() {
-                handleWallpaperExtractColors(thumbsDir, markerDir);
-                QMetaObject::invokeMethod(this, [this, client, reqId]() {
-                    sendResponse(client, reqId, "ok");
-                });
-            }).detach();
-        }
+    auto it = handlers.find(target.toStdString());
+    if (it != handlers.end()) {
+        it->second->handleRequest(this, client, reqId, action, req);
+    } else {
+        std::cerr << "Unknown IPC target: " << target.toStdString() << std::endl;
     }
 }

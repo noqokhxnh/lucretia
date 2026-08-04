@@ -633,6 +633,7 @@ Item {
 
             // Big Parallax Weather Icon (Tied to Weather Transition)
             Text {
+                visible: false
                 anchors.centerIn: parent
                 anchors.verticalCenterOffset: window.centerOffset
                 text: {

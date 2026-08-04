@@ -30,58 +30,98 @@ function s(val, scale) {
 function getLayout(name, mx, my, mw, mh, userScale) {
     let scale = getScale(mw, mh, userScale);
 
-    let base = {
+    let rawLayouts = {
         // --- Top Right Popups ---
-        "battery":   { w: s(801, scale), h: s(760, scale), rx: mw - s(805, scale), ry: s(60, scale), comp: "battery/BatteryPopup.qml" },
-        "network":   { w: s(900, scale), h: s(700, scale), rx: mw - s(904, scale), ry: s(60, scale), comp: "network/NetworkPopup.qml" },
-        "volume":    { w: s(450, scale), h: s(700, scale), rx: mw - s(455, scale), ry: s(60, scale), comp: "volume/VolumePopup.qml" },
-        "controlcenter": { w: s(420, scale), h: s(580, scale), rx: Math.floor((mw/2)-(s(420, scale)/2)), ry: Math.floor((mh/2)-(s(580, scale)/2)), comp: "controlcenter/ControlCenterPopup.qml" },
+        "battery":           { baseW: 801,  baseH: 760,  pos: "top-right", comp: "battery/BatteryPopup.qml" },
+        "network":           { baseW: 900,  baseH: 700,  pos: "top-right", comp: "network/NetworkPopup.qml" },
+        "volume":            { baseW: 450,  baseH: 700,  pos: "top-right", comp: "volume/VolumePopup.qml" },
+        "controlcenter":     { baseW: 420,  baseH: 580,  pos: "center",    comp: "controlcenter/ControlCenterPopup.qml" },
         
         // --- Central Standard Tools ---
-        "applauncher": { w: s(800, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "applauncher/appLauncher.qml" },
-        "clipboard": { w: s(800, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "clipboard/ClipboardManager.qml" },
-        "monitors":  { w: s(800, scale), h: s(650, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(650, scale)/2)), comp: "monitors/MonitorPopup.qml" },
-        "stewart":   { w: s(800, scale), h: s(650, scale), rx: Math.floor((mw/2)-(s(800, scale)/2)), ry: Math.floor((mh/2)-(s(650, scale)/2)), comp: "stewart/stewart.qml" },
-        "notes":     { w: s(900, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(900, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "notes/NotesPopup.qml" },
-        "photobooth": { w: s(850, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(850, scale)/2)), ry: Math.floor((mh/2)-(s(750, scale)/2)), comp: "photobooth/PhotoBooth.qml" },
-        "screenshotgallery": { w: s(900, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(900, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "screenshot/ScreenshotGallery.qml" },
+        "applauncher":       { baseW: 800,  baseH: 700,  pos: "center",    comp: "applauncher/appLauncher.qml" },
+        "clipboard":         { baseW: 800,  baseH: 700,  pos: "center",    comp: "clipboard/ClipboardManager.qml" },
+        "monitors":          { baseW: 800,  baseH: 650,  pos: "center",    comp: "monitors/MonitorPopup.qml" },
+        "stewart":           { baseW: 800,  baseH: 650,  pos: "center",    comp: "stewart/stewart.qml" },
+        "notes":             { baseW: 900,  baseH: 700,  pos: "center",    comp: "notes/NotesPopup.qml" },
+        "photobooth":        { baseW: 850,  baseH: 750,  pos: "center",    comp: "photobooth/PhotoBooth.qml" },
+        "screenshotgallery": { baseW: 900,  baseH: 700,  pos: "center",    comp: "screenshot/ScreenshotGallery.qml" },
 
         // --- Central Large Tools ---
-        "focustime": { w: s(900, scale), h: s(700, scale), rx: Math.floor((mw/2)-(s(900, scale)/2)), ry: Math.floor((mh/2)-(s(700, scale)/2)), comp: "focustime/FocusTimePopup.qml" },
-        "services":  { w: s(1150, scale), h: s(800, scale), rx: Math.floor((mw/2)-(s(1150, scale)/2)), ry: Math.floor((mh/2)-(s(800, scale)/2)), comp: "services/ServicesOverlay.qml" },
+        "focustime":         { baseW: 900,  baseH: 700,  pos: "center",    comp: "focustime/FocusTimePopup.qml" },
+        "services":          { baseW: 1150, baseH: 800,  pos: "center",    comp: "services/ServicesOverlay.qml" },
 
         // --- Extralarge / Custom Centered ---
-        "guide":     { w: s(1200, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(1200, scale)/2)), ry: Math.floor((mh/2)-(s(750, scale)/2)), comp: "guide/GuidePopup.qml" },
-        "dashboard": { w: s(1200, scale), h: s(800, scale), rx: Math.floor((mw/2)-(s(1200, scale)/2)), ry: Math.floor((mh/2)-(s(800, scale)/2)), comp: "Dashboard.qml" },
-        "calendar":  { w: s(1450, scale), h: s(750, scale), rx: Math.floor((mw/2)-(s(1450, scale)/2)), ry: s(60, scale), comp: "calendar/CalendarPopup.qml" },
-	"updater": { w: s(950, scale), h: s(850, scale), rx: Math.floor((mw/2)-(s(950, scale)/2)), ry: Math.floor((mh/2)-(s(850, scale)/2)), comp: "updater/UpdaterPopup.qml" },
-        "wallpaper": { w: mw, h: s(650, scale), rx: 0, ry: Math.floor((mh/2)-(s(650, scale)/2)), comp: "wallpaper/WallpaperPicker.qml" },
+        "guide":             { baseW: 1200, baseH: 750,  pos: "center",    comp: "guide/GuidePopup.qml" },
+        "dashboard":         { baseW: 1200, baseH: 800,  pos: "center",    comp: "Dashboard.qml" },
+        "calendar":          { baseW: 1450, baseH: 750,  pos: "top-center", comp: "calendar/CalendarPopup.qml" },
+        "updater":           { baseW: 950,  baseH: 850,  pos: "center",    comp: "updater/UpdaterPopup.qml" },
+        "wallpaper":         { baseW: 1920, baseH: 650,  pos: "wallpaper", comp: "wallpaper/WallpaperPicker.qml" },
         
         // --- Top Left Edge ---
-        "music":     { w: s(700, scale), h: s(650, scale), rx: s(5, scale), ry: s(60, scale), comp: "music/MusicPopup.qml" },
+        "music":             { baseW: 700,  baseH: 650,  pos: "top-left",  comp: "music/MusicPopup.qml" },
 
-        "movies": {
-            w: s(1370, scale),
-            h: s(850, scale),
-            rx: Math.floor((mw / 2) - (s(1370, scale) / 2)),
-            ry: mh - s(850, scale),
-            comp: "movies/MovieWidget.qml"
-        },
+        "movies":            { baseW: 1370, baseH: 850,  pos: "bottom-center", comp: "movies/MovieWidget.qml" },
         
         // --- Screen Spanning Panels ---
-        "settings":  { w: s(450, scale), h: mh - s(0, scale), rx: s(0, scale), ry: s(0, scale), comp: "settings/SettingsPopup.qml" },
+        "settings":          { baseW: 450,  baseH: 1080, pos: "left-span", comp: "settings/SettingsPopup.qml" },
         
         // --- Utility ---
-        "hidden":    { w: 1, h: 1, rx: -5000 - mx, ry: -5000 - my, comp: "" } 
+        "hidden":            { baseW: 1,    baseH: 1,    pos: "hidden",    comp: "" } 
     };
 
-    if (!base[name]) return null;
+    if (!rawLayouts[name]) return null;
+
+    let item = rawLayouts[name];
+    if (item.pos === "hidden") {
+        return { w: 1, h: 1, rx: -5000 - mx, ry: -5000 - my, x: -5000, y: -5000, comp: "" };
+    }
+
+    // Dynamic relative bounds calculations
+    let maxW = Math.floor(mw * 0.95);
+    let maxH = Math.floor(mh * 0.90);
     
-    let t = base[name];
-    t.x = mx + t.rx;
-    t.y = my + t.ry;
+    let w = Math.min(s(item.baseW, scale), maxW);
+    let h = Math.min(s(item.baseH, scale), maxH);
     
-    return t;
+    let rx = 0;
+    let ry = 0;
+
+    if (item.pos === "top-right") {
+        rx = mw - w - s(10, scale);
+        ry = s(60, scale);
+    } else if (item.pos === "top-left") {
+        rx = s(5, scale);
+        ry = s(60, scale);
+    } else if (item.pos === "top-center") {
+        rx = Math.floor((mw - w) / 2);
+        ry = s(60, scale);
+    } else if (item.pos === "bottom-center") {
+        rx = Math.floor((mw - w) / 2);
+        ry = mh - h;
+    } else if (item.pos === "wallpaper") {
+        w = mw;
+        h = Math.min(s(650, scale), Math.floor(mh * 0.85));
+        rx = 0;
+        ry = Math.floor((mh - h) / 2);
+    } else if (item.pos === "left-span") {
+        w = Math.min(s(450, scale), Math.floor(mw * 0.4));
+        h = mh;
+        rx = 0;
+        ry = 0;
+    } else { // "center"
+        rx = Math.floor((mw - w) / 2);
+        ry = Math.floor((mh - h) / 2);
+    }
+
+    return {
+        w: w,
+        h: h,
+        rx: rx,
+        ry: ry,
+        x: mx + rx,
+        y: my + ry,
+        comp: item.comp
+    };
 }
 
 function getPopupLayout(mw, mh, userScale) {

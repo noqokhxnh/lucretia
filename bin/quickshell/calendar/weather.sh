@@ -128,6 +128,7 @@ get_data() {
     c_temp=$(echo "$raw_weather" | jq -r '.main.temp')
     c_temp=$(printf "%.1f" "$c_temp")
     c_code=$(echo "$raw_weather" | jq -r '.weather[0].icon')
+    c_desc=$(echo "$raw_weather" | jq -r '.weather[0].description' | sed -e "s/\b\(.\)/\u\1/g")
     c_icon=$(get_icon "$c_code" | cut -d'|' -f1)
     c_hex=$(get_hex "$c_code")
 
@@ -190,11 +191,17 @@ get_data() {
             f_wind=$(echo "$day_data" | jq '[.[].wind.speed] | max | round')
             f_hum=$(echo "$day_data" | jq '[.[].main.humidity] | add / length | round')
             
-            f_code=$(echo "$day_data" | jq -r '.[length/2 | floor].weather[0].icon')
-            f_desc=$(echo "$day_data" | jq -r '.[length/2 | floor].weather[0].description' | sed -e "s/\b\(.\)/\u\1/g")
-            f_icon_data=$(get_icon "$f_code")
-            f_icon=$(echo "$f_icon_data" | cut -d'|' -f1)
-            f_hex=$(get_hex "$f_code")
+            if [ $counter -eq 0 ]; then
+                f_desc="$c_desc"
+                f_icon="$c_icon"
+                f_hex="$c_hex"
+            else
+                f_code=$(echo "$day_data" | jq -r '.[length/2 | floor].weather[0].icon')
+                f_desc=$(echo "$day_data" | jq -r '.[length/2 | floor].weather[0].description' | sed -e "s/\b\(.\)/\u\1/g")
+                f_icon_data=$(get_icon "$f_code")
+                f_icon=$(echo "$f_icon_data" | cut -d'|' -f1)
+                f_hex=$(get_hex "$f_code")
+            fi
             
             f_day=$(date -d "$d" "+%a")
             f_full_day=$(date -d "$d" "+%A")
@@ -204,6 +211,7 @@ get_data() {
             count_slots=$(echo "$day_data" | jq '. | length')
             count_slots=$((count_slots-1))
             
+            c_hr=$(date +%H)
             for i in $(seq 0 1 $count_slots); do
                 slot_item=$(echo "$day_data" | jq ".[$i]")
                 
@@ -216,6 +224,17 @@ get_data() {
                 s_hex=$(get_hex "$s_code")
                 s_icon=$(get_icon "$s_code" | cut -d'|' -f1)
                 
+                if [ $counter -eq 0 ]; then
+                    s_hr=$(date -d @$s_dt "+%H")
+                    diff=$(( 10#$s_hr - 10#$c_hr ))
+                    diff=${diff#-}
+                    if [ $diff -le 1 ]; then
+                        s_icon="$c_icon"
+                        s_hex="$c_hex"
+                        s_temp="$c_temp"
+                    fi
+                fi
+
                 hourly_json="${hourly_json} {\"time\": \"${s_time}\", \"temp\": \"${s_temp}\", \"icon\": \"${s_icon}\", \"hex\": \"${s_hex}\"},"
             done
             hourly_json="${hourly_json%,}]"

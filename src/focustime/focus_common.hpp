@@ -106,6 +106,9 @@ inline sqlite3* init_db(const std::string& db_path) {
     sqlite3* db;
     if (sqlite3_open(db_path.c_str(), &db) != SQLITE_OK) return nullptr;
 
+    sqlite3_exec(db, "PRAGMA journal_mode=WAL;", nullptr, nullptr, nullptr);
+    sqlite3_exec(db, "PRAGMA synchronous=NORMAL;", nullptr, nullptr, nullptr);
+
     const char* sql = 
         "CREATE TABLE IF NOT EXISTS focus_log (log_date TEXT, app_class TEXT, seconds INTEGER, app_title TEXT, PRIMARY KEY (log_date, app_class));"
         "CREATE INDEX IF NOT EXISTS idx_log_date ON focus_log(log_date);"
