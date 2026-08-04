@@ -11,12 +11,12 @@ add_compile_options(-O3 -pthread)
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Network DBus Gui)
 
-# Find SQLite3
+# Find SQLite3 & ZBar
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(SQLITE3 REQUIRED sqlite3)
 pkg_check_modules(ZBAR REQUIRED zbar)
 
-# Source files
+# Source files for Primary Quickshell Daemon
 set(DAEMON_SOURCES
     main.cpp
     core/ipc_server.cpp
@@ -57,7 +57,16 @@ target_link_libraries(qs_daemon PRIVATE
     ${ZBAR_LIBRARIES}
 )
 
-# Output binary to bin/quickshell/
+# Output qs_daemon binary to bin/quickshell/
 set_target_properties(qs_daemon PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/quickshell"
 )
+
+# Keycast Backend target
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/keycast_backend.cpp")
+    add_executable(keycast_backend keycast_backend.cpp)
+    target_link_libraries(keycast_backend PRIVATE Qt6::Core Qt6::Gui)
+    set_target_properties(keycast_backend PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../bin"
+    )
+endif()
