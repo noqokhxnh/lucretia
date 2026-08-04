@@ -231,7 +231,38 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     serviceManager = new ServiceManager(this);
     mediaProcessor = new MediaProcessor(this);
     clipboardManager = new ClipboardManager(this);
+    fileWatcher = new FileWatcherService(this);
+    dbusWatcher = new DBusWatcherService(this);
     netManager = new QNetworkAccessManager(this);
+
+    connect(fileWatcher, &FileWatcherService::fileChanged, this, [this](const QString& eventType, const QString& path) {
+        QJsonObject eventObj;
+        eventObj["event"] = "file_changed";
+        eventObj["type"] = eventType;
+        eventObj["path"] = path;
+        QJsonDocument doc(eventObj);
+        QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
+        for (QLocalSocket* client : clients) {
+            if (client && client->state() == QLocalSocket::ConnectedState) {
+                client->write(payload);
+                client->flush();
+            }
+        }
+    });
+
+    connect(dbusWatcher, &DBusWatcherService::powerStateChanged, this, [this](bool onBattery) {
+        QJsonObject eventObj;
+        eventObj["event"] = "power_changed";
+        eventObj["onBattery"] = onBattery;
+        QJsonDocument doc(eventObj);
+        QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
+        for (QLocalSocket* client : clients) {
+            if (client && client->state() == QLocalSocket::ConnectedState) {
+                client->write(payload);
+                client->flush();
+            }
+        }
+    });
 
     registerHandlers();
 

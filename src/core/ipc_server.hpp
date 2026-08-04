@@ -22,6 +22,9 @@
 #include "media/media_processor.hpp"
 #include "clipboard/clipboard_manager.hpp"
 
+#include "system/file_watcher.hpp"
+#include "system/dbus_watcher.hpp"
+
 class DaemonServer;
 
 class ICommandHandler {
@@ -82,6 +85,8 @@ private:
     ServiceManager* serviceManager;
     MediaProcessor* mediaProcessor;
     ClipboardManager* clipboardManager;
+    FileWatcherService* fileWatcher;
+    DBusWatcherService* dbusWatcher;
     QNetworkAccessManager* netManager;
 
     std::unordered_map<std::string, std::shared_ptr<ICommandHandler>> handlers;

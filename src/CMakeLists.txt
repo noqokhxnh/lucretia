@@ -21,6 +21,8 @@ set(DAEMON_SOURCES
     main.cpp
     core/ipc_server.cpp
     system/system_monitor.cpp
+    system/file_watcher.cpp
+    system/dbus_watcher.cpp
     music/music_manager.cpp
     focus/focus_tracker.cpp
     apps/app_indexer.cpp
@@ -32,6 +34,8 @@ set(DAEMON_SOURCES
 set(DAEMON_HEADERS
     core/ipc_server.hpp
     system/system_monitor.hpp
+    system/file_watcher.hpp
+    system/dbus_watcher.hpp
     music/music_manager.hpp
     focus/focus_tracker.hpp
     apps/app_indexer.hpp
