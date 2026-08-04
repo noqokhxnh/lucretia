@@ -25,7 +25,7 @@ ShellRoot {
 
     Process {
         id: zombieCleanup
-        command: ["bash", "-c", "pkill -f 'inotifywait.*quickshell|watchers/.*_wait.sh|dbus-monitor.*org.bluez|nmcli monitor|udevadm monitor|pactl subscribe|socat.*socket2.sock|qs_daemon'; rm -f \"${XDG_RUNTIME_DIR:-/tmp}/quickshell/qs_\"*\".lock\"; rm -rf ~/.cache/quickshell/crashes/*"]
+        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; rm -f \"${XDG_RUNTIME_DIR:-/tmp}/quickshell/qs_\"*\".lock\"; rm -rf ~/.cache/quickshell/crashes/*"]
         running: true
         onExited: {
             qsDaemon.running = true;

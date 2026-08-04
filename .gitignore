@@ -30,3 +30,10 @@ hyprland.conf
 .mimocode/*
 .nodeterm/
 insta
+
+# Build artifacts and compiled binaries
+*.moc
+build/
+src/build/
+bin/quickshell/qs_daemon
+bin/keycast_backend

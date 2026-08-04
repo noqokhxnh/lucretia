@@ -1,44 +1,17 @@
 #!/bin/bash
 
-# Optimization flags for performance
-FLAGS="-O3 -march=native -flto -std=c++20 -pthread"
+# Build qs_daemon using CMake
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SRC_DIR="$(cd "$SCRIPT_DIR/../../src" && pwd)"
 
-# Detect Qt6 modules
-QT_MODULES="Qt6Core Qt6Network Qt6DBus Qt6Gui"
-LIBS=$(pkg-config --cflags --libs $QT_MODULES)
-
+echo "Building qs_daemon via CMake..."
+cmake -B "$SRC_DIR/build" -S "$SRC_DIR"
 if [ $? -ne 0 ]; then
-    echo "Error: Qt6 development libraries not found."
+    echo "Error: CMake configuration failed."
     exit 1
 fi
 
-# Additional dependencies
-DEPS="-lsqlite3 -lzbar"
-
-echo "Generating MOC file..."
-# Try to find moc for Qt6 (could be moc, moc-qt6, or inside qt6/bin)
-MOC_BIN="moc"
-if command -v moc-qt6 &> /dev/null; then
-    MOC_BIN="moc-qt6"
-elif [ -f "/usr/lib/qt6/moc" ]; then
-    MOC_BIN="/usr/lib/qt6/moc"
-elif [ -f "/usr/lib/qt6/bin/moc" ]; then
-    MOC_BIN="/usr/lib/qt6/bin/moc"
-elif [ -f "/usr/lib64/qt6/bin/moc" ]; then
-    MOC_BIN="/usr/lib64/qt6/bin/moc"
-fi
-
-$MOC_BIN ../../src/qs_daemon.cpp -o ../../src/qs_daemon.moc
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to generate MOC file."
-    exit 1
-fi
-
-echo "Compiling qs_daemon.cpp..."
-
-# Compile
-g++ $FLAGS ../../src/qs_daemon.cpp -o qs_daemon $LIBS $DEPS -fPIC
-
+cmake --build "$SRC_DIR/build"
 if [ $? -eq 0 ]; then
     echo "Compilation successful: qs_daemon"
 else
