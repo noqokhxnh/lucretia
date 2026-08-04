@@ -6,6 +6,11 @@ import Quickshell.Io
 Item {
     id: root
 
+    readonly property string _runtimeDir: {
+        var xdg = Quickshell.env("XDG_RUNTIME_DIR");
+        return (xdg !== "" ? xdg : "/tmp") + "/quickshell";
+    }
+
     // --- Singleton Properties (Reactive States) ---
     property var sysData: ({
         cpu: 0,
@@ -61,7 +66,7 @@ Item {
     // --- UNIX Local Socket Connection ---
     Socket {
         id: daemonSocket
-        path: "/tmp/quickshell_qs_daemon.sock"
+        path: root._runtimeDir + "/qs_daemon.sock"
         connected: false
 
         parser: SplitParser {

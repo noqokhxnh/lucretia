@@ -45,8 +45,6 @@ layout {
     
     focus-ring {
         width 4
-        active-color "#b7c4ffee"
-        inactive-color "#364479aa"
     }
 }
 
@@ -153,7 +151,7 @@ binds {
     Super+D { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle dashboard"; }
     Super+Shift+M { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle monitors"; }
     // --- SwayOSD Controls ---
-    Caps_Lock { spawn "sleep" "0.1" "&&" "swayosd-client" "--caps-lock"; }
+    Caps_Lock { spawn "bash" "-c" "sleep 0.1 && swayosd-client --caps-lock"; }
     XF86MonBrightnessDown { spawn "swayosd-client" "--brightness" "lower"; }
     XF86MonBrightnessUp { spawn "swayosd-client" "--brightness" "raise"; }
     XF86AudioMicMute { spawn "swayosd-client" "--input-volume" "mute-toggle"; }

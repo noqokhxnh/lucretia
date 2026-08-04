@@ -236,8 +236,13 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     registerHandlers();
 
     server = new QLocalServer(this);
-    QString sockPath = "/tmp/quickshell_qs_daemon.sock";
+    QString runtimeDir = QString::fromUtf8(qgetenv("XDG_RUNTIME_DIR"));
+    if (runtimeDir.isEmpty()) runtimeDir = "/tmp";
+    QString sockDir = runtimeDir + "/quickshell";
+    QDir().mkpath(sockDir);
+    QString sockPath = sockDir + "/qs_daemon.sock";
     QLocalServer::removeServer(sockPath);
+    server->setSocketOptions(QLocalServer::UserAccessOption);
     if (!server->listen(sockPath)) {
         std::cerr << "Failed to start Local UNIX Socket server!" << std::endl;
         QCoreApplication::exit(1);

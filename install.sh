@@ -243,9 +243,7 @@ WORKER_URL="https://dots-telemetry.ilyamiro-work.workers.dev"
 send_telemetry() {
     local mode=$1
     if [[ "$ENABLE_TELEMETRY" != true ]]; then
-        if [[ "$mode" != "done" ]]; then
-            return 0
-        fi
+        return 0
     fi
     if [[ -n "$WORKER_URL" && "$WORKER_URL" != *"YOUR_USERNAME"* ]]; then
         if [[ "$mode" == "init" ]]; then
@@ -1182,9 +1180,9 @@ if [ -f "$(pwd)/install.sh" ] && [ -d "$(pwd)/config" ] && [ -d "$(pwd)/.git" ] 
 else
     OLD_COMMIT="$LAST_COMMIT"
     if [ -d "$TARGET_CONFIG_DIR" ]; then
-        echo -e "  -> Backing up old configuration to ${BACKUP_DIR}/hypr"
+        echo -e "  -> Backing up old configuration to ${BACKUP_DIR}/niri"
         mkdir -p "$BACKUP_DIR"
-        mv "$TARGET_CONFIG_DIR" "$BACKUP_DIR/hypr"
+        mv "$TARGET_CONFIG_DIR" "$BACKUP_DIR/niri"
     fi
     echo -e "  -> Cloning repository from ${REPO_URL}..."
     if ! git clone -b "$TARGET_BRANCH" "$REPO_URL" "$TARGET_CONFIG_DIR"; then

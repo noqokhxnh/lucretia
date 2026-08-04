@@ -22,11 +22,11 @@ QJsonObject SysDataService::getMetrics() {
         cpu_usage = static_cast<int>(100 * (diff_total - diff_idle) / diff_total);
     }
 
-    // Network
+    // Network (timer interval is 10s -> divide by 10.0 for B/s)
     double rx_rate = (currentNet.rx - lastNet.rx);
     double tx_rate = (currentNet.tx - lastNet.tx);
-    rx_rate = std::max(0.0, rx_rate / 2.0);
-    tx_rate = std::max(0.0, tx_rate / 2.0);
+    rx_rate = std::max(0.0, rx_rate / 10.0);
+    tx_rate = std::max(0.0, tx_rate / 10.0);
 
     // RAM
     int ram_pct = 0;

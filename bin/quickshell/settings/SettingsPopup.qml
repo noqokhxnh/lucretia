@@ -929,7 +929,7 @@ Item {
     Process {
         id: pathSuggestProc
         property string query: ""
-        command: ["bash", "-c", "eval ls -dp " + query + "* 2>/dev/null | grep '/$' | head -n 5 || true"]
+        command: ["bash", "-c", "q=\"${1/#\\~/$HOME}\"; compgen -d -- \"$q\" 2>/dev/null | sed 's|$|/|' | head -n 5 || true", "_", query]
         stdout: StdioCollector {
             onStreamFinished: {
                 pathSuggestModel.clear();

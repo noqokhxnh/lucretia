@@ -332,12 +332,11 @@ public:
     }
 
     void connectWifi(const QString &ssid, const QString &password = "") {
-        // This is complex via D-Bus directly for new connections (requires SecretAgent).
-        // For simplicity and matching existing behavior, we can use nmcli for the actual connection 
-        // while using D-Bus for the fast status/list.
-        QString cmd = "nmcli device wifi connect '" + ssid + "'";
-        if (!password.isEmpty()) cmd += " password '" + password + "'";
-        QProcess::startDetached("bash", {"-c", cmd});
+        QStringList args = {"device", "wifi", "connect", ssid};
+        if (!password.isEmpty()) {
+            args << "password" << password;
+        }
+        QProcess::startDetached("nmcli", args);
     }
 
     void disconnectWifi() {

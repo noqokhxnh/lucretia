@@ -159,11 +159,12 @@ handle_wallpaper_prep() {
             extension="${filename##*.}"
 
             if [[ "${extension,,}" == "webp" ]]; then
-                new_img="${img%.*}.jpg"
-                magick "$img" "$new_img" && rm -f "$img"
-                img="$new_img"
-                filename="$(basename "$img")"
-                extension="jpg"
+                thumb="$THUMB_DIR/${filename%.*}.jpg"
+                if [ ! -f "$thumb" ]; then
+                    magick "$img" -resize x420 -quality 70 "$thumb"
+                    echo "${filename%.*}.jpg" >> "$MANIFEST"
+                fi
+                continue
             fi
 
             if [[ "${extension,,}" =~ ^(mp4|mkv|mov|webm)$ ]]; then
@@ -197,17 +198,7 @@ handle_network_prep() {
 # -----------------------------------------------------------------------------
 # IPC ROUTING
 # -----------------------------------------------------------------------------
-if [[ "$ACTION" == "close" ]]; then
-    quickshell -p "$SHELL_QML_PATH" ipc call main handleCommand "close" "" "" >/dev/null 2>&1
-    if [[ "$TARGET" == "network" || "$TARGET" == "all" || -z "$TARGET" ]]; then
-        if [ -f "$BT_PID_FILE" ]; then
-            kill $(cat "$BT_PID_FILE") 2>/dev/null
-            rm -f "$BT_PID_FILE"
-        fi
-        (bluetoothctl scan off > /dev/null 2>&1) &
-    fi
-    exit 0
-fi
+
 
 if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
     if [[ "$TARGET" == "network" ]]; then

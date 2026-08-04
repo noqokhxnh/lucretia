@@ -11,8 +11,14 @@ if [ -e "$LOCKFILE" ]; then
 fi
 echo "$$" > "$LOCKFILE"
 
-# Clean up lockfile on exit
-trap 'rm -f "$LOCKFILE"; exit' INT TERM EXIT
+cleanup() {
+    if [ "$PREV_STATUS" = "saver" ]; then
+        apply_performance 2>/dev/null || true
+    fi
+    rm -f "$LOCKFILE"
+    exit
+}
+trap cleanup INT TERM EXIT
 
 # Config and state files
 SETTINGS_FILE="$HOME/.config/niri/settings.json"
@@ -38,16 +44,18 @@ PREV_STATUS=""
 update_setting_bool() {
     local key="$1"
     local val="$2"
+    local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+        ( flock 9; jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" ) 9>"$lock_path"
     fi
 }
 
 update_setting_str() {
     local key="$1"
     local val="$2"
+    local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+        ( flock 9; jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" ) 9>"$lock_path"
     fi
 }
 

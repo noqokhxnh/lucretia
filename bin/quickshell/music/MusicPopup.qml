@@ -305,85 +305,15 @@ Item {
         });
     }
 
-    // 500ms poll — same pattern as the reference repo
-    Timer {
-        id: musicPollTimer
-        interval: 500
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            if (!musicPollProc.running) musicPollProc.running = true;
-        }
-    }
-
-    Process {
-        id: musicPollProc
-        running: true
-        command: ["bash", "-c", "STATUS=$(playerctl status 2>/dev/null); if [ \"$STATUS\" = \"Playing\" ] || [ \"$STATUS\" = \"Paused\" ]; then META=$(playerctl metadata --format 'TITLE={{title}}\nARTIST={{artist}}\nLEN={{mpris:length}}\nPOS={{position}}\nART={{mpris:artUrl}}\nPN={{playerName}}' 2>/dev/null); echo \"$STATUS|$META\"; else echo \"Stopped|\"; fi"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                var raw = (this.text || "").trim();
-                var pipeIdx = raw.indexOf("|");
-                if (pipeIdx < 0) return;
-                var status = raw.substring(0, pipeIdx);
-                var meta = raw.substring(pipeIdx + 1);
-
-                if (status === "Playing" || status === "Paused") {
-                    var lines = meta.split("\n");
-                    var fields = {};
-                    for (var i = 0; i < lines.length; i++) {
-                        var eq = lines[i].indexOf("=");
-                        if (eq > 0) fields[lines[i].substring(0, eq)] = lines[i].substring(eq + 1);
-                    }
-
-                    var title = fields["TITLE"] || "Unknown";
-                    var artist = fields["ARTIST"] || "Unknown";
-                    var lenMicro = parseInt(fields["LEN"]) || 1000000;
-                    var posMicro = parseInt(fields["POS"]) || 0;
-                    var artUrl = fields["ART"] || "";
-                    var playerName = fields["PN"] || "";
-
-                    var lenSec = Math.floor(lenMicro / 1000000);
-                    var posSec = Math.floor(posMicro / 1000000);
-                    var pct = lenSec > 0 ? Math.floor((posSec * 100) / lenSec) : 0;
-                    if (pct > 100) pct = 100;
-
-                    var lenStr = String(Math.floor(lenSec / 60)).padStart(2, "0") + ":" + String(lenSec % 60).padStart(2, "0");
-                    var posStr = String(Math.floor(posSec / 60)).padStart(2, "0") + ":" + String(posSec % 60).padStart(2, "0");
-
-                    var newData = Object.assign({}, root.musicData, {
-                        title: title, artist: artist, status: status,
-                        percent: pct, length: lenSec, position: posSec,
-                        lengthStr: lenStr, positionStr: posStr, timeStr: posStr + " / " + lenStr,
-                        source: playerName, playerName: playerName
-                    });
-
-                    if (root.userToggledPlay) newData.status = root.musicData.status;
-                    if (root.userIsSkipping) {
-                        if (newData.title !== root.musicData.title && newData.title !== root.skippedTitle && newData.title !== "Loading...") {
-                            root.userIsSkipping = false;
-                        } else {
-                            return;
-                        }
-                    }
-
-                    root.musicData = newData;
-                } else {
-                    if (!root.userToggledPlay) {
-                        root.musicData = Object.assign({}, root.musicData, {
-                            status: "Stopped", percent: 0, title: "Not Playing", artist: ""
-                        });
-                    }
-                }
-            }
-        }
-    }
-
     Connections {
         target: Components.QsDaemonClient
 
-        // EQ still comes from daemon
+        function onMusicStateReceived(payload) {
+            if (payload) {
+                root.musicData = payload;
+            }
+        }
+
         function onEqStateReceived(payload) {
             if (Date.now() - root.lastEqUpdate < 2000) return;
             if (payload) {
