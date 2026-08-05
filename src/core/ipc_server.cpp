@@ -407,43 +407,59 @@ void DaemonServer::handleToolsRequest(QLocalSocket* client, const QString& reqId
         url = "https://api.dictionaryapi.dev/api/v2/entries/en/" + QUrl::toPercentEncoding(query);
     }
 
-    QNetworkReply* reply = netManager->get(QNetworkRequest(QUrl(url)));
+    QNetworkRequest req((QUrl(url)));
+    req.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (X11; Linux x86_64) Quickshell/1.0");
+
+    QNetworkReply* reply = netManager->get(req);
     connect(reply, &QNetworkReply::finished, this, [this, client, reqId, mode, query, reply]() {
+        QByteArray rawData = reply->readAll();
+        int httpStatus = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        QNetworkReply::NetworkError netErr = reply->error();
         reply->deleteLater();
-        if (reply->error() != QNetworkReply::NoError) {
+
+        // If network failed completely without any HTTP response (e.g. no internet)
+        if (netErr != QNetworkReply::NoError && rawData.isEmpty() && httpStatus == 0) {
             QJsonObject errorRes;
-            errorRes["result"] = "Error connecting to service.";
+            errorRes["result"] = "Error connecting to service. Please check network.";
             errorRes["mode"] = mode;
             sendResponse(client, reqId, errorRes, "error");
             return;
         }
 
-        QByteArray rawData = reply->readAll();
         try {
             auto data = json::parse(rawData.toStdString());
             QJsonObject resObj;
 
             if (mode == "tran") {
-                std::string translated = data["responseData"]["translatedText"];
-                if (translated.find("MYMEMORY WARNING") != std::string::npos || translated.find("PLEASE SELECT") != std::string::npos) {
-                    translated = "API quota exceeded, try again later.";
+                if (data.contains("responseData") && data["responseData"].contains("translatedText")) {
+                    std::string translated = data["responseData"]["translatedText"];
+                    if (translated.find("MYMEMORY WARNING") != std::string::npos || translated.find("PLEASE SELECT") != std::string::npos) {
+                        translated = "API quota exceeded, try again later.";
+                    }
+                    resObj["result"] = QString::fromStdString(translated);
+                } else {
+                    resObj["result"] = "Translation not available.";
                 }
-                resObj["result"] = QString::fromStdString(translated);
                 resObj["mode"] = "tran";
             } else {
-                if (data.is_array() && !data.empty()) {
+                if (httpStatus == 404 || (data.is_object() && data.contains("title"))) {
+                    resObj["result"] = "No definitions found for \"" + query + "\".";
+                    resObj["mode"] = "df";
+                } else if (data.is_array() && !data.empty()) {
                     auto entry = data[0];
                     std::string phonetic = entry.value("phonetic", "");
                     std::vector<std::string> results;
                     int m_count = 0;
-                    for (auto& meaning : entry["meanings"]) {
-                        if (m_count >= 2) break;
-                        std::string part = meaning.value("partOfSpeech", "");
-                        if (meaning.contains("definitions") && !meaning["definitions"].empty()) {
-                            std::string defn = meaning["definitions"][0].value("definition", "");
-                            if (!defn.empty()) {
-                                results.push_back("(" + part + ") " + defn);
-                                m_count++;
+                    if (entry.contains("meanings")) {
+                        for (auto& meaning : entry["meanings"]) {
+                            if (m_count >= 2) break;
+                            std::string part = meaning.value("partOfSpeech", "");
+                            if (meaning.contains("definitions") && !meaning["definitions"].empty()) {
+                                std::string defn = meaning["definitions"][0].value("definition", "");
+                                if (!defn.empty()) {
+                                    results.push_back("(" + part + ") " + defn);
+                                    m_count++;
+                                }
                             }
                         }
                     }
@@ -455,16 +471,16 @@ void DaemonServer::handleToolsRequest(QLocalSocket* client, const QString& reqId
                     resObj["result"] = QString::fromStdString(final_res);
                     resObj["mode"] = "df";
                 } else {
-                    resObj["result"] = "No definition found.";
+                    resObj["result"] = "No definition found for \"" + query + "\".";
                     resObj["mode"] = "df";
                 }
             }
             sendResponse(client, reqId, resObj);
         } catch (...) {
             QJsonObject errorRes;
-            errorRes["result"] = "Failed to parse API response.";
+            errorRes["result"] = "No definition found for \"" + query + "\".";
             errorRes["mode"] = mode;
-            sendResponse(client, reqId, errorRes, "error");
+            sendResponse(client, reqId, errorRes, "ok");
         }
     });
 }
