@@ -203,16 +203,16 @@ binds {
 
 spawn-at-startup "/usr/lib/polkit-kde-authentication-agent-1"
 spawn-at-startup "awww-daemon"
-spawn-at-startup "$HOME/.config/niri/bin/swayidle.sh"
-spawn-at-startup "swayosd-server" "--top-margin" "0.9" "--style" "$HOME/.config/swayosd/style.css"
-spawn-at-startup "quickshell" "-p" "$HOME/.config/niri/bin/quickshell/Shell.qml"
-spawn-at-startup "$HOME/.config/niri/bin/init.sh"
+spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/swayidle.sh"
+spawn-at-startup "bash" "-c" "swayosd-server --top-margin 0.9 --style $HOME/.config/swayosd/style.css"
+spawn-at-startup "bash" "-c" "quickshell -p $HOME/.config/niri/bin/quickshell/Shell.qml"
+spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/init.sh"
 spawn-at-startup "playerctld"
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
-spawn-at-startup "$HOME/.config/niri/bin/volume_listener.sh"
-spawn-at-startup "$HOME/.config/niri/bin/update_notifier.sh"
-spawn-at-startup "$HOME/.config/niri/bin/battery_power_saver.sh"
+spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/volume_listener.sh"
+spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/update_notifier.sh"
+spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
 
 
