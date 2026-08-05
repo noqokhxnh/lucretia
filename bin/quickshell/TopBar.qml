@@ -1874,7 +1874,7 @@ Variants {
                         border.width: 1
                         color: Qt.rgba(mocha.base.r, mocha.base.g, mocha.base.b, 0.75)
 
-                        property real targetWidth: (Config.enabledModules["tray"] !== false && trayRepeater.count > 0) ? trayLayout.width + barWindow.s(24) : 0
+                        property real targetWidth: (Config.enabledModules["tray"] !== false && trayLayout.width > 0) ? trayLayout.width + barWindow.s(24) : 0
                         width: targetWidth
                         Behavior on width {
                             NumberAnimation {
@@ -1901,6 +1901,23 @@ Variants {
                                 model: SystemTray.items
                                 delegate: Image {
                                     id: trayIcon
+
+                                    property bool isIgnored: {
+                                        let idStr = String(modelData.id || "").toLowerCase();
+                                        let titleStr = String(modelData.title || "").toLowerCase();
+                                        let iconStr = String(modelData.icon || "").toLowerCase();
+                                        let iconNameStr = String(modelData.iconName || "").toLowerCase();
+                                        let combined = idStr + " " + titleStr + " " + iconStr + " " + iconNameStr;
+                                        return combined.includes("network") ||
+                                               combined.includes("nm-applet") ||
+                                               combined.includes("blueman") ||
+                                               combined.includes("bluetooth") ||
+                                               combined.includes("nm-signal") ||
+                                               combined.includes("warp") ||
+                                               combined.includes("warp-taskbar");
+                                    }
+                                    visible: !isIgnored
+
                                     source: modelData.icon || ""
                                     fillMode: Image.PreserveAspectFit
 
