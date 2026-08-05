@@ -88,7 +88,7 @@ window-rule {
 
 // --- Overview: place wallpaper into backdrop ---
 layer-rule {
-    match namespace="^awww-daemon$"
+    match namespace="^(awww-daemon|mpvpaper)$"
     place-within-backdrop true
 }
 

@@ -5,7 +5,7 @@
 # ──────────────────────────────────────────────────────────────
 # Mặc định power-saver để giảm nhiệt, chỉ lên balanced khi cần
 if command -v gdbus &>/dev/null; then
-    sudo systemctl enable --now power-profiles-daemon 2>/dev/null || true
+    sudo -n systemctl enable --now power-profiles-daemon 2>/dev/null || true
     sleep 0.5
     gdbus call --system \
         --dest net.hadess.PowerProfiles \
@@ -37,7 +37,7 @@ if [ -f "$FLAG" ]; then
     if [ -f "$CACHE_VID" ] && [ -s "$CACHE_VID" ]; then
         VID_PATH=$(cat "$CACHE_VID")
         if [ -f "$VID_PATH" ]; then
-            pkill mpvpaper 2>/dev/null || true
+            pkill -x mpvpaper 2>/dev/null || true
             mpvpaper -o 'loop --no-audio --hwdec=auto --profile=high-quality --video-sync=display-resample --interpolation --tscale=oversample' '*' "$VID_PATH" &
         else
             rm -f "$CACHE_VID"
@@ -47,6 +47,7 @@ if [ -f "$FLAG" ]; then
     # If mpvpaper is not running, restore static image with awww
     if ! pgrep -x mpvpaper >/dev/null; then
         if [ -f "$CACHE_IMG" ]; then
+            pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
             awww img "$CACHE_IMG" --transition-type any --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 &
         fi
     fi

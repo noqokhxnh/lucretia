@@ -176,7 +176,8 @@ Item {
                     
                     cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
                     rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
-                    pkill mpvpaper || true
+                    pkill -x mpvpaper 2>/dev/null || true
+                    pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
                     
                     echo "" >> ${logFile}
                     echo "[$(date +'%H:%M:%S.%3N')] APPLYING CACHED SEARCH: $DEST_FILE TO $TARGET_MONITORS" >> ${logFile}
@@ -219,7 +220,8 @@ Item {
                         
                         cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
                         rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
-                        pkill mpvpaper || true
+                        pkill -x mpvpaper 2>/dev/null || true
+                        pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
                         
                         echo "" >> ${logFile}
                         echo "[$(date +'%H:%M:%S.%3N')] APPLYING NEW DOWNLOAD: $DEST_FILE TO $TARGET_MONITORS" >> ${logFile}
@@ -266,6 +268,7 @@ Item {
                 echo "" >> ${logFile}
                 echo "[$(date +'%H:%M:%S.%3N')] APPLYING LOCAL IMAGE: ${escOriginal} TO ${escOutputs}" >> ${logFile}
                 
+                pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
                 if [ "${escOutputs}" = "all" ]; then
                     awww img "${escOriginal}" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
                 else
@@ -280,7 +283,7 @@ Item {
 
         const fullScript = `
             cp "${isVideo ? escThumb : escOriginal}" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
-            pkill mpvpaper || true
+            pkill -x mpvpaper 2>/dev/null || true
             ${saveVideoCmd}
             
             ${wallpaperCmd}
