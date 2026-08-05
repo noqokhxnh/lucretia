@@ -134,88 +134,87 @@ void cmd_commits(CURL* curl) {
     auto local = read_local_version();
     auto local_v = parse_ver(local);
 
-    if (local_v == ZERO_VER) {
-        auto resp = fetch_url(curl,
-            "https://api.github.com/repos/" + repo + "/commits/main");
-        try {
-            auto data = json::parse(resp.data);
-            std::cout << data["commit"]["message"].get<std::string>() << std::endl;
-        } catch (...) {
-            std::cout << "No changelog available" << std::endl;
-        }
-        return;
-    }
-
     std::string found_ref;
 
-    // 1. Try tags first (fast, small payload)
-    {
+    if (local_v > ZERO_VER) {
+        // 1. Try tags first (fast, small payload)
+        {
+            auto resp = fetch_url(curl,
+                "https://api.github.com/repos/" + repo + "/tags?per_page=30");
+            if (resp.status_code == 200) {
+                try {
+                    auto tags = json::parse(resp.data);
+                    std::tuple<int,int,int> best = {0, 0, 0};
+                    for (const auto& t : tags) {
+                        auto tv = parse_ver(t["name"].get<std::string>());
+                        if (tv > ZERO_VER && tv <= local_v && tv > best) {
+                            best = tv;
+                            found_ref = t["name"].get<std::string>();
+                        }
+                    }
+                } catch (...) {}
+            }
+        }
+
+        // 2. Fallback: releases (only if no tag found)
+        if (found_ref.empty()) {
+            auto resp = fetch_url(curl,
+                "https://api.github.com/repos/" + repo + "/releases?per_page=10");
+            if (resp.status_code == 200) {
+                try {
+                    auto releases = json::parse(resp.data);
+                    for (const auto& r : releases) {
+                        auto rv = parse_ver(r["tag_name"].get<std::string>());
+                        if (rv <= local_v && rv > ZERO_VER) {
+                            found_ref = r["tag_name"].get<std::string>();
+                            break;
+                        }
+                    }
+                } catch (...) {}
+            }
+        }
+    }
+
+    // 3. If a valid ref was found, compare found_ref...main
+    if (!found_ref.empty()) {
         auto resp = fetch_url(curl,
-            "https://api.github.com/repos/" + repo + "/tags?per_page=30");
+            "https://api.github.com/repos/" + repo + "/compare/" + found_ref + "...main");
         if (resp.status_code == 200) {
             try {
-                auto tags = json::parse(resp.data);
-                std::tuple<int,int,int> best = {0, 0, 0};
-                for (const auto& t : tags) {
-                    auto tv = parse_ver(t["name"].get<std::string>());
-                    if (tv > ZERO_VER && tv <= local_v && tv > best) {
-                        best = tv;
-                        found_ref = t["name"].get<std::string>();
+                auto data = json::parse(resp.data);
+                if (data.contains("commits") && data["commits"].is_array() && !data["commits"].empty()) {
+                    auto commits = data["commits"];
+                    int start = std::max(0, (int)commits.size() - 20);
+                    for (int i = start; i < (int)commits.size(); i++) {
+                        std::cout << commits[i]["commit"]["message"].get<std::string>() << std::endl;
+                        std::cout << "---SPLIT---" << std::endl;
                     }
+                    return;
                 }
             } catch (...) {}
         }
     }
 
-    // 2. Fallback: releases (only if no tag found)
-    if (found_ref.empty()) {
-        auto resp = fetch_url(curl,
-            "https://api.github.com/repos/" + repo + "/releases?per_page=10");
-        if (resp.status_code == 200) {
-            try {
-                auto releases = json::parse(resp.data);
-                for (const auto& r : releases) {
-                    auto rv = parse_ver(r["tag_name"].get<std::string>());
-                    if (rv <= local_v && rv > ZERO_VER) {
-                        found_ref = r["tag_name"].get<std::string>();
-                        break;
-                    }
-                }
-            } catch (...) {}
-        }
-    }
-
-    // 3. If we found a ref, compare directly — skip the "no ref" fallback
-    if (found_ref.empty()) {
-        // No matching tag/release: compare with earliest known version
-        // Use v0.0.1 as baseline to get all recent commits
-        found_ref = "v0.0.1";
-    }
-
-    // 4. Compare found_ref...main
+    // 4. Fallback: No matching tag/release found or compare failed — fetch recent commits on main directly
     auto resp = fetch_url(curl,
-        "https://api.github.com/repos/" + repo + "/compare/" + found_ref + "...main");
-    if (resp.status_code != 200) {
-        std::cout << "No changelog available" << std::endl;
-        return;
+        "https://api.github.com/repos/" + repo + "/commits?per_page=20");
+    if (resp.status_code == 200) {
+        try {
+            auto commits = json::parse(resp.data);
+            if (commits.is_array() && !commits.empty()) {
+                int count = (int)commits.size();
+                for (int i = count - 1; i >= 0; i--) {
+                    if (commits[i].contains("commit") && commits[i]["commit"].contains("message")) {
+                        std::cout << commits[i]["commit"]["message"].get<std::string>() << std::endl;
+                        std::cout << "---SPLIT---" << std::endl;
+                    }
+                }
+                return;
+            }
+        } catch (...) {}
     }
 
-    try {
-        auto data = json::parse(resp.data);
-        auto commits = data["commits"];
-        if (commits.empty()) {
-            std::cout << "No changelog available" << std::endl;
-            return;
-        }
-        // Limit to last 20 commits to keep popup fast
-        int start = std::max(0, (int)commits.size() - 20);
-        for (int i = start; i < (int)commits.size(); i++) {
-            std::cout << commits[i]["commit"]["message"].get<std::string>() << std::endl;
-            std::cout << "---SPLIT---" << std::endl;
-        }
-    } catch (...) {
-        std::cout << "No changelog available" << std::endl;
-    }
+    std::cout << "No changelog available" << std::endl;
 }
 
 int main(int argc, char* argv[]) {

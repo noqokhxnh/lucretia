@@ -3,7 +3,6 @@ import QtQuick.Window
 import QtQuick.Effects
 import QtQuick.Layouts
 import QtQuick.Controls
-import QtMultimedia
 import Quickshell
 import Quickshell.Io
 import "../"
@@ -12,13 +11,9 @@ Item {
     id: window
     focus: true
 
-    Caching { id: paths }
-    readonly property string videoPath: paths.getRunDir("updater") + "/video.mp4"
-    
     // WAYLAND ANTI-DEADLOCK: Guarantee the initial frame is never 0x0.
-    // If mainCard.width evaluates to 0 on tick 1, it falls back to raw 500.
-    implicitWidth: mainCard.width || 500
-    implicitHeight: mainCard.height || 600
+    implicitWidth: mainCard.width || 600
+    implicitHeight: mainCard.height || 550
 
     property bool _init: false
     property string updaterBin: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/updater/updater_backend"
@@ -59,17 +54,10 @@ Item {
     property string localVersion: "..."
     property string remoteVersion: "..."
     
-    // Dynamic URL based on the user's current version vs the manifest
-    property string videoUrl: ""
-    property bool uiExpanded: false
-    property bool videoReady: false
-    
     property var pendingCommits: []
     property int typeIndex: 0
 
     ListModel { id: commitModel }
-
-
 
     Keys.onEscapePressed: {
         Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
@@ -88,7 +76,6 @@ Item {
             window._init = true;
             localVerProcess.running = true;
             remoteVerProcess.running = true;
-            videoResolveProcess.running = true;
             commitFetchProcess.running = true;
         }
     }
@@ -128,50 +115,12 @@ Item {
         stdout: StdioCollector {
             onStreamFinished: {
                 let out = this.text ? this.text.trim() : "";
-                if (out !== "") {
-                    window.remoteVersion = out;
-                    // Expand UI immediately when we have version info
-                    if (!window.uiExpanded && window.localVersion !== out) {
-                        window.uiExpanded = true;
-                    }
-                }
+                if (out !== "") window.remoteVersion = out;
             }
         }
     }
 
-    // --- 3. DYNAMIC VIDEO RESOLUTION ---
-    Process {
-        id: videoResolveProcess
-        running: false
-        command: [window.updaterBin, "--video"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let url = this.text ? this.text.trim() : "";
-                if (url !== "" && url.startsWith("http")) {
-                    window.videoUrl = url;
-                    if (!window.uiExpanded) window.uiExpanded = true;
-                    videoDownloadProcess.running = true;
-                }
-            }
-        }
-    }
-
-    // --- 4. VIDEO DOWNLOAD (BACKGROUND DISK WRITE) ---
-    Process {
-        id: videoDownloadProcess
-        running: false
-        // Quietly pulls the mp4 to RAM/tmpfs to avoid locking the UI thread
-        command: ["bash", "-c", "curl -m 60 -s -L -o '" + window.videoPath + "' " + window.videoUrl]
-        onExited: {
-            if (exitCode === 0) {
-                videoPlayer.source = "file://" + window.videoPath;
-                videoPlayer.play();
-                window.videoReady = true; // Fades out spinner, fades in video
-            }
-        }
-    }
-
-    // --- 5. COMMIT LOG FETCH ---
+    // --- 3. COMMIT LOG FETCH ---
     Process {
         id: commitFetchProcess
         running: false
@@ -226,8 +175,8 @@ Item {
     // =========================================================================
     Rectangle {
         id: mainCard
-        width: window.uiExpanded ? window.s(950) : window.s(500)
-        height: window.uiExpanded ? window.s(850) : window.s(600)
+        width: window.s(650)
+        height: window.s(550)
         anchors.centerIn: parent 
         
         radius: window.s(16)
@@ -344,66 +293,6 @@ Item {
                         if (window.remoteVersion !== "..." && window.remoteVersion !== "") {
                             versionAnim.start();
                         }
-                    }
-                }
-            }
-
-            // --- STRICT 16:9 DYNAMIC VIDEO PREVIEW ---
-            Item {
-                id: videoContainer
-                Layout.fillWidth: true
-                // Perfectly clamps height to a 16:9 ratio of the dynamic width
-                Layout.preferredHeight: window.uiExpanded ? (width * 9 / 16) : 0 
-                visible: window.uiExpanded || height > 0
-                clip: true
-                
-                Behavior on Layout.preferredHeight { enabled: window._init; NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: window.s(12)
-                    color: window.crust 
-                    border.color: window.surface2 
-                    border.width: 1
-                    clip: true
-
-                    // Loading State Animation (Visible while downloading)
-                    Item {
-                        anchors.centerIn: parent
-                        width: window.s(42)
-                        height: window.s(42)
-                        visible: window.uiExpanded && !window.videoReady
-                        
-                        Text {
-                            anchors.centerIn: parent
-                            text: "󰑮"
-                            font.family: "Iosevka Nerd Font"
-                            font.pixelSize: window.s(42)
-                            color: window.mauve
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
-                            transformOrigin: Item.Center
-                            
-                            RotationAnimation on rotation {
-                                from: 0; to: 360; duration: 2500; loops: Animation.Infinite; running: parent ? parent.visible : false
-                            }
-                        }
-                    }
-
-                    MediaPlayer {
-                        id: videoPlayer
-                        videoOutput: videoOutput
-                        loops: MediaPlayer.Infinite
-                    }
-
-                    VideoOutput {
-                        id: videoOutput
-                        anchors.fill: parent
-                        fillMode: VideoOutput.PreserveAspectFit 
-                        
-                        // Fades in smoothly once the local video is physically ready
-                        opacity: window.videoReady ? 1.0 : 0.0
-                        Behavior on opacity { NumberAnimation { duration: 800; easing.type: Easing.InOutQuad } }
                     }
                 }
             }
