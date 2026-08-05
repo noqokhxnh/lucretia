@@ -150,13 +150,13 @@ fi
 
 # Main official packages
 ARCH_PKGS=(
-    "niri" "swayidle" "kitty" "cava" "zbar" "pavucontrol" "alsa-utils" "awww" 
-    "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep" "fcitx5" "fcitx5-configtool"
+    "niri" "swayidle" "foot" "pavucontrol" "alsa-utils" "awww" 
+    "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep"
     "cliphist" "jq" "socat" "inotify-tools" "pamixer" "brightnessctl" "acpi" "iw"
     "bluez" "bluez-utils" "libnotify" "networkmanager" "lm_sensors" "bc" 
     "pipewire" "wireplumber" "pipewire-pulse" "pipewire-alsa" "pipewire-jack" "libpulse" "python"
     "imagemagick" "wget" "file" "git" "psmisc"
-    "matugen-bin" "ffmpeg" "fastfetch" "quickshell-git" "unzip"
+    "matugen-bin" "ffmpeg" "quickshell-git"
     "grim" "playerctl" "satty" "yq" "xdg-desktop-portal-gtk" "slurp" "mpvpaper"
     "power-profiles-daemon" "swayosd-git" "nautilus" "polkit-kde-agent"
     "qt5-wayland" "qt5-quickcontrols" "qt5-quickcontrols2" "qt5-graphicaleffects" "qt6-wayland"
@@ -166,9 +166,9 @@ ARCH_PKGS=(
 PKGS=("${ARCH_PKGS[@]}")
 
 # Bootstrap dependencies
-if ! command -v fzf &> /dev/null || ! command -v lspci &> /dev/null || ! command -v jq &> /dev/null || ! command -v curl &> /dev/null; then
-    echo -e "${C_CYAN}Bootstrapping TUI dependencies (fzf, pciutils, jq, curl)...${RESET}"
-    sudo pacman -Sy --noconfirm --needed fzf pciutils jq curl > /dev/null 2>&1
+if ! command -v fzf &> /dev/null || ! command -v lspci &> /dev/null || ! command -v jq &> /dev/null || ! command -v curl &> /dev/null || ! command -v unzip &> /dev/null; then
+    echo -e "${C_CYAN}Bootstrapping TUI dependencies (fzf, pciutils, jq, curl, unzip)...${RESET}"
+    sudo pacman -Sy --noconfirm --needed fzf pciutils jq curl unzip > /dev/null 2>&1
 fi
 
 if ! grep -q "^\[multilib\]" /etc/pacman.conf; then
@@ -627,14 +627,14 @@ show_overview() {
 
     echo -e "${BOLD}${C_BLUE}--- Applications ---${RESET}"
     print_kb "SUPER + RETURN" "Open Terminal"
-    print_kb "SUPER + W" "Open Browser (Brave)"
+    print_kb "SUPER + W" "Open Browser"
     print_kb "SUPER + E" "Open File Manager (Nautilus)"
     print_kb "SUPER + V" "Clipboard History Manager"
     print_kb "SUPER + ," "Lock Screen"
     echo ""
 
     echo -e "${BOLD}${C_BLUE}--- Quickshell Widgets ---${RESET}"
-    print_kb "SUPER_L (Win Key)" "Toggle App Launcher"
+    print_kb "SUPER + A" "Toggle App Launcher"
     print_kb "SUPER + SHIFT + I" "Toggle Control Center / Settings"
     print_kb "SUPER + SHIFT + Q" "Toggle Music Player Popup"
     print_kb "SUPER + SHIFT + W" "Toggle Wallpaper Picker"
@@ -643,6 +643,8 @@ show_overview() {
     print_kb "SUPER + N" "Toggle Notes Widget"
     print_kb "SUPER + SHIFT + N" "Toggle Network Panel"
     print_kb "SUPER + D" "Toggle System Dashboard"
+    print_kb "SUPER + SHIFT + B" "Toggle Battery Popup"
+    print_kb "SUPER + SHIFT + M" "Toggle Monitors Panel"
     echo ""
 
     echo -e "${BOLD}${C_BLUE}--- Window Management ---${RESET}"
