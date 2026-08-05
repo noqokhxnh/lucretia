@@ -212,9 +212,23 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
         handle_wallpaper_prep
         CURRENT_SRC=""
 
-        # Detect current wallpaper from running wallpaper engines
-        if pgrep -a "mpvpaper" > /dev/null; then
-            CURRENT_SRC=$(pgrep -a mpvpaper | grep -o "$SRC_DIR/[^' ]*" | head -n1)
+        # Detect current wallpaper from saved path, mpvpaper, video path, or awww cache
+        if [ -f "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path" ]; then
+            SAVED_PATH=$(cat "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path" 2>/dev/null)
+            if [ -f "$SAVED_PATH" ]; then
+                CURRENT_SRC="$SAVED_PATH"
+            fi
+        fi
+
+        if [ -z "$CURRENT_SRC" ] && pgrep mpvpaper > /dev/null 2>&1; then
+            for pid in $(pgrep mpvpaper); do
+                cmd=$(tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null)
+                src=$(echo "$cmd" | grep -o "$SRC_DIR/[^ ]*")
+                if [ -n "$src" ] && [ -f "$src" ]; then
+                    CURRENT_SRC="$src"
+                    break
+                fi
+            done
         fi
 
         if [ -z "$CURRENT_SRC" ] && [ -f "$QS_CACHE_WALLPAPER_PICKER/current_video.path" ]; then

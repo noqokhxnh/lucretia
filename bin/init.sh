@@ -75,6 +75,7 @@ file=$(find "$WALLPAPER_DIR" -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -in
 if [ -n "$file" ]; then
     # Copy to our persistent cache location instead of /tmp
     cp "$file" "$CACHE_IMG"
+    echo "$file" > "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path"
     
     awww img "$file" --transition-type any --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 &
     

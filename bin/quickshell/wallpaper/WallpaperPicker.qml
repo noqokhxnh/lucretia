@@ -27,7 +27,7 @@ Item {
     MatugenColors { id: _theme }
 
     property string widgetArg: ""
-    property string targetWallName: ""
+    property string targetWallName: widgetArg
     property bool initialFocusSet: false
     property int visibleItemCount: -1
     property int scrollAccum: 0
@@ -175,6 +175,7 @@ Item {
                     export TARGET_MONITORS="${escOutputs}"
                     
                     cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
+                    echo "$DEST_FILE" > ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.path
                     rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
                     pkill -x mpvpaper 2>/dev/null || true
                     pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
@@ -219,6 +220,7 @@ Item {
                         magick "$DEST_FILE" -resize x420 -quality 70 "$FINAL_THUMB" || true
                         
                         cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
+                        echo "$DEST_FILE" > ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.path
                         rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
                         pkill -x mpvpaper 2>/dev/null || true
                         pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
@@ -283,6 +285,7 @@ Item {
 
         const fullScript = `
             cp "${isVideo ? escThumb : escOriginal}" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
+            echo "${escOriginal}" > ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.path
             pkill -x mpvpaper 2>/dev/null || true
             ${saveVideoCmd}
             
@@ -330,6 +333,9 @@ Item {
                 window.isSearchPaused = true;
             }
         } else {
+            if (widgetArg !== "") {
+                targetWallName = widgetArg;
+            }
             window.initializePicker();
         }
     }
