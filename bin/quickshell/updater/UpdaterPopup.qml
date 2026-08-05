@@ -56,8 +56,18 @@ Item {
     
     property var pendingCommits: []
     property int typeIndex: 0
+    readonly property bool isLoading: localVerProcess.running || remoteVerProcess.running || commitFetchProcess.running
 
     ListModel { id: commitModel }
+
+    function refreshData() {
+        if (window.isLoading) return;
+        window.remoteVersion = "...";
+        commitModel.clear();
+        localVerProcess.running = true;
+        remoteVerProcess.running = true;
+        commitFetchProcess.running = true;
+    }
 
     Keys.onEscapePressed: {
         Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
@@ -205,22 +215,60 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: window.s(60)
 
-                // Git Protection Badge
-                Rectangle {
-                    visible: window.isGitRepo || Config.isConfigProtected
+                // Header Action Bar (Refresh Button + Protection Badge)
+                RowLayout {
                     anchors.top: parent.top
                     anchors.right: parent.right
-                    width: window.s(130)
-                    height: window.s(24)
-                    radius: height / 2
-                    color: window.mauve
-                    opacity: 0.15
-                    
-                    RowLayout {
-                        anchors.centerIn: parent
-                        spacing: window.s(6)
-                        Text { text: window.isGitRepo ? "󰊢" : "󰒳"; font.family: "Iosevka Nerd Font"; color: window.mauve; font.pixelSize: window.s(14) }
-                        Text { text: window.isGitRepo ? "GIT PROTECTED" : "CONFIG LOCKED"; font.family: "JetBrains Mono"; font.weight: Font.Black; color: window.mauve; font.pixelSize: window.s(10) }
+                    spacing: window.s(8)
+
+                    // Refresh Button
+                    Rectangle {
+                        width: window.s(28)
+                        height: window.s(24)
+                        radius: height / 2
+                        color: refreshMa.containsMouse ? window.surface1 : window.surface0
+                        border.color: window.surface2
+                        border.width: 1
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "󰑐"
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: window.s(13)
+                            color: window.text
+
+                            NumberAnimation on rotation {
+                                running: window.isLoading
+                                loops: Animation.Infinite
+                                from: 0; to: 360
+                                duration: 1000
+                            }
+                        }
+
+                        MouseArea {
+                            id: refreshMa
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: window.isLoading ? Qt.ArrowCursor : Qt.PointingHandCursor
+                            onClicked: window.refreshData()
+                        }
+                    }
+
+                    // Git Protection Badge
+                    Rectangle {
+                        visible: window.isGitRepo || Config.isConfigProtected
+                        width: window.s(130)
+                        height: window.s(24)
+                        radius: height / 2
+                        color: window.mauve
+                        opacity: 0.15
+                        
+                        RowLayout {
+                            anchors.centerIn: parent
+                            spacing: window.s(6)
+                            Text { text: window.isGitRepo ? "󰊢" : "󰒳"; font.family: "Iosevka Nerd Font"; color: window.mauve; font.pixelSize: window.s(14) }
+                            Text { text: window.isGitRepo ? "GIT PROTECTED" : "CONFIG LOCKED"; font.family: "JetBrains Mono"; font.weight: Font.Black; color: window.mauve; font.pixelSize: window.s(10) }
+                        }
                     }
                 }
 
@@ -233,16 +281,27 @@ Item {
                     anchors.centerIn: parent
                     anchors.horizontalCenterOffset: 0 
                 }
+
+                Text {
+                    id: arrowText
+                    text: "󰁔"
+                    font.family: "Iosevka Nerd Font"
+                    font.pixelSize: window.s(18)
+                    color: window.mauve
+                    anchors.centerIn: parent
+                    anchors.horizontalCenterOffset: window.s(-25)
+                    opacity: 0
+                }
                 
                 Text { 
                     id: newVer
                     text: window.remoteVersion
                     font.family: "JetBrains Mono"
                     font.weight: Font.Black
-                    font.pixelSize: window.s(48) 
+                    font.pixelSize: window.s(36) 
                     color: window.green 
                     anchors.centerIn: parent
-                    anchors.horizontalCenterOffset: window.s(20)
+                    anchors.horizontalCenterOffset: window.s(70)
                     opacity: 0
                     scale: 0.8 
                 }
@@ -265,15 +324,16 @@ Item {
                     PauseAnimation { duration: 150 }
 
                     ParallelAnimation {
-                        NumberAnimation { target: oldVer; property: "anchors.horizontalCenterOffset"; to: window.s(-30); duration: 1200; easing.type: Easing.OutExpo }
-                        NumberAnimation { target: oldVer; property: "opacity"; to: 0.0; duration: 1000; easing.type: Easing.OutSine }
+                        NumberAnimation { target: oldVer; property: "anchors.horizontalCenterOffset"; to: window.s(-110); duration: 1000; easing.type: Easing.OutExpo }
+                        NumberAnimation { target: oldVer; property: "opacity"; to: 0.6; duration: 800; easing.type: Easing.OutSine }
 
                         SequentialAnimation {
-                            PauseAnimation { duration: 400 } 
+                            PauseAnimation { duration: 300 } 
                             ParallelAnimation {
+                                NumberAnimation { target: arrowText; property: "opacity"; to: 0.8; duration: 600; easing.type: Easing.OutSine }
                                 NumberAnimation { target: newVer; property: "opacity"; to: 1; duration: 800; easing.type: Easing.OutSine }
-                                NumberAnimation { target: newVer; property: "anchors.horizontalCenterOffset"; to: 0; duration: 1200; easing.type: Easing.OutExpo }
-                                NumberAnimation { target: newVer; property: "scale"; to: 1.0; duration: 1200; easing.type: Easing.OutBack; easing.overshoot: 1.4 }
+                                NumberAnimation { target: newVer; property: "anchors.horizontalCenterOffset"; to: window.s(65); duration: 1000; easing.type: Easing.OutExpo }
+                                NumberAnimation { target: newVer; property: "scale"; to: 1.0; duration: 1000; easing.type: Easing.OutBack; easing.overshoot: 1.3 }
                             }
                             ScriptAction { script: glowAnim.start() }
                         }
@@ -303,12 +363,43 @@ Item {
                 Layout.fillHeight: true
                 clip: true
 
+                // Loading / Empty indicator overlay
+                ColumnLayout {
+                    anchors.centerIn: parent
+                    visible: window.isLoading && commitModel.count === 0
+                    spacing: window.s(10)
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "󰑐"
+                        font.family: "Iosevka Nerd Font"
+                        font.pixelSize: window.s(32)
+                        color: window.mauve
+
+                        NumberAnimation on rotation {
+                            running: window.isLoading
+                            loops: Animation.Infinite
+                            from: 0; to: 360
+                            duration: 1000
+                        }
+                    }
+
+                    Text {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: "Checking for updates..."
+                        font.family: "JetBrains Mono"
+                        font.pixelSize: window.s(13)
+                        color: window.subtext0
+                    }
+                }
+
                 ListView {
                     id: changelogList
                     anchors.fill: parent
                     clip: true
                     model: commitModel
-                    spacing: window.s(8)
+                    spacing: window.s(6)
+                    visible: !(window.isLoading && commitModel.count === 0)
 
                     ScrollBar.vertical: ScrollBar {
                         id: scrollBar
@@ -349,31 +440,73 @@ Item {
 
                     delegate: Rectangle {
                         width: changelogList.width - window.s(12) 
-                        height: Math.max(window.s(40), commitText.implicitHeight + window.s(20))
+                        height: Math.max(window.s(36), contentLayout.implicitHeight + window.s(14))
                         color: window.surface0 
-                        radius: window.s(12)
+                        radius: window.s(10)
 
                         // Subtle Matugen Tint Overlay
                         Rectangle {
                             anchors.fill: parent
                             radius: parent.radius
                             color: window.mauve
-                            opacity: 0.05
+                            opacity: 0.04
                         }
-                        
-                        Text {
-                            id: commitText
+
+                        function parseCommit(txt) {
+                            if (!txt) return { tag: "", color: window.subtext0, msg: "" };
+                            let m = txt.match(/^(feat|fix|docs|style|refactor|perf|test|chore|build|ci)(\([^\)]+\))?:\s*(.*)/i);
+                            if (m) {
+                                let type = m[1].toLowerCase();
+                                let scope = m[2] || "";
+                                let col = window.subtext0;
+                                if (type === "feat") col = window.green;
+                                else if (type === "fix") col = window.mauve;
+                                else if (type === "refactor" || type === "perf") col = window.blue;
+                                return { tag: type.toUpperCase() + scope, color: col, msg: m[3] };
+                            }
+                            return { tag: "", color: window.subtext0, msg: txt };
+                        }
+
+                        property var commitData: parseCommit(model.lineText)
+
+                        RowLayout {
+                            id: contentLayout
                             anchors.fill: parent
-                            anchors.margins: window.s(10)
-                            anchors.leftMargin: window.s(16)
-                            anchors.rightMargin: window.s(16)
-                            text: model.lineText
-                            font.family: "JetBrains Mono"
-                            font.pixelSize: window.s(13)
-                            color: window.text
-                            wrapMode: Text.WordWrap
-                            verticalAlignment: Text.AlignVCenter
-                            lineHeight: 1.4
+                            anchors.margins: window.s(6)
+                            anchors.leftMargin: window.s(12)
+                            anchors.rightMargin: window.s(12)
+                            spacing: window.s(10)
+
+                            Rectangle {
+                                visible: commitData.tag !== ""
+                                Layout.alignment: Qt.AlignVCenter
+                                implicitWidth: tagText.implicitWidth + window.s(12)
+                                implicitHeight: window.s(20)
+                                radius: window.s(4)
+                                color: commitData.color
+                                opacity: 0.2
+
+                                Text {
+                                    id: tagText
+                                    anchors.centerIn: parent
+                                    text: commitData.tag
+                                    font.family: "JetBrains Mono"
+                                    font.weight: Font.Bold
+                                    font.pixelSize: window.s(10)
+                                    color: commitData.color
+                                }
+                            }
+
+                            Text {
+                                Layout.fillWidth: true
+                                Layout.alignment: Qt.AlignVCenter
+                                text: commitData.tag !== "" ? commitData.msg : model.lineText
+                                font.family: "JetBrains Mono"
+                                font.pixelSize: window.s(12)
+                                color: window.text
+                                wrapMode: Text.WordWrap
+                                lineHeight: 1.3
+                            }
                         }
                     }
                 }
@@ -466,7 +599,7 @@ Item {
                     }
                     
                     Text { 
-                        text: updateBtn.fillLevel > 0 ? "HOLDING..." : "UPDATE"
+                        text: updateBtn.fillLevel > 0 ? "HOLDING... " + Math.floor(updateBtn.fillLevel * 100) + "%" : "UPDATE"
                         font.family: "JetBrains Mono"
                         font.weight: Font.Black
                         font.pixelSize: window.s(14)
