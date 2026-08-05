@@ -28,22 +28,38 @@ qs_ensure_cache "wallpaper_picker"
 
 FLAG="$QS_STATE_WALLPAPER_PICKER/wallpaper_initialized"
 CACHE_IMG="$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.png"
+CACHE_VID="$QS_CACHE_WALLPAPER_PICKER/current_video.path"
 
 RELOAD_SCRIPT_PATH="$(dirname "${BASH_SOURCE[0]}")/quickshell/wallpaper/matugen_reload.sh"
 
-# If the flag exists, just run matugen, awww, and the reload script, then exit
+# If the flag exists, restore current wallpaper (video or image) and exit
 if [ -f "$FLAG" ]; then
-    # Use the cached wallpaper image for matugen and awww
+    if [ -f "$CACHE_VID" ] && [ -s "$CACHE_VID" ]; then
+        VID_PATH=$(cat "$CACHE_VID")
+        if [ -f "$VID_PATH" ]; then
+            pkill mpvpaper 2>/dev/null || true
+            mpvpaper -o 'loop --no-audio --hwdec=auto --profile=high-quality --video-sync=display-resample --interpolation --tscale=oversample' '*' "$VID_PATH" &
+        else
+            rm -f "$CACHE_VID"
+        fi
+    fi
+
+    # If mpvpaper is not running, restore static image with awww
+    if ! pgrep -x mpvpaper >/dev/null; then
+        if [ -f "$CACHE_IMG" ]; then
+            awww img "$CACHE_IMG" --transition-type any --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 &
+        fi
+    fi
+
     if [ -f "$CACHE_IMG" ]; then
-        awww img "$CACHE_IMG" --transition-type any --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 &
         matugen image "$CACHE_IMG" --source-color-index 0
     fi
-    
+
     if [ -f "$RELOAD_SCRIPT_PATH" ]; then
         chmod +x "$RELOAD_SCRIPT_PATH"
         bash "$RELOAD_SCRIPT_PATH"
     fi
-    
+
     exit 0
 fi
 

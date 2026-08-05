@@ -217,6 +217,13 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
             CURRENT_SRC=$(pgrep -a mpvpaper | grep -o "$SRC_DIR/[^' ]*" | head -n1)
         fi
 
+        if [ -z "$CURRENT_SRC" ] && [ -f "$QS_CACHE_WALLPAPER_PICKER/current_video.path" ]; then
+            SAVED_VID=$(cat "$QS_CACHE_WALLPAPER_PICKER/current_video.path" 2>/dev/null)
+            if [ -f "$SAVED_VID" ]; then
+                CURRENT_SRC="$SAVED_VID"
+            fi
+        fi
+
         # Fallback: read awww state cache (stores image path per monitor)
         if [ -z "$CURRENT_SRC" ] && [ -d "$HOME/.cache/awww" ]; then
             AWWS_VER_DIR=$(ls -td "$HOME/.cache/awww"/*/ 2>/dev/null | head -1)

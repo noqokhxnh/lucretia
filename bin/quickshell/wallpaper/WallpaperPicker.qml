@@ -175,6 +175,7 @@ Item {
                     export TARGET_MONITORS="${escOutputs}"
                     
                     cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
+                    rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
                     pkill mpvpaper || true
                     
                     echo "" >> ${logFile}
@@ -217,6 +218,7 @@ Item {
                         magick "$DEST_FILE" -resize x420 -quality 70 "$FINAL_THUMB" || true
                         
                         cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
+                        rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
                         pkill mpvpaper || true
                         
                         echo "" >> ${logFile}
@@ -272,9 +274,14 @@ Item {
             `;
         }
 
+        let saveVideoCmd = isVideo
+            ? `echo "${escOriginal}" > ${paths.getCacheDir("wallpaper_picker")}/current_video.path`
+            : `rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true`;
+
         const fullScript = `
             cp "${isVideo ? escThumb : escOriginal}" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
             pkill mpvpaper || true
+            ${saveVideoCmd}
             
             ${wallpaperCmd}
             ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON ${isVideo ? escThumb : escOriginal}" >> ${logFile}; matugen image "${isVideo ? escThumb : escOriginal}" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "${escReload}" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
