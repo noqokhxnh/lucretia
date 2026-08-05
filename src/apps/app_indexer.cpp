@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <filesystem>
 #include <cctype>
+#include <QProcess>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 namespace fs = std::filesystem;
 
@@ -57,6 +61,7 @@ void AppIndexer::scanDesktopApps() {
                 if (!file.is_open()) continue;
 
                 DesktopApp app;
+                app.desktopFile = entry.path().filename().string();
                 bool is_desktop = false;
                 bool no_display = false;
                 std::string line;
@@ -89,8 +94,18 @@ void AppIndexer::scanDesktopApps() {
                         } else if (key == "Icon" && app.icon.empty()) {
                             std::string raw_icon = trim_str(value);
                             app.icon = stripIconExt(raw_icon);
+                        } else if (key == "Keywords" && app.keywords.empty()) {
+                            app.keywords = trim_str(value);
+                        } else if (key == "Comment" && app.comment.empty()) {
+                            app.comment = trim_str(value);
+                        } else if (key == "Categories" && app.categories.empty()) {
+                            app.categories = trim_str(value);
+                        } else if (key == "Terminal") {
+                            std::string val = to_lower_str(trim_str(value));
+                            if (val == "true" || val == "1") app.terminal = true;
                         } else if (key == "NoDisplay") {
-                            if (value == "true" || value == "1") no_display = true;
+                            std::string val = to_lower_str(trim_str(value));
+                            if (val == "true" || val == "1") no_display = true;
                         }
                     }
                 }
@@ -109,17 +124,67 @@ void AppIndexer::scanDesktopApps() {
     }
 }
 
-int AppIndexer::computeFuzzyScore(const std::string& name, const std::string& query) {
+std::vector<RunningWindowInfo> AppIndexer::fetchNiriWindows() {
+    std::vector<RunningWindowInfo> windows;
+    QProcess proc;
+    proc.start("niri", QStringList() << "msg" << "-j" << "windows");
+    if (proc.waitForFinished(150)) {
+        QByteArray output = proc.readAllStandardOutput();
+        QJsonDocument doc = QJsonDocument::fromJson(output);
+        if (doc.isArray()) {
+            QJsonArray arr = doc.array();
+            for (const auto& val : arr) {
+                QJsonObject o = val.toObject();
+                RunningWindowInfo info;
+                info.id = o["id"].toInt(-1);
+                info.appId = o["app_id"].toString().toLower().toStdString();
+                info.title = o["title"].toString().toStdString();
+                info.workspaceId = o["workspace_id"].toInt(1);
+                if (info.id != -1) {
+                    windows.push_back(info);
+                }
+            }
+        }
+    }
+    return windows;
+}
+
+int AppIndexer::computeFuzzyScore(const DesktopApp& app, const std::string& query) {
     if (query.empty()) return 0;
-    std::string n = to_lower_str(name);
+    std::string n = to_lower_str(app.name);
     std::string q = to_lower_str(query);
-    
+    std::string e = to_lower_str(app.exec);
+    std::string kw = to_lower_str(app.keywords);
+    std::string cat = to_lower_str(app.categories);
+
     int score = 0;
-    if (n == q) score += 2000;
-    else if (n.find(q) == 0) score += 1500 + (q.length() * 10);
-    else if (n.find(" " + q) != std::string::npos) score += 1200 + (q.length() * 5);
-    else if (n.find(q) != std::string::npos) score += 1000 + q.length();
-    
+
+    // Exact or Prefix Match on Name
+    if (n == q) score += 3000;
+    else if (n.find(q) == 0) score += 2000 + (q.length() * 10);
+    else if (n.find(" " + q) != std::string::npos) score += 1600 + (q.length() * 5);
+    else if (n.find(q) != std::string::npos) score += 1200 + q.length();
+
+    // Acronym / Initials Matching (e.g., "vsc" -> "Visual Studio Code")
+    std::string initials = "";
+    std::stringstream ss(n);
+    std::string word;
+    while (ss >> word) {
+        if (!word.empty()) initials += word[0];
+    }
+    if (!initials.empty() && initials.find(q) == 0) {
+        score += 1800;
+    }
+
+    // Match on Exec / Desktop file
+    if (e.find(q) == 0) score += 1000;
+    else if (e.find(q) != std::string::npos) score += 600;
+
+    // Match on Keywords / Categories
+    if (!kw.empty() && kw.find(q) != std::string::npos) score += 800;
+    if (!cat.empty() && cat.find(q) != std::string::npos) score += 400;
+
+    // Subsequence fuzzy search fallback
     int fuzzy = 0;
     int lastIdx = -1;
     bool match = true;
@@ -128,14 +193,15 @@ int AppIndexer::computeFuzzyScore(const std::string& name, const std::string& qu
         if (idx == std::string::npos) { match = false; break; }
         if (lastIdx != -1) {
             int dist = idx - lastIdx;
-            if (dist == 1) fuzzy += 50; 
-            else fuzzy += std::max(0, 30 - dist);
+            if (dist == 1) fuzzy += 40; 
+            else fuzzy += std::max(0, 20 - dist);
         } else {
-            if (idx == 0) fuzzy += 100;
+            if (idx == 0) fuzzy += 80;
         }
         lastIdx = idx;
     }
-    if (!match) return score > 0 ? score : 0;
+
+    if (score == 0 && !match) return 0;
     return score + fuzzy;
 }
 
@@ -143,6 +209,9 @@ QJsonArray AppIndexer::searchApps(const QString& query) {
     if (desktopApps.empty()) {
         scanDesktopApps();
     }
+
+    std::vector<RunningWindowInfo> runningWins = fetchNiriWindows();
+
     QJsonArray arr;
     if (query == "--list") {
         for (const auto& app : desktopApps) {
@@ -150,6 +219,7 @@ QJsonArray AppIndexer::searchApps(const QString& query) {
             o["name"] = QString::fromStdString(app.name);
             o["exec"] = QString::fromStdString(app.exec);
             o["icon"] = QString::fromStdString(app.icon);
+            o["terminal"] = app.terminal;
             arr.append(o);
         }
         return arr;
@@ -158,13 +228,38 @@ QJsonArray AppIndexer::searchApps(const QString& query) {
     struct ScoreApp {
         DesktopApp app;
         int score;
+        bool isRunning = false;
+        int runningWindowId = -1;
+        int runningWorkspaceId = -1;
     };
     std::vector<ScoreApp> results;
     std::string stdQuery = query.toStdString();
+
     for (const auto& app : desktopApps) {
-        int score = computeFuzzyScore(app.name, stdQuery);
+        int score = computeFuzzyScore(app, stdQuery);
         if (score > 0) {
-            results.push_back({app, score});
+            ScoreApp sa;
+            sa.app = app;
+            sa.score = score;
+
+            std::string lowerExec = to_lower_str(app.exec);
+            std::string lowerName = to_lower_str(app.name);
+
+            // Match running window
+            for (const auto& win : runningWins) {
+                if (!win.appId.empty() && 
+                    (lowerExec.find(win.appId) != std::string::npos || 
+                     win.appId.find(lowerName) != std::string::npos ||
+                     lowerName.find(win.appId) != std::string::npos)) {
+                    sa.isRunning = true;
+                    sa.runningWindowId = win.id;
+                    sa.runningWorkspaceId = win.workspaceId;
+                    sa.score += 500; // Boost running app score
+                    break;
+                }
+            }
+
+            results.push_back(sa);
         }
     }
     
@@ -178,7 +273,14 @@ QJsonArray AppIndexer::searchApps(const QString& query) {
         o["exec"] = QString::fromStdString(r.app.exec);
         o["icon"] = QString::fromStdString(r.app.icon);
         o["score"] = r.score;
+        o["terminal"] = r.app.terminal;
+        o["is_running"] = r.isRunning;
+        if (r.isRunning) {
+            o["running_window_id"] = r.runningWindowId;
+            o["running_workspace_id"] = r.runningWorkspaceId;
+        }
         arr.append(o);
     }
     return arr;
 }
+

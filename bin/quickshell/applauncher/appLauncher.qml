@@ -200,15 +200,25 @@ Item {
         }
 
         let q = query.trim();
-        if (q === "") {
-            // Instant query for empty search: no debounce delay when opening!
-            appSearchDebounce.stop();
-            window._runAppSearch("");
-        } else {
-            // Debounce: cancel previous pending search and schedule a new one.
-            appSearchDebounce.pendingQuery = q;
-            appSearchDebounce.restart();
+
+        // Check Prefix Router modes
+        if (q.startsWith("=")) {
+            window.handleSpecialQuery("calc " + q.substring(1).trim());
+            appModel.clear();
+            return;
+        } else if (q.startsWith(":tr ")) {
+            window.handleSpecialQuery("tran " + q.substring(4).trim());
+            appModel.clear();
+            return;
+        } else if (q.startsWith(":df ")) {
+            window.handleSpecialQuery("df " + q.substring(4).trim());
+            appModel.clear();
+            return;
         }
+
+        // Instant query for local app search (no debounce delay)
+        appSearchDebounce.stop();
+        window._runAppSearch(q);
     }
 
     function _runAppSearch(q) {
@@ -268,6 +278,10 @@ Item {
                 name: a.name,
                 exec: a.exec,
                 icon: a.icon,
+                terminal: a.terminal || false,
+                isRunning: a.is_running || false,
+                runningWindowId: a.running_window_id || -1,
+                runningWorkspaceId: a.running_workspace_id || -1,
                 isFavorite: favoritesSet.has(a.name),
                 isHidden: hiddenSet.has(a.name)
             };
@@ -473,14 +487,25 @@ Item {
         }
     }
 
-    function launchApp(appName, execStr) {
+    function launchApp(item, forceNew) {
+        if (!item) return;
+        let appName = typeof item === "string" ? item : item.name;
+        let execStr = typeof item === "string" ? arguments[1] : item.exec;
+        let isRunning = typeof item === "object" && item.isRunning;
+        let runningWinId = typeof item === "object" ? item.runningWindowId : -1;
+        let isTerminal = typeof item === "object" && item.terminal;
+
         // Update history
         let history = getHistory();
         history[appName] = (history[appName] || 0) + 1;
         saveHistory(history);
 
-        // Run via shell instead of direct exec to avoid compositor dispatch quirks.
-        Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && " + execStr]);
+        if (!forceNew && isRunning && runningWinId > 0) {
+            Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", runningWinId.toString()]);
+        } else {
+            let finalExec = isTerminal ? ("alacritty -e " + execStr) : execStr;
+            Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && " + finalExec]);
+        }
         Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
     }
 
@@ -698,6 +723,26 @@ Item {
 
                         onTextChanged: filterApps(text)
 
+                        Keys.onPressed: function(event) {
+                            // Vim Navigation Shortcuts (Ctrl+J, Ctrl+K, Ctrl+N, Ctrl+P)
+                            if ((event.key === Qt.Key_J && (event.modifiers & Qt.ControlModifier)) || 
+                                (event.key === Qt.Key_N && (event.modifiers & Qt.ControlModifier))) {
+                                window.isKeyboardNav = true;
+                                keyboardNavTimer.restart();
+                                if (appList.currentIndex < appModel.count - 1) appList.currentIndex++;
+                                event.accepted = true;
+                                return;
+                            }
+                            if ((event.key === Qt.Key_K && (event.modifiers & Qt.ControlModifier)) || 
+                                (event.key === Qt.Key_P && (event.modifiers & Qt.ControlModifier))) {
+                                window.isKeyboardNav = true;
+                                keyboardNavTimer.restart();
+                                if (appList.currentIndex > 0) appList.currentIndex--;
+                                event.accepted = true;
+                                return;
+                            }
+                        }
+
                         Keys.onDownPressed: {
                             window.isKeyboardNav = true;
                             keyboardNavTimer.restart();
@@ -715,6 +760,7 @@ Item {
                             event.accepted = true;
                         }
                         Keys.onReturnPressed: {
+                            let forceNew = (event.modifiers & Qt.ControlModifier) || (event.modifiers & Qt.ShiftModifier);
                             if (window.specialMode === "keycast") {
                                 let cmd = (window.specialResult.indexOf("ON") !== -1) ? "1" : "0";
                                 let runtimeDir = Quickshell.env("XDG_RUNTIME_DIR") || "/tmp";
@@ -727,7 +773,7 @@ Item {
                                 Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
                             } else if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
                                 let item = appModel.get(appList.currentIndex);
-                                launchApp(item.name, item.exec);
+                                launchApp(item, forceNew);
                             }
                             event.accepted = true;
                         }
@@ -1110,6 +1156,28 @@ Item {
                                     NumberAnimation { duration: 500; easing.type: Easing.OutExpo } 
                                 }
                                 Behavior on color { ColorAnimation { duration: 300; easing.type: Easing.OutExpo } }
+                            }
+
+                            Row {
+                                Layout.alignment: Qt.AlignVCenter
+                                spacing: window.s(6)
+                                visible: model.isRunning !== undefined && model.isRunning
+
+                                Rectangle {
+                                    width: window.s(7)
+                                    height: window.s(7)
+                                    radius: window.s(3.5)
+                                    color: index === appList.currentIndex ? window.crust : window.green
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
+
+                                Text {
+                                    text: "Ws " + (model.runningWorkspaceId || 1)
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: window.s(11)
+                                    color: index === appList.currentIndex ? window.crust : window.subtext0
+                                    anchors.verticalCenter: parent.verticalCenter
+                                }
                             }
 
                             Text {
