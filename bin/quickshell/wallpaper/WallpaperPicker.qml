@@ -51,6 +51,11 @@ Item {
     // Separate flag so add-animations fire on new arrivals
     // even before the first focus snap has happened
     property bool allowAddAnimation: false
+
+    // True once we know whether a current-wallpaper target exists to focus.
+    // Guards the initial focus snap against racing the async resolution of
+    // current_wallpaper.path / current_video.path (used when widgetArg is empty).
+    property bool currentWallResolved: false
     
     Timer {
         id: applyUnlockTimer
@@ -119,6 +124,39 @@ Item {
     function loadMonitors() {
         console.log("[MonitorSync] Starting native hyprctl process...");
         monitorProc.running = true;
+    }
+
+    // Resolves the currently-applied wallpaper from the cache files
+    // (written by applyWallpaper / init.sh) when no widgetArg was passed.
+    Process {
+        id: currentWallProc
+        command: ["sh", "-c", "cat '" + paths.getCacheDir("wallpaper_picker") + "/current_wallpaper.path' 2>/dev/null; echo; cat '" + paths.getCacheDir("wallpaper_picker") + "/current_video.path' 2>/dev/null"]
+        running: false
+        
+        stdout: StdioCollector {
+            onStreamFinished: {
+                window.currentWallResolved = true;
+                if (window.targetWallName !== "") return;
+
+                let lines = this.text.split("\n");
+                let resolvedPath = lines.length > 0 ? lines[0].trim() : "";
+                let isVideo = false;
+                if (resolvedPath === "" && lines.length > 1) {
+                    resolvedPath = lines[1].trim();
+                    isVideo = true;
+                }
+                if (resolvedPath === "") return;
+
+                let base = resolvedPath.split("/").pop() || "";
+                if (base === "") return;
+
+                window.targetWallName = isVideo ? "000_" + base : base;
+                window.initialFocusSet = false;
+                if (window.currentFilter !== "Search") {
+                    window.tryFocus();
+                }
+            }
+        }
     }
 
     function getMonitorOutputs() {
@@ -315,6 +353,17 @@ Item {
     }
 
     function initializePicker() {
+        if (window.widgetArg === "") {
+            // No target passed by the shell — resolve the current wallpaper
+            // from the cache files ourselves.
+            window.currentWallResolved = false;
+            if (!window.currentWallProc.running) {
+                window.currentWallProc.running = true;
+            }
+        } else {
+            window.currentWallResolved = true;
+        }
+
         window.isFilterAnimating = true;
         filterAnimationTimer.restart();
 
@@ -333,6 +382,7 @@ Item {
             window.initialFocusSet = false;
             window.allowAddAnimation = false;
             window.searchIndexRestored = false;
+            window.currentWallResolved = false;
             window.isApplying = false;
             window.isMonitorSelectorOpen = false;
             
@@ -434,6 +484,7 @@ Item {
 
     function tryFocus() {
         if (initialFocusSet) return;
+        if (!window.currentWallResolved) return;
 
         if (localProxyModel.count > 0) {
             let foundIndex = -1;
@@ -820,10 +871,10 @@ Item {
         } else if (window.jumpToLastOnFilterChange && lastValidIndex !== -1) {
             indexToFocus = lastValidIndex;
         } else if (firstValidIndex !== -1) {
-            // During initial open — if target is expected but not yet in model
-            // (thumbnail still being generated), don't steal focus.
-            // syncLocalModel handles it when the thumbnail arrives.
-            if (!(cleanTarget !== "" && targetIndex === -1 && !window.initialFocusSet)) {
+            // During initial open — if a target is expected (or still being
+            // resolved from cache) but not yet in the model, don't steal focus.
+            // syncLocalModel handles it when the target arrives.
+            if (!((cleanTarget !== "" || !window.currentWallResolved) && targetIndex === -1 && !window.initialFocusSet)) {
                 indexToFocus = firstValidIndex;
             }
         }
@@ -972,6 +1023,29 @@ Item {
         // First-time focus snap (only if no target is set or target not yet found)
         if (!window.initialFocusSet && window.currentFilter !== "Search" && localProxyModel.count > 0) {
             window.tryFocus();
+        }
+
+        // If a target was expected but the folder is fully synced and it never
+        // appeared (e.g. the current wallpaper file was deleted and its
+        // thumbnail can't be generated), stop waiting and snap to the first
+        // item so the picker behaves normally.
+        if (!window.initialFocusSet && window.targetWallName !== "" &&
+            window.currentFilter !== "Search" && window.currentWallResolved &&
+            localFolderModel.status === FolderListModel.Ready &&
+            localProxyModel.count === localFolderModel.count) {
+            let cleanTarget = window.getCleanName(window.targetWallName);
+            let found = false;
+            for (let i = 0; i < localProxyModel.count; i++) {
+                let fname = localProxyModel.get(i).fileName || "";
+                if (window.getCleanName(fname) === cleanTarget) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                window.targetWallName = "";
+                window.tryFocus();
+            }
         }
     }
 
