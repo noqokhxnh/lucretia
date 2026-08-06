@@ -28,75 +28,79 @@ Item {
     property color yellow: "#f9e2af"
     property color maroon: "#eba0ac"
     property color teal: "#94e2d5"
+    property color primary: "#89b4fa"
+    property color on_primary: "#181825"
 
     property string rawJson: ""
     readonly property string _colorsFile: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/qs_colors.json"
 
+    function _extractHex(val) {
+        if (!val) return null;
+        if (typeof val === "string") return val;
+        if (typeof val === "object" && val.color) return val.color;
+        return null;
+    }
+
     function _applyColors(txt) {
-        if (txt === "" || txt === root.rawJson) return;
-        root.rawJson = txt;
+        if (!txt || txt.trim() === "" || txt === root.rawJson) return;
         try {
             let c = JSON.parse(txt);
-            if (c.base)     root.base     = c.base;
-            if (c.mantle)   root.mantle   = c.mantle;
-            if (c.crust)    root.crust    = c.crust;
-            if (c.text)     root.text     = c.text;
-            if (c.subtext0) root.subtext0 = c.subtext0;
-            if (c.subtext1) root.subtext1 = c.subtext1;
-            if (c.surface0) root.surface0 = c.surface0;
-            if (c.surface1) root.surface1 = c.surface1;
-            if (c.surface2) root.surface2 = c.surface2;
-            if (c.overlay0) root.overlay0 = c.overlay0;
-            if (c.overlay1) root.overlay1 = c.overlay1;
-            if (c.overlay2) root.overlay2 = c.overlay2;
-            if (c.blue)     root.blue     = c.blue;
-            if (c.sapphire) root.sapphire = c.sapphire;
-            if (c.peach)    root.peach    = c.peach;
-            if (c.green)    root.green    = c.green;
-            if (c.red)      root.red      = c.red;
-            if (c.mauve)    root.mauve    = c.mauve;
-            if (c.pink)     root.pink     = c.pink;
-            if (c.yellow)   root.yellow   = c.yellow;
-            if (c.maroon)   root.maroon   = c.maroon;
-            if (c.teal)     root.teal     = c.teal;
+            let setHex = function(propName, rawVal) {
+                let hex = _extractHex(rawVal);
+                if (hex) root[propName] = hex;
+            };
+
+            setHex("base", c.base);
+            setHex("mantle", c.mantle);
+            setHex("crust", c.crust);
+            setHex("text", c.text);
+            setHex("subtext0", c.subtext0);
+            setHex("subtext1", c.subtext1);
+            setHex("surface0", c.surface0);
+            setHex("surface1", c.surface1);
+            setHex("surface2", c.surface2);
+            setHex("overlay0", c.overlay0);
+            setHex("overlay1", c.overlay1);
+            setHex("overlay2", c.overlay2);
+            setHex("blue", c.blue);
+            setHex("sapphire", c.sapphire);
+            setHex("peach", c.peach);
+            setHex("green", c.green);
+            setHex("red", c.red);
+            setHex("mauve", c.mauve);
+            setHex("pink", c.pink);
+            setHex("yellow", c.yellow);
+            setHex("maroon", c.maroon);
+            setHex("teal", c.teal);
+            setHex("primary", c.primary);
+            setHex("on_primary", c.on_primary);
+
+            root.rawJson = txt;
         } catch(e) {}
     }
 
-    // Initial read on startup
-    Process {
-        id: themeReader
-        running: true
-        command: ["cat", root._colorsFile]
-        stdout: StdioCollector {
-            onStreamFinished: root._applyColors(this.text.trim())
-        }
+    FileView {
+        id: colorsFileView
+        path: root._colorsFile
+        // FileView only watches the file when this is true (default: false),
+        // and text() returns the cached content — without this, colors would
+        // only refresh after a shell restart.
+        watchChanges: true
+        onFileChanged: colorsFileView.reload()
+        onTextChanged: root._applyColors(colorsFileView.text())
     }
 
-    // Event-driven watcher: blocks until file changes, then triggers a re-read
-    // Much cheaper than polling every 1s — zero CPU when theme is not changing
-    Process {
-        id: themeWatcher
-        running: true
-        command: ["bash", "-c", "while [ ! -f '" + root._colorsFile + "' ]; do sleep 1; done; exec inotifywait -q -e close_write,modify,move_self,delete_self --format '%e' '" + root._colorsFile + "' 2>/dev/null"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                themeReader.running = false;
-                themeReader.running = true;
-                themeWatcher.running = false;
-                themeWatcher.running = true;
-            }
-        }
+    Component.onCompleted: {
+        root._applyColors(colorsFileView.text());
     }
 
-    // Fallback poll timer: re-reads the file every 3s as safety net
+    // Safety net for missed watch events (e.g. atomic rename): slow re-read
+    // instead of polling every second in every instance.
     Timer {
         id: pollTimer
-        interval: 3000
+        interval: 5000
         running: true
         repeat: true
-        onTriggered: {
-            themeReader.running = false;
-            themeReader.running = true;
-        }
+        onTriggered: colorsFileView.reload()
     }
 }

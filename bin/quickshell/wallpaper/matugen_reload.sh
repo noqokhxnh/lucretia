@@ -3,22 +3,21 @@
 # ------------------------------------------------------------------------------
 # 1. Flatten Matugen v4.0 Nested JSON for Quickshell (C++ helper)
 # ------------------------------------------------------------------------------
-# Updated to match your config.toml output path
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 FLATTEN_BIN="$SCRIPT_DIR/flatten_colors"
 QS_JSON="$HOME/.config/niri/bin/quickshell/qs_colors.json"
 
-# Build the C++ helper on demand if it is missing (e.g. fresh clone).
 if [ ! -x "$FLATTEN_BIN" ]; then
     bash "$SCRIPT_DIR/compile_flatten.sh" >/dev/null
 fi
 
-"$FLATTEN_BIN" "$QS_JSON"
+if [ -f "$QS_JSON" ]; then
+    "$FLATTEN_BIN" "$QS_JSON"
+fi
 
 # ------------------------------------------------------------------------------
-# 2. Flatten Matugen v4.0 Output in Standard Text Configs
+# 2. Atomic Flatten Output in Standard Text Configs
 # ------------------------------------------------------------------------------
-# If Tera dumped {"color": "#hex"} into your text files, this strips it to #hex.
 TEXT_FILES=(
     "$HOME/.config/niri/bin/quickshell/qs_colors.json"
     "$HOME/.config/kitty/kitty-matugen-colors.conf"
@@ -35,58 +34,39 @@ TEXT_FILES=(
 )
 
 for file in "${TEXT_FILES[@]}"; do
-    # Check if file exists and we have write permissions (avoids sudo password hangs on SDDM)
     if [ -f "$file" ] && [ -w "$file" ]; then
-        # Looks for {"color": "#abcdef"} and replaces it with #abcdef
-        sed -i -E 's/\{[[:space:]]*"color":[[:space:]]*"([^"]+)"[[:space:]]*\}/\1/g' "$file"
-    elif [ -f "$file" ]; then
-        echo "Warning: No write permission for $file (Skipping text clean-up)"
+        sed -E 's/\{[[:space:]]*"color":[[:space:]]*"([^"]+)"[[:space:]]*\}/\1/g' "$file" > "${file}.tmp" 2>/dev/null && mv -f "${file}.tmp" "$file"
     fi
 done
 
 # ------------------------------------------------------------------------------
-# 3. Reload System Components
+# 3. Asynchronous Non-Blocking App Reloads
 # ------------------------------------------------------------------------------
+(
+    killall -USR1 kitty 2>/dev/null || true
 
-# Reload Kitty instances
-killall -USR1 kitty 2>/dev/null || true
+    cat ~/.config/cava/config_base ~/.config/cava/colors > ~/.config/cava/config 2>/dev/null
+    if pgrep -x "cava" > /dev/null; then
+        killall -USR1 cava 2>/dev/null
+    fi
 
-# Reload CAVA
-# ALWAYS rebuild the final config file from the base and newly generated colors
-cat ~/.config/cava/config_base ~/.config/cava/colors > ~/.config/cava/config 2>/dev/null
+    if pgrep -x "swayosd-server" > /dev/null; then
+        killall swayosd-server 2>/dev/null
+        swayosd-server --top-margin 0.9 --style "$HOME/.config/swayosd/style.css" > /dev/null 2>&1 &
+    fi
 
-# Tell CAVA to reload the config ONLY if it is currently running
-if pgrep -x "cava" > /dev/null; then
-    killall -USR1 cava
-fi
+    if command -v gsettings &> /dev/null; then
+        gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' 2>/dev/null
+        sleep 0.03
+        gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark' 2>/dev/null
+        gsettings set org.gnome.desktop.interface color-scheme 'default' 2>/dev/null
+        sleep 0.03
+        gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark' 2>/dev/null
+    fi
 
-# Restart swayosd-server in the background and disown it so the script doesn't hang
-killall swayosd-server 2>/dev/null
-swayosd-server --top-margin 0.9 --style "$HOME/.config/swayosd/style.css" > /dev/null 2>&1 &
-disown
-
-# GTK Live-Reload Hack
-# Rapidly toggles the global theme to force GTK3 and GTK4 apps to flush 
-# their caches and read the newly generated Matugen CSS.
-if command -v gsettings &> /dev/null; then
-    # GTK3 apps
-    gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita'
-    sleep 0.05
-    gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'
-    
-    # GTK4 / Libadwaita apps
-    gsettings set org.gnome.desktop.interface color-scheme 'default'
-    sleep 0.05
-    gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
-fi
-
-# Quickshell automatically watches qs_colors.json and updates colors live without full shell reload
-
-# Reload compositor to apply color changes
-if [ "$XDG_CURRENT_DESKTOP" = "Hyprland" ] && command -v hyprctl &> /dev/null; then
-    hyprctl reload
-elif [ "$XDG_CURRENT_DESKTOP" = "niri" ]; then
-    niri msg action reload-config 2>/dev/null || true
-fi
-
-
+    if [ "$XDG_CURRENT_DESKTOP" = "Hyprland" ] && command -v hyprctl &> /dev/null; then
+        hyprctl reload 2>/dev/null || true
+    elif [ "$XDG_CURRENT_DESKTOP" = "niri" ]; then
+        niri msg action load-config-file 2>/dev/null || true
+    fi
+) &
