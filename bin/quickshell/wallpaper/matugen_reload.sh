@@ -49,7 +49,7 @@ done
 # ------------------------------------------------------------------------------
 
 # Reload Kitty instances
-killall -USR1 kitty
+killall -USR1 kitty 2>/dev/null || true
 
 # Reload CAVA
 # ALWAYS rebuild the final config file from the base and newly generated colors
