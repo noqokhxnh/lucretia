@@ -53,7 +53,10 @@ if [ -f "$FLAG" ]; then
     fi
 
     if [ -f "$CACHE_IMG" ]; then
-        matugen image "$CACHE_IMG" --source-color-index 0
+        # Re-apply the saved per-wallpaper color override if one exists
+        CUR_WALL="$(cat "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path" 2>/dev/null)"
+        MATUGEN_APPLY="$(dirname "${BASH_SOURCE[0]}")/quickshell/wallpaper/matugen_apply.sh"
+        bash "$MATUGEN_APPLY" apply "$CUR_WALL" "$CACHE_IMG"
     fi
 
     if [ -f "$RELOAD_SCRIPT_PATH" ]; then

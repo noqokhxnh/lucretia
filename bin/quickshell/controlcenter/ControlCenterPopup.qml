@@ -254,6 +254,32 @@ Item {
 
                             Item { Layout.fillWidth: true }
 
+                            QsButton {
+                                Layout.preferredWidth: s(104)
+                                Layout.preferredHeight: s(22)
+                                text: "Reset"
+                                icon: "󰑮"
+                                iconSize: 11
+                                textSize: 10
+                                textFont: "Outfit"
+                                iconFont: "Nerd Font Mono"
+                                radius: s(8)
+                                baseColor: Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.35)
+                                hoverColor: Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.6)
+                                textColor: mocha.text
+                                iconColor: mocha.subtext0
+                                ToolTip.visible: isHovered
+                                ToolTip.text: "Use this wallpaper's own colors"
+                                ToolTip.delay: 300
+                                onClicked: {
+                                    Config.activeHex = "";
+                                    controlCenterRoot.applyingTheme = true;
+                                    themeApplyFeedback.restart();
+                                    themeSaveTimer.restart();
+                                    Quickshell.execDetached(["bash", "-c", Config.qsScriptsDir + "/wallpaper/matugen_apply.sh clear && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
+                                }
+                            }
+
                             Text {
                                 text: "󰇚"
                                 font.family: "Nerd Font Mono"
@@ -354,7 +380,7 @@ Item {
                                             themeSaveTimer.restart();
                                             let sc = modelData.scheme ? modelData.scheme : Config.selectedSchemeType;
                                             let hx = modelData.forceHex ? modelData.forceHex : modelData.hex;
-                                            Quickshell.execDetached(["bash", "-c", "matugen color hex '" + hx + "' -t " + sc + " && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
+                                            Quickshell.execDetached(["bash", "-c", "matugen color hex '" + hx + "' -t " + sc + " && " + Config.qsScriptsDir + "/wallpaper/matugen_apply.sh save '" + hx + "' '" + sc + "' && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
                                         }
                                     }
                                 }
@@ -422,7 +448,11 @@ Item {
                                             controlCenterRoot.applyingTheme = true;
                                             themeApplyFeedback.restart();
                                             themeSaveTimer.restart();
-                                            Quickshell.execDetached(["bash", "-c", "matugen color hex '" + Config.activeHex + "' -t " + modelData.type + " && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
+                                            if (Config.activeHex === "") {
+                                                Quickshell.execDetached(["bash", "-c", Config.qsScriptsDir + "/wallpaper/matugen_apply.sh scheme '" + modelData.type + "' && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
+                                            } else {
+                                                Quickshell.execDetached(["bash", "-c", "matugen color hex '" + Config.activeHex + "' -t " + modelData.type + " && " + Config.qsScriptsDir + "/wallpaper/matugen_apply.sh save '" + Config.activeHex + "' '" + modelData.type + "' && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
+                                            }
                                         }
                                     }
                                 }

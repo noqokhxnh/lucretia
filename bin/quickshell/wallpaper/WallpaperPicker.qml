@@ -149,9 +149,13 @@ Item {
         window.targetWallName = safeFileName;
         let cleanName = window.getCleanName(safeFileName);
         let reloadScript = Qt.resolvedUrl("matugen_reload.sh").toString();
+        let applyScriptPath = Qt.resolvedUrl("matugen_apply.sh").toString();
         
         if (reloadScript.startsWith("file://")) {
             reloadScript = decodeURIComponent(reloadScript.substring(7));
+        }
+        if (applyScriptPath.startsWith("file://")) {
+            applyScriptPath = decodeURIComponent(applyScriptPath.substring(7));
         }
 
         const escapeBash = (str) => String(str).replace(/(["\\$`])/g, '\\$1');
@@ -172,6 +176,7 @@ Item {
                     export DEST_FILE="${escapeBash(destFile)}"
                     export FINAL_THUMB="${escapeBash(finalThumb)}"
                     export RELOAD_SCRIPT="${escapeBash(reloadScript)}"
+                    export MATUGEN_APPLY="${escapeBash(applyScriptPath)}"
                     export TARGET_MONITORS="${escOutputs}"
                     
                     cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
@@ -189,7 +194,7 @@ Item {
                         awww img -o "$TARGET_MONITORS" "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
                     fi
                     
-                    ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; matugen image "$DEST_FILE" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+                    ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; bash "$MATUGEN_APPLY" apply "$DEST_FILE" "$DEST_FILE" >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
                 `;
                 Quickshell.execDetached(["bash", "-c", applyScript]);
             } else {
@@ -203,6 +208,7 @@ Item {
                     export TEMP_THUMB="${escapeBash(tempThumb)}"
                     export RELOAD_SCRIPT="${escapeBash(reloadScript)}"
                     export MAP_FILE="${escapeBash(mapFile)}"
+                    export MATUGEN_APPLY="${escapeBash(applyScriptPath)}"
                     export TARGET_MONITORS="${escOutputs}"
                     
                     URL=$(awk -F'|' -v fname="$SAFE_NAME" '$1 == fname {print $2; exit}' "$MAP_FILE")
@@ -234,7 +240,7 @@ Item {
                             awww img -o "$TARGET_MONITORS" "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
                         fi
                         
-                        ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; matugen image "$DEST_FILE" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+                        ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; bash "$MATUGEN_APPLY" apply "$DEST_FILE" "$DEST_FILE" >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
                     fi
                 `;
                 Quickshell.execDetached(["bash", "-c", downloadScript]);
@@ -248,6 +254,7 @@ Item {
         const escOriginal = escapeBash(originalFile);
         const escThumb = escapeBash(thumbFile);
         const escReload = escapeBash(reloadScript);
+        const escApply = escapeBash(applyScriptPath);
 
         let wallpaperCmd = "";
         
@@ -290,7 +297,7 @@ Item {
             ${saveVideoCmd}
             
             ${wallpaperCmd}
-            ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON ${isVideo ? escThumb : escOriginal}" >> ${logFile}; matugen image "${isVideo ? escThumb : escOriginal}" --source-color-index 0 >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "${escReload}" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+            ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON ${isVideo ? escThumb : escOriginal}" >> ${logFile}; bash "${escApply}" apply "${escOriginal}" "${isVideo ? escThumb : escOriginal}" >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "${escReload}" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
         `;
         Quickshell.execDetached(["bash", "-c", fullScript]);
     }
