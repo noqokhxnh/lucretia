@@ -275,7 +275,7 @@ Item {
                                     Config.activeHex = "";
                                     controlCenterRoot.applyingTheme = true;
                                     themeApplyFeedback.restart();
-                                    themeSaveTimer.restart();
+                                    Config.saveAppSettings();
                                     Quickshell.execDetached(["bash", "-c", Config.qsScriptsDir + "/wallpaper/matugen_apply.sh clear && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
                                 }
                             }
@@ -377,7 +377,7 @@ Item {
                                             Config.activeHex = modelData.hex;
                                             controlCenterRoot.applyingTheme = true;
                                             themeApplyFeedback.restart();
-                                            themeSaveTimer.restart();
+                                            Config.saveAppSettings();
                                             let sc = modelData.scheme ? modelData.scheme : Config.selectedSchemeType;
                                             let hx = modelData.forceHex ? modelData.forceHex : modelData.hex;
                                             Quickshell.execDetached(["bash", "-c", "matugen color hex '" + hx + "' -t " + sc + " && " + Config.qsScriptsDir + "/wallpaper/matugen_apply.sh save '" + hx + "' '" + sc + "' && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
@@ -447,7 +447,7 @@ Item {
                                             Config.selectedSchemeType = modelData.type;
                                             controlCenterRoot.applyingTheme = true;
                                             themeApplyFeedback.restart();
-                                            themeSaveTimer.restart();
+                                            Config.saveAppSettings();
                                             if (Config.activeHex === "") {
                                                 Quickshell.execDetached(["bash", "-c", Config.qsScriptsDir + "/wallpaper/matugen_apply.sh scheme '" + modelData.type + "' && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
                                             } else {
@@ -881,22 +881,10 @@ Item {
         onTriggered: Config.applyControlCenterSettings()
     }
 
-    // Persists the theme selection without re-triggering niri reload
-    // (matugen_reload.sh already handles that).
-    Timer {
-        id: themeSaveTimer
-        interval: 200
-        onTriggered: Config.saveAppSettings()
-    }
-
     Component.onDestruction: {
         if (saveTimer.running) {
             saveTimer.stop();
             Config.applyControlCenterSettings();
-        }
-        if (themeSaveTimer.running) {
-            themeSaveTimer.stop();
-            Config.saveAppSettings();
         }
     }
 }
