@@ -158,7 +158,7 @@ Item {
             anchors.topMargin: s(20)
             anchors.left: parent.left
             anchors.right: parent.right
-            height: (parent.height - s(60) - s(40)) * 0.45
+            height: (parent.height - s(60) - s(40)) * 0.5
             opacity: dashboardRoot.introTopSection
             transform: Translate { y: (1 - dashboardRoot.introTopSection) * s(20) }
 
@@ -266,14 +266,14 @@ Item {
                         clip: true
 
                         model: ListModel {
-                            ListElement { name: "Control Center"; icon: "󰒓"; target: "controlcenter"; btnColor: "#89b4fa" }
-                            ListElement { name: "Clipboard"; icon: "󰅌"; target: "clipboard"; btnColor: "#fab387" }
-                            ListElement { name: "Monitors"; icon: "󰍹"; target: "monitors"; btnColor: "#a6e3a1" }
-                            ListElement { name: "Focus Time"; icon: "󱎫"; target: "focustime"; btnColor: "#cba6f7" }
-                            ListElement { name: "Network"; icon: "󰖩"; target: "network"; btnColor: "#74c7ec" }
-                            ListElement { name: "Volume"; icon: "󰕾"; target: "volume"; btnColor: "#f9e2af" }
-                            ListElement { name: "Updater"; icon: "󰚰"; target: "updater"; btnColor: "#94e2d5" }
-                            ListElement { name: "Wallpaper"; icon: "󰸉"; target: "wallpaper"; btnColor: "#f5c2e7" }
+                            ListElement { name: "Control Center"; icon: "󰒓"; target: "controlcenter"; colorKey: "blue" }
+                            ListElement { name: "Clipboard"; icon: "󰅌"; target: "clipboard"; colorKey: "peach" }
+                            ListElement { name: "Monitors"; icon: "󰍹"; target: "monitors"; colorKey: "green" }
+                            ListElement { name: "Focus Time"; icon: "󱎫"; target: "focustime"; colorKey: "mauve" }
+                            ListElement { name: "Network"; icon: "󰖩"; target: "network"; colorKey: "sapphire" }
+                            ListElement { name: "Volume"; icon: "󰕾"; target: "volume"; colorKey: "yellow" }
+                            ListElement { name: "Updater"; icon: "󰚰"; target: "updater"; colorKey: "teal" }
+                            ListElement { name: "Wallpaper"; icon: "󰸉"; target: "wallpaper"; colorKey: "pink" }
                         }
 
                         delegate: AppButton {
@@ -281,7 +281,12 @@ Item {
                             height: s(80)
                             appName: model.name
                             appIcon: model.icon
-                            appColor: model.btnColor
+                            appColor: {
+                                // Some theme roles (e.g. monochrome) resolve to dark tones that
+                                // vanish on the dark card — keep bright roles, lighten dark ones.
+                                let c = mocha[model.colorKey];
+                                return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) < 0.4 ? Qt.lighter(c, 1.9) : c;
+                            }
                             onClicked: {
                                 Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle " + model.target]);
                             }
@@ -320,7 +325,7 @@ Item {
                     Text {
                         text: Qt.formatTime(dashboardRoot.currentTime, "HH:mm")
                         font.family: "JetBrains Mono"
-                        font.pixelSize: s(160)
+                        font.pixelSize: s(140)
                         font.weight: Font.Black
                         color: mocha.text
                         Layout.alignment: Qt.AlignHCenter
@@ -475,7 +480,7 @@ Item {
         property string title: ""
         property string statValue: ""
         property string statIcon: ""
-        property color accentColor: "#cba6f7"
+        property color accentColor: mocha.primary
         property var history: []
         property bool isHovered: false
         width: dashboardRoot.s(170)
@@ -569,6 +574,19 @@ Item {
             Behavior on border.color { ColorAnimation { duration: 200 } }
             scale: ma.containsMouse ? 1.05 : 1.0
             Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+
+            // Soft accent glow behind the icon while hovered (color = theme role)
+            Rectangle {
+                anchors.centerIn: parent
+                width: dashboardRoot.s(64)
+                height: width
+                radius: width / 2
+                color: ma.appColor
+                opacity: ma.containsMouse ? 0.16 : 0.0
+                scale: ma.containsMouse ? 1.0 : 0.6
+                Behavior on opacity { NumberAnimation { duration: 200 } }
+                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+            }
 
             ColumnLayout {
                 anchors.centerIn: parent

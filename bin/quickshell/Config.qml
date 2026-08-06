@@ -135,6 +135,8 @@ Item {
         "notes": true,
         "focustime": true
     })
+    property string activeHex: "#2563eb"
+    property string selectedSchemeType: "scheme-tonal-spot"
 
     function toggleDnd() {
         config.dndMode = !config.dndMode;
@@ -175,7 +177,9 @@ Item {
             "powerProfile": config.powerProfile,
             "idleLockTimeout": config.idleLockTimeout,
             "idleScreenOffTimeout": config.idleScreenOffTimeout,
-            "idleSleepTimeout": config.idleSleepTimeout
+            "idleSleepTimeout": config.idleSleepTimeout,
+            "activeHex": config.activeHex,
+            "selectedSchemeType": config.selectedSchemeType
         };
 
         config.updateJsonBulk(configObj);
@@ -506,6 +510,8 @@ Item {
                         if (config.rawSettings.idleLockTimeout !== undefined) config.idleLockTimeout = config.rawSettings.idleLockTimeout;
                         if (config.rawSettings.idleScreenOffTimeout !== undefined) config.idleScreenOffTimeout = config.rawSettings.idleScreenOffTimeout;
                         if (config.rawSettings.idleSleepTimeout !== undefined) config.idleSleepTimeout = config.rawSettings.idleSleepTimeout;
+                        if (config.rawSettings.activeHex !== undefined) config.activeHex = config.rawSettings.activeHex;
+                        if (config.rawSettings.selectedSchemeType !== undefined) config.selectedSchemeType = config.rawSettings.selectedSchemeType;
                         
                         // Map Keybinds
                         if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {

@@ -11,8 +11,10 @@ Item {
 
     property real layoutWidth: 420
     property real layoutHeight: 620
-    property string selectedSchemeType: "scheme-tonal-spot"
-    property string activeHex: "#2563eb"
+
+    // Feedback state while matugen regenerates the theme
+    property bool applyingTheme: false
+    Timer { id: themeApplyFeedback; interval: 900; onTriggered: controlCenterRoot.applyingTheme = false }
 
     function s(val) {
         return Math.round(val * (controlCenterRoot.layoutWidth / 420.0));
@@ -48,14 +50,16 @@ Item {
             width: parent.width * 0.75; height: width; radius: width / 2
             x: (parent.width * 0.6 - width / 2) + Math.cos(controlCenterRoot.globalOrbitAngle * 1.3) * s(60)
             y: (parent.height * 0.2 - height / 2) + Math.sin(controlCenterRoot.globalOrbitAngle * 1.3) * s(50)
-            opacity: 0.035
+            opacity: controlCenterRoot.applyingTheme ? 0.12 : 0.035
+            Behavior on opacity { NumberAnimation { duration: 300 } }
             color: mocha.mauve
         }
         Rectangle {
             width: parent.width * 0.65; height: width; radius: width / 2
             x: (parent.width * 0.4 - width / 2) + Math.sin(controlCenterRoot.globalOrbitAngle * 1.1) * s(-50)
             y: (parent.height * 0.8 - height / 2) + Math.cos(controlCenterRoot.globalOrbitAngle * 1.1) * s(-40)
-            opacity: 0.03
+            opacity: controlCenterRoot.applyingTheme ? 0.10 : 0.03
+            Behavior on opacity { NumberAnimation { duration: 300 } }
             color: mocha.blue
         }
     }
@@ -247,6 +251,28 @@ Item {
                                 font.weight: Font.Bold
                                 color: mocha.text
                             }
+
+                            Item { Layout.fillWidth: true }
+
+                            Text {
+                                text: "󰇚"
+                                font.family: "Nerd Font Mono"
+                                font.pixelSize: s(13)
+                                color: mocha.primary
+                                visible: controlCenterRoot.applyingTheme
+                                RotationAnimation on rotation {
+                                    from: 0; to: 360; duration: 700; loops: Animation.Infinite
+                                    running: controlCenterRoot.applyingTheme
+                                }
+                            }
+                            Text {
+                                text: "Applying"
+                                font.family: "Outfit"
+                                font.pixelSize: s(10)
+                                font.weight: Font.DemiBold
+                                color: mocha.subtext0
+                                visible: controlCenterRoot.applyingTheme
+                            }
                         }
 
                         // Theme Swatches Grid (18 Colors)
@@ -280,7 +306,7 @@ Item {
                                 ]
                                 delegate: Rectangle {
                                     property bool isHovered: cMa.containsMouse
-                                    property bool isSelected: controlCenterRoot.activeHex === modelData.hex
+                                    property bool isSelected: Config.activeHex === modelData.hex
 
                                     Layout.preferredWidth: s(36)
                                     Layout.preferredHeight: s(36)
@@ -296,14 +322,37 @@ Item {
                                     ToolTip.text: modelData.name
                                     ToolTip.delay: 250
 
+                                    // Checkmark on the active swatch; dark/light pick depends on fill luminance
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: "󰄲"
+                                        font.family: "Nerd Font Mono"
+                                        font.pixelSize: s(15)
+                                        font.weight: Font.Black
+                                        opacity: isSelected ? 1.0 : 0.0
+                                        scale: isSelected ? 1.0 : 0.3
+                                        Behavior on opacity { NumberAnimation { duration: 150 } }
+                                        Behavior on scale { NumberAnimation { duration: 180; easing.type: Easing.OutBack } }
+                                        color: {
+                                            let h = modelData.hex.replace("#", "");
+                                            let r = parseInt(h.substr(0,2),16) / 255;
+                                            let g = parseInt(h.substr(2,2),16) / 255;
+                                            let b = parseInt(h.substr(4,2),16) / 255;
+                                            return (0.299 * r + 0.587 * g + 0.114 * b) > 0.6 ? "black" : "white";
+                                        }
+                                    }
+
                                     MouseArea {
                                         id: cMa
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
                                         onClicked: {
-                                            controlCenterRoot.activeHex = modelData.hex;
-                                            let sc = modelData.scheme ? modelData.scheme : controlCenterRoot.selectedSchemeType;
+                                            Config.activeHex = modelData.hex;
+                                            controlCenterRoot.applyingTheme = true;
+                                            themeApplyFeedback.restart();
+                                            themeSaveTimer.restart();
+                                            let sc = modelData.scheme ? modelData.scheme : Config.selectedSchemeType;
                                             let hx = modelData.forceHex ? modelData.forceHex : modelData.hex;
                                             Quickshell.execDetached(["bash", "-c", "matugen color hex '" + hx + "' -t " + sc + " && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
                                         }
@@ -345,7 +394,7 @@ Item {
                                     Layout.fillWidth: true
                                     height: s(28)
                                     radius: s(8)
-                                    property bool isActive: controlCenterRoot.selectedSchemeType === modelData.type
+                                    property bool isActive: Config.selectedSchemeType === modelData.type
                                     property bool isHovered: stMa.containsMouse
 
                                     color: isActive ? mocha.primary : (isHovered ? Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.5) : Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.25))
@@ -369,8 +418,11 @@ Item {
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
                                         onClicked: {
-                                            controlCenterRoot.selectedSchemeType = modelData.type;
-                                            Quickshell.execDetached(["bash", "-c", "matugen color hex '" + controlCenterRoot.activeHex + "' -t " + modelData.type + " && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
+                                            Config.selectedSchemeType = modelData.type;
+                                            controlCenterRoot.applyingTheme = true;
+                                            themeApplyFeedback.restart();
+                                            themeSaveTimer.restart();
+                                            Quickshell.execDetached(["bash", "-c", "matugen color hex '" + Config.activeHex + "' -t " + modelData.type + " && " + Config.qsScriptsDir + "/wallpaper/matugen_reload.sh"]);
                                         }
                                     }
                                 }
@@ -799,10 +851,22 @@ Item {
         onTriggered: Config.applyControlCenterSettings()
     }
 
+    // Persists the theme selection without re-triggering niri reload
+    // (matugen_reload.sh already handles that).
+    Timer {
+        id: themeSaveTimer
+        interval: 200
+        onTriggered: Config.saveAppSettings()
+    }
+
     Component.onDestruction: {
         if (saveTimer.running) {
             saveTimer.stop();
             Config.applyControlCenterSettings();
+        }
+        if (themeSaveTimer.running) {
+            themeSaveTimer.stop();
+            Config.saveAppSettings();
         }
     }
 }
