@@ -102,27 +102,42 @@ Item {
     }
 
     property bool ignoreNextModeFileUpdate: false
-    Process {
-        id: modeReader
-        command: ["bash", "-c", "cat '" + window.modeFilePath + "' 2>/dev/null"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let mode = this.text.trim();
-                if ((mode === "wifi" || mode === "bt" || mode === "eth") && window.activeMode !== mode) {
-                    if ((mode === "eth" && window.ethPresent) || 
-                        (mode === "wifi" && window.wifiPresent) || 
-                        (mode === "bt" && window.btPresent)) {
-                        window.powerAnimAllowed = false;
-                        powerAnimBlocker.restart();
-                        window.ignoreNextModeFileUpdate = true;
-                        window.activeMode = mode;
-                    }
-                }
+
+    function _handleModeFile(text) {
+        let mode = text.trim();
+        if ((mode === "wifi" || mode === "bt" || mode === "eth") && window.activeMode !== mode) {
+            if ((mode === "eth" && window.ethPresent) || 
+                (mode === "wifi" && window.wifiPresent) || 
+                (mode === "bt" && window.btPresent)) {
+                window.powerAnimAllowed = false;
+                powerAnimBlocker.restart();
+                window.ignoreNextModeFileUpdate = true;
+                window.activeMode = mode;
             }
         }
     }
 
-    Timer { interval: 100; running: true; repeat: true; onTriggered: modeReader.running = true }
+    // Event-driven mode file watcher (restores the last-used tab on open).
+    // text() is cached, so new content only arrives after reload().
+    FileView {
+        id: modeFileView
+        path: window.modeFilePath
+        watchChanges: true
+        onFileChanged: modeFileView.reload()
+        onTextChanged: window._handleModeFile(modeFileView.text())
+    }
+
+    // Fallback: re-evaluates the last-known mode until hardware presence is
+    // known, and re-reads the file in case a watch event was missed.
+    Timer {
+        interval: 1000
+        running: true
+        repeat: true
+        onTriggered: {
+            window._handleModeFile(modeFileView.text());
+            modeFileView.reload();
+        }
+    }
 
     Component.onCompleted: {
         window.powerAnimAllowed = false;
@@ -152,6 +167,11 @@ Item {
 
         introState = 1.0;
         if (window.activeMode === "wifi") savedNetworksFetcher.running = true;
+
+        // Initial discovery burst; afterwards only the active tab's poller cycles.
+        ethPoller.running = true;
+        wifiPoller.running = true;
+        btPoller.running = true;
     }
 
 
@@ -366,6 +386,10 @@ Item {
         syncCores();
         window.showInfoView = window.currentConn;
         if (window.showInfoView) window.updateInfoNodes();
+
+        if (window.activeMode === "eth") ethPoller.running = true;
+        else if (window.activeMode === "wifi") wifiPoller.running = true;
+        else btPoller.running = true;
     }
 
     ListModel { id: wifiListModel }
@@ -760,7 +784,7 @@ Item {
     Process {
         id: ethPoller
         command: ["bash", window.scriptsDir + "/eth_panel_logic.sh"]
-        running: true
+        running: false
         stdout: StdioCollector {
             onStreamFinished: {
                 cache.lastEthJson = this.text.trim();
@@ -772,7 +796,7 @@ Item {
     Process {
         id: wifiPoller
         command: ["bash", window.scriptsDir + "/wifi_panel_logic.sh"]
-        running: true
+        running: false
         stdout: StdioCollector {
             onStreamFinished: {
                 cache.lastWifiJson = this.text.trim();
@@ -784,7 +808,7 @@ Item {
     Process {
         id: btPoller
         command: ["bash", window.scriptsDir + "/bluetooth_panel_logic.sh", "--status"]
-        running: true
+        running: false
         stdout: StdioCollector {
             onStreamFinished: {
                 cache.lastBtJson = this.text.trim();
@@ -796,10 +820,22 @@ Item {
     Timer {
         interval: (Object.keys(window.busyTasks).length > 0 || Object.keys(window.disconnectingDevices).length > 0) ? 1000 : 3000
         running: true; repeat: true
-        onTriggered: { 
-            if (!ethPoller.running) ethPoller.running = true; 
-            if (!wifiPoller.running) wifiPoller.running = true; 
-            if (!btPoller.running) btPoller.running = true; 
+        onTriggered: {
+            let poller = window.activeMode === "eth" ? ethPoller : (window.activeMode === "wifi" ? wifiPoller : btPoller);
+            if (!poller.running) poller.running = true;
+        }
+    }
+
+    // Keep hardware presence fresh (Tab cycling depends on it) without
+    // polling the inactive stacks on every cycle.
+    Timer {
+        interval: 15000
+        running: true
+        repeat: true
+        onTriggered: {
+            if (!window.ethPresent) ethPoller.running = true;
+            if (!window.wifiPresent) wifiPoller.running = true;
+            if (!window.btPresent) btPoller.running = true;
         }
     }
 
@@ -907,19 +943,12 @@ Item {
 
                 Timer {
                     id: lightningTimer
-                    interval: 45
+                    interval: 100
                     running: nodeLinesCanvas.opacity > 0.01 && window.currentPower 
                     repeat: true
                     onTriggered: nodeLinesCanvas.requestPaint()
                 }
 
-                Connections {
-                    target: window
-                    function onGlobalOrbitAngleChanged() { 
-                        if (window.currentConn && window.showInfoView && window.currentPower) nodeLinesCanvas.requestPaint() 
-                    }
-                }
-                
                 onPaint: {
                     var ctx = getContext("2d");
                     var s = window.s;
