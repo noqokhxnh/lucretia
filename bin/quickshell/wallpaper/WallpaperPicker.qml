@@ -302,11 +302,11 @@ Item {
                 echo "[$(date +'%H:%M:%S.%3N')] APPLYING LOCAL VIDEO: ${escOriginal} TO ${escOutputs}" >> ${logFile}
                 
                 if [ "${escOutputs}" = "all" ]; then
-                    mpvpaper -o 'loop --no-audio --hwdec=auto --profile=high-quality --video-sync=display-resample --interpolation --tscale=oversample' '*' "${escOriginal}" >> ${logFile} 2>&1 &
+                    mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' '*' "${escOriginal}" >> ${logFile} 2>&1 &
                 else
                     IFS=',' read -ra MON_ARR <<< "${escOutputs}"
                     for mon in "\${MON_ARR[@]}"; do
-                        mpvpaper -o 'loop --no-audio --hwdec=auto --profile=high-quality --video-sync=display-resample --interpolation --tscale=oversample' "\$mon" "${escOriginal}" >> ${logFile} 2>&1 &
+                        mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' "\$mon" "${escOriginal}" >> ${logFile} 2>&1 &
                     done
                 fi
             `;

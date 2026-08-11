@@ -38,7 +38,7 @@ if [ -f "$FLAG" ]; then
         VID_PATH=$(cat "$CACHE_VID")
         if [ -f "$VID_PATH" ]; then
             pkill -x mpvpaper 2>/dev/null || true
-            mpvpaper -o 'loop --no-audio --hwdec=auto --profile=high-quality --video-sync=display-resample --interpolation --tscale=oversample' '*' "$VID_PATH" &
+            mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' '*' "$VID_PATH" &
         else
             rm -f "$CACHE_VID"
         fi
