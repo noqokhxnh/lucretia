@@ -263,37 +263,38 @@ get_data() {
     fi
 }
 
-# --- MODE HANDLING ---
-if [[ "$1" == "--getdata" ]]; then
-    get_data
-
-elif [[ "$1" == "--json" ]]; then
+ensure_cache_freshness() {
     CACHE_LIMIT=900         # 15 minutes for valid working data
     PENDING_RETRY_LIMIT=3600 # 1 hour for invalid/activating keys
 
     if [ -f "$json_file" ]; then
-        file_time=$(stat -c %Y "$json_file")
+        file_time=$(stat -c %Y "$json_file" 2>/dev/null || echo 0)
         current_time=$(date +%s)
         diff=$((current_time - file_time))
-        
-        if grep -q '"desc": "No API Key"' "$json_file"; then
-            # Key is pending/invalid. Check once an hour.
+
+        if grep -q '"desc": "No API Key"' "$json_file" 2>/dev/null; then
             if [ $diff -gt $PENDING_RETRY_LIMIT ]; then
-                touch "$json_file" # Bump file timestamp slightly to avoid spamming processes
+                touch "$json_file"
                 get_data &
             fi
         else
-            # Normal working API key. Check every 15 mins.
             if [ $diff -gt $CACHE_LIMIT ]; then
                 touch "$json_file"
                 get_data &
             fi
         fi
-        cat "$json_file"
     else
         get_data
-        cat "$json_file"
     fi
+}
+
+# --- MODE HANDLING ---
+if [[ "$1" == "--getdata" ]]; then
+    get_data
+
+elif [[ "$1" == "--json" ]]; then
+    ensure_cache_freshness
+    cat "$json_file" 2>/dev/null
 
 elif [[ "$1" == "--view-listener" ]]; then
     if [ ! -f "$view_file" ]; then echo "0" > "$view_file"; fi
@@ -317,36 +318,64 @@ elif [[ "$1" == "--nav" ]]; then
     fi
 
 elif [[ "$1" == "--icon" ]]; then
-    cat "$json_file" | jq -r '.forecast[0].icon'
+    cat "$json_file" 2>/dev/null | jq -r '.forecast[0].icon'
 
 elif [[ "$1" == "--temp" ]]; then 
-    t=$(cat "$json_file" | jq -r '.forecast[0].max')
+    t=$(cat "$json_file" 2>/dev/null | jq -r '.forecast[0].max')
     echo "${t}${UNIT_SYM}"
 
 elif [[ "$1" == "--hex" ]]; then 
-    cat "$json_file" | jq -r '.forecast[0].hex'
+    cat "$json_file" 2>/dev/null | jq -r '.forecast[0].hex'
+
+elif [[ "$1" == "--current" ]]; then
+    ensure_cache_freshness
+    icon=$(cat "$json_file" 2>/dev/null | jq -r '.current_icon // empty' 2>/dev/null)
+    temp=$(cat "$json_file" 2>/dev/null | jq -r '.current_temp // empty' 2>/dev/null)
+    hex=$(cat "$json_file" 2>/dev/null | jq -r '.current_hex // empty' 2>/dev/null)
+
+    if [[ -z "$icon" || "$icon" == "null" || -z "$temp" || "$temp" == "null" ]]; then
+        get_data
+        icon=$(cat "$json_file" 2>/dev/null | jq -r '.current_icon // empty' 2>/dev/null)
+        temp=$(cat "$json_file" 2>/dev/null | jq -r '.current_temp // empty' 2>/dev/null)
+        hex=$(cat "$json_file" 2>/dev/null | jq -r '.current_hex // empty' 2>/dev/null)
+    fi
+
+    echo "${icon:-}"
+    if [[ -n "$temp" && "$temp" != "null" ]]; then
+        echo "${temp}${UNIT_SYM}"
+    else
+        echo "--°"
+    fi
+    echo "${hex:-#cdd6f4}"
 
 elif [[ "$1" == "--current-icon" ]]; then
-    icon=$(cat "$json_file" | jq -r '.current_icon // empty')
+    ensure_cache_freshness
+    icon=$(cat "$json_file" 2>/dev/null | jq -r '.current_icon // empty' 2>/dev/null)
     if [[ -z "$icon" || "$icon" == "null" ]]; then 
         get_data
-        icon=$(cat "$json_file" | jq -r '.current_icon')
+        icon=$(cat "$json_file" 2>/dev/null | jq -r '.current_icon' 2>/dev/null)
     fi
-    echo "$icon"
+    echo "${icon:-}"
 
 elif [[ "$1" == "--current-temp" ]]; then 
-    t=$(cat "$json_file" | jq -r '.current_temp // empty')
+    ensure_cache_freshness
+    t=$(cat "$json_file" 2>/dev/null | jq -r '.current_temp // empty' 2>/dev/null)
     if [[ -z "$t" || "$t" == "null" ]]; then 
         get_data
-        t=$(cat "$json_file" | jq -r '.current_temp')
+        t=$(cat "$json_file" 2>/dev/null | jq -r '.current_temp' 2>/dev/null)
     fi
-    echo "${t}${UNIT_SYM}"
+    if [[ -n "$t" && "$t" != "null" ]]; then
+        echo "${t}${UNIT_SYM}"
+    else
+        echo "--°"
+    fi
 
 elif [[ "$1" == "--current-hex" ]]; then
-    hex=$(cat "$json_file" | jq -r '.current_hex // empty')
+    ensure_cache_freshness
+    hex=$(cat "$json_file" 2>/dev/null | jq -r '.current_hex // empty' 2>/dev/null)
     if [[ -z "$hex" || "$hex" == "null" ]]; then 
         get_data
-        hex=$(cat "$json_file" | jq -r '.current_hex')
+        hex=$(cat "$json_file" 2>/dev/null | jq -r '.current_hex' 2>/dev/null)
     fi
-    echo "$hex"
+    echo "${hex:-#cdd6f4}"
 fi

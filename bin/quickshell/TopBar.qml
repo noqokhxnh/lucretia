@@ -630,11 +630,7 @@ Variants {
 
             Process {
                 id: weatherPoller
-                command: ["bash", "-c", `
-                    echo "$(~/.config/niri/bin/quickshell/calendar/weather.sh --current-icon)"
-                    echo "$(~/.config/niri/bin/quickshell/calendar/weather.sh --current-temp)"
-                    echo "$(~/.config/niri/bin/quickshell/calendar/weather.sh --current-hex)"
-                `]
+                command: ["bash", "-c", "~/.config/niri/bin/quickshell/calendar/weather.sh --current"]
                 stdout: StdioCollector {
                     onStreamFinished: {
                         let lines = this.text.trim().split("\n");
@@ -643,6 +639,19 @@ Variants {
                             barWindow.weatherTemp = lines[1];
                             barWindow.weatherHex = lines[2] || mocha.yellow;
                         }
+                    }
+                }
+            }
+            Process {
+                id: weatherWatcher
+                running: true
+                command: ["bash", "-c", "exec inotifywait -qq -e create,modify,close_write " + paths.getCacheDir("weather") + "/ 2>/dev/null || sleep 60"]
+                onExited: exitCode => {
+                    if (exitCode === 0) {
+                        weatherPoller.running = false;
+                        weatherPoller.running = true;
+                        running = false;
+                        running = true;
                     }
                 }
             }
