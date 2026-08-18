@@ -216,6 +216,9 @@ spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
 
 
+
+
+
 output "eDP-1" {
     mode "1920x1080@60"
     position x=0 y=0

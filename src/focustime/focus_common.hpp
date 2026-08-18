@@ -85,12 +85,20 @@ inline std::string resolve_app_name(const std::string& app_class, const std::str
     
     if (desktop_cache.count(cls_lower)) return desktop_cache[cls_lower].name;
 
+    auto dot_pos = cls_lower.rfind('.');
+    if (dot_pos != std::string::npos) {
+        std::string short_cls = cls_lower.substr(dot_pos + 1);
+        if (desktop_cache.count(short_cls)) return desktop_cache[short_cls].name;
+    }
+
     // Fallback: cleaning title
     std::string name = raw_title;
-    std::regex re("(\\s+[-—|]\\s+.*)$");
-    name = std::regex_replace(name, re, "");
-    if (name.length() > 25) return app_class;
-    return name;
+    try {
+        std::regex re("(\\s+[-—|]\\s+.*)$");
+        name = std::regex_replace(name, re, "");
+    } catch (...) {}
+    if (!name.empty() && name.length() <= 35) return name;
+    return app_class;
 }
 
 inline std::string get_app_icon(const std::string& app_class) {
@@ -99,6 +107,12 @@ inline std::string get_app_icon(const std::string& app_class) {
     std::string cls_lower = app_class;
     std::transform(cls_lower.begin(), cls_lower.end(), cls_lower.begin(), ::tolower);
     if (desktop_cache.count(cls_lower)) return desktop_cache[cls_lower].icon;
+
+    auto dot_pos = cls_lower.rfind('.');
+    if (dot_pos != std::string::npos) {
+        std::string short_cls = cls_lower.substr(dot_pos + 1);
+        if (desktop_cache.count(short_cls)) return desktop_cache[short_cls].icon;
+    }
     return "";
 }
 

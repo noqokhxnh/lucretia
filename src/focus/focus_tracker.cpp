@@ -23,12 +23,15 @@ FocusService::FocusService(QObject* parent) : QObject(parent), db(nullptr) {
     run_dir = std::getenv("QS_RUN_FOCUSTIME") ? std::getenv("QS_RUN_FOCUSTIME") : "/tmp/quickshell/focustime";
     fs::create_directories(run_dir);
 
-    // Start Niri listener socket thread
-    std::thread([this]() {
-        this->daemon_loop();
-    }).detach();
+    // Initial active window query
+    updateActiveWindow();
 
-    // Start logging logic timer
+    // Start Niri listener socket thread
+    daemon_thread = std::thread([this]() {
+        this->daemonLoop();
+    });
+
+    // Start logging logic timer (every 1 second)
     QTimer* timer = new QTimer(this);
     connect(timer, &QTimer::timeout, this, [this]() {
         auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -38,14 +41,21 @@ FocusService::FocusService(QObject* parent) : QObject(parent), db(nullptr) {
         
         LogEntry entry;
         {
-            std::lock_guard<std::mutex> lock(buf_mutex);
-            entry = {date_buf, now_tm->tm_hour, "Desktop", 1};
+            std::lock_guard<std::mutex> lock(state_mutex);
+            entry = {date_buf, now_tm->tm_hour, current_class, current_title, 1};
         }
         
-        if (!entry.app_class.empty() && entry.app_class != "Locked") buffer.push_back(entry);
+        bool need_flush = false;
+        if (!entry.app_class.empty() && entry.app_class != "Locked") {
+            std::lock_guard<std::mutex> lock(buf_mutex);
+            buffer.push_back(entry);
+            if (buffer.size() >= 15) {
+                need_flush = true;
+            }
+        }
 
-        if (buffer.size() >= 15) {
-            flush_buffer();
+        if (need_flush) {
+            flushBuffer();
         }
     });
     timer->start(1000);
@@ -53,17 +63,131 @@ FocusService::FocusService(QObject* parent) : QObject(parent), db(nullptr) {
 
 FocusService::~FocusService() {
     stop_daemon = true;
+    if (daemon_thread.joinable()) {
+        daemon_thread.detach();
+    }
+    flushBuffer();
     if (db) sqlite3_close(db);
 }
 
-void FocusService::daemon_loop() {
+std::string FocusService::getNiriSocketPath() {
     const char* niri_socket = std::getenv("NIRI_SOCKET");
-    if (!niri_socket) return;
-    std::string sock_path = niri_socket;
+    if (niri_socket && fs::exists(niri_socket)) return niri_socket;
+
+    uid_t uid = getuid();
+    std::string run_user = "/run/user/" + std::to_string(uid);
+    if (fs::exists(run_user)) {
+        try {
+            for (const auto& entry : fs::directory_iterator(run_user)) {
+                std::string filename = entry.path().filename().string();
+                if (filename.rfind("niri", 0) == 0 && entry.path().extension() == ".sock") {
+                    return entry.path().string();
+                }
+            }
+        } catch (...) {}
+    }
+    return "";
+}
+
+bool FocusService::isLocked() {
+    return system("pgrep -f '[L]ock.qml' > /dev/null") == 0;
+}
+
+void FocusService::updateActiveWindow() {
+    if (isLocked()) {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        current_class = "Locked";
+        current_title = "Locked";
+        return;
+    }
+
+    std::string sock_path = getNiriSocketPath();
+    if (sock_path.empty()) {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        current_class = "Desktop";
+        current_title = "Desktop";
+        return;
+    }
+
+    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sock < 0) return;
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, sock_path.c_str(), sizeof(addr.sun_path) - 1);
+
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+
+    if (::connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        close(sock);
+        return;
+    }
+
+    std::string req = "\"FocusedWindow\"\n";
+    if (send(sock, req.c_str(), req.length(), 0) < 0) {
+        close(sock);
+        return;
+    }
+
+    char buf[4096];
+    std::string response = "";
+    ssize_t n = recv(sock, buf, sizeof(buf) - 1, 0);
+    if (n > 0) {
+        buf[n] = '\0';
+        response = buf;
+    }
+    close(sock);
+
+    if (response.empty()) return;
+
+    try {
+        auto data = json::parse(response);
+        if (data.contains("Ok") && data["Ok"].contains("FocusedWindow")) {
+            auto focused = data["Ok"]["FocusedWindow"];
+            if (focused.is_null()) {
+                std::lock_guard<std::mutex> lock(state_mutex);
+                current_class = "Desktop";
+                current_title = "Desktop";
+            } else {
+                std::string cls = focused.value("app_id", "");
+                if (cls.empty()) cls = "Unknown";
+                std::string title = focused.value("title", "");
+                if (title.empty()) title = cls;
+
+                if (cls.find("quickshell") != std::string::npos) {
+                    cls = "Quickshell";
+                    title = "Quickshell";
+                }
+                std::string clean_title = focus_common::resolve_app_name(cls, title);
+                std::lock_guard<std::mutex> lock(state_mutex);
+                current_class = cls;
+                current_title = clean_title;
+            }
+        }
+    } catch (...) {
+    }
+}
+
+void FocusService::daemonLoop() {
+    updateActiveWindow();
 
     while (!stop_daemon) {
+        std::string sock_path = getNiriSocketPath();
+        if (sock_path.empty()) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            continue;
+        }
+
         int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (sock < 0) { std::this_thread::sleep_for(std::chrono::seconds(2)); continue; }
+        if (sock < 0) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            continue;
+        }
 
         struct sockaddr_un addr;
         memset(&addr, 0, sizeof(addr));
@@ -95,6 +219,16 @@ void FocusService::daemon_loop() {
             while ((pos = stream_data.find('\n')) != std::string::npos) {
                 std::string line = stream_data.substr(0, pos);
                 stream_data.erase(0, pos + 1);
+
+                if (!line.empty()) {
+                    if (line.find("WindowFocusChanged") != std::string::npos ||
+                        line.find("WindowOpenedOrChanged") != std::string::npos ||
+                        line.find("WindowClosed") != std::string::npos ||
+                        line.find("WorkspaceActivated") != std::string::npos ||
+                        line.find("WorkspacesChanged") != std::string::npos) {
+                        updateActiveWindow();
+                    }
+                }
             }
         }
         close(sock);
@@ -102,23 +236,36 @@ void FocusService::daemon_loop() {
     }
 }
 
-void FocusService::flush_buffer() {
-    if (!db || buffer.empty()) return;
+void FocusService::flushBuffer() {
+    if (!db) return;
+    std::vector<LogEntry> entries;
+    {
+        std::lock_guard<std::mutex> lock(buf_mutex);
+        if (buffer.empty()) return;
+        entries = std::move(buffer);
+        buffer.clear();
+    }
+
     std::map<std::pair<std::string, std::string>, int> daily;
     std::map<std::tuple<std::string, int, std::string>, int> hourly;
-    for (const auto& e : buffer) {
+    std::map<std::pair<std::string, std::string>, std::string> titles;
+    for (const auto& e : entries) {
         daily[{e.date, e.app_class}] += e.seconds;
         hourly[{e.date, e.hour, e.app_class}] += e.seconds;
+        if (!e.app_title.empty()) {
+            titles[{e.date, e.app_class}] = e.app_title;
+        }
     }
 
     sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
     for (auto const& [key, secs] : daily) {
+        std::string title = titles.count(key) ? titles[key] : key.second;
         sqlite3_stmt* stmt;
-        sqlite3_prepare_v2(db, "INSERT INTO focus_log (log_date, app_class, seconds, app_title) VALUES (?, ?, ?, ?) ON CONFLICT(log_date, app_class) DO UPDATE SET seconds = seconds + ?", -1, &stmt, nullptr);
+        sqlite3_prepare_v2(db, "INSERT INTO focus_log (log_date, app_class, seconds, app_title) VALUES (?, ?, ?, ?) ON CONFLICT(log_date, app_class) DO UPDATE SET seconds = seconds + ?, app_title = excluded.app_title", -1, &stmt, nullptr);
         sqlite3_bind_text(stmt, 1, key.first.c_str(), -1, SQLITE_STATIC);
         sqlite3_bind_text(stmt, 2, key.second.c_str(), -1, SQLITE_STATIC);
         sqlite3_bind_int(stmt, 3, secs);
-        sqlite3_bind_text(stmt, 4, key.second.c_str(), -1, SQLITE_STATIC); 
+        sqlite3_bind_text(stmt, 4, title.c_str(), -1, SQLITE_STATIC); 
         sqlite3_bind_int(stmt, 5, secs);
         sqlite3_step(stmt);
         sqlite3_finalize(stmt);
@@ -135,12 +282,13 @@ void FocusService::flush_buffer() {
         sqlite3_finalize(stmt);
     }
     sqlite3_exec(db, "COMMIT;", nullptr, nullptr, nullptr);
-    buffer.clear();
 }
 
 QJsonObject FocusService::handleStats(const QJsonObject& req) {
     QJsonObject root;
     if (!db) return root;
+
+    flushBuffer();
 
     QString dateStr = req.value("date").toString();
     QString appFilter = req.value("app").toString();
@@ -225,7 +373,7 @@ QJsonObject FocusService::handleStats(const QJsonObject& req) {
     sqlite3_finalize(stmt);
     int average_seconds = (days_count > 0) ? (total_week / days_count) : 0;
 
-    // Apps list
+    // Apps list for target date
     QJsonArray appsArray;
     std::string q_apps = build_query("SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs FROM focus_log WHERE log_date = ?");
     q_apps += " GROUP BY app_class ORDER BY secs DESC";
@@ -243,6 +391,29 @@ QJsonObject FocusService::handleStats(const QJsonObject& req) {
             appObj["seconds"] = secs;
             appObj["percent"] = total_seconds > 0 ? std::round((secs * 1000.0) / total_seconds) / 10.0 : 0.0;
             appsArray.append(appObj);
+        }
+    }
+    sqlite3_finalize(stmt);
+
+    // Week Apps list
+    QJsonArray weekAppsArray;
+    std::string q_wapps = build_query("SELECT app_class, COALESCE(app_title, app_class), SUM(seconds) as secs FROM focus_log WHERE log_date >= ? AND log_date <= ?");
+    q_wapps += " GROUP BY app_class ORDER BY secs DESC";
+    if (sqlite3_prepare_v2(db, q_wapps.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, monday_str.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, sunday_str.c_str(), -1, SQLITE_STATIC);
+        if (!app_filter_std.empty()) sqlite3_bind_text(stmt, 3, app_filter_std.c_str(), -1, SQLITE_STATIC);
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            std::string cls = (const char*)sqlite3_column_text(stmt, 0);
+            std::string name = (const char*)sqlite3_column_text(stmt, 1);
+            int secs = sqlite3_column_int(stmt, 2);
+            QJsonObject appObj;
+            appObj["class"] = QString::fromStdString(cls);
+            appObj["name"] = QString::fromStdString(name);
+            appObj["icon"] = QString::fromStdString(focus_common::get_app_icon(cls));
+            appObj["seconds"] = secs;
+            appObj["percent"] = total_week > 0 ? std::round((secs * 1000.0) / total_week) / 10.0 : 0.0;
+            weekAppsArray.append(appObj);
         }
     }
     sqlite3_finalize(stmt);
@@ -390,13 +561,20 @@ QJsonObject FocusService::handleStats(const QJsonObject& req) {
         monthArray.append(padObj);
     }
 
+    std::string cur;
+    {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        cur = current_title.empty() ? "Desktop" : current_title;
+    }
+
     root["selected_date"] = QString::fromStdString(target_date_str);
     root["total"] = total_seconds;
     root["average"] = average_seconds;
     root["week_range"] = QString::fromStdString(week_range_str);
     root["yesterday"] = yesterday_seconds;
-    root["current"] = appFilter.isEmpty() ? "History" : appFilter;
+    root["current"] = appFilter.isEmpty() ? QString::fromStdString(cur) : appFilter;
     root["apps"] = appsArray;
+    root["week_apps"] = weekAppsArray;
     root["week"] = weekArray;
     root["hourly"] = hourlyArray;
     root["week_heatmap"] = weekHeatmapArray;
