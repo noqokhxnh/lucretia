@@ -152,8 +152,8 @@ fi
 ARCH_PKGS=(
     "niri" "swayidle" "foot" "pavucontrol" "alsa-utils" "awww" 
     "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep"
-    "cliphist" "jq" "socat" "inotify-tools" "pamixer" "brightnessctl" "acpi" "iw"
-    "bluez" "bluez-utils" "libnotify" "networkmanager" "lm_sensors" "bc" 
+    "cliphist" "jq" "socat" "inotify-tools" "pamixer" "brightnessctl" "acpi" "iw" "wpa_supplicant" "wireless_tools"
+    "bluez" "bluez-utils" "libnotify" "networkmanager" "network-manager-applet" "lm_sensors" "bc" 
     "pipewire" "wireplumber" "pipewire-pulse" "pipewire-alsa" "pipewire-jack" "libpulse" "python"
     "imagemagick" "wget" "file" "git" "psmisc"
     "matugen-bin" "ffmpeg" "quickshell-git"
@@ -1551,8 +1551,10 @@ fi
 # 7.5. ENABLE SERVICES & SET PERMISSIONS
 # ------------------------------------------------------------------------------
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Enabling Core System Services..."
-sudo systemctl enable NetworkManager.service >/dev/null 2>&1 || true
-printf "  -> NetworkManager enabled %-20s ${C_GREEN}[ OK ]${RESET}\n" ""
+sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
+printf "  -> NetworkManager enabled & active %-11s ${C_GREEN}[ OK ]${RESET}\n" ""
+sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
+printf "  -> Bluetooth service enabled & active %-8s ${C_GREEN}[ OK ]${RESET}\n" ""
 sudo systemctl enable --now power-profiles-daemon.service >/dev/null 2>&1 || true
 printf "  -> Power Profiles Daemon enabled %-13s ${C_GREEN}[ OK ]${RESET}\n" ""
 

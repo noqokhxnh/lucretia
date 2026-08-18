@@ -5,7 +5,7 @@ source "$SCRIPT_DIR/../../caching.sh"
 qs_ensure_cache "network"
 
 # Zero-latency hardware presence check via sysfs (Instant, no nmcli hang)
-if ! ls -1d /sys/class/net/*/wireless &>/dev/null; then
+if ! ls -1d /sys/class/net/*/wireless &>/dev/null && ! ls -1d /sys/class/net/*/phy80211 &>/dev/null; then
     echo '{ "present": false, "power": "off", "connected": null, "networks": [] }'
     exit 0
 fi
