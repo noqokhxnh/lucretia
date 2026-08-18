@@ -13,7 +13,7 @@ Item {
     // =========================================================
     property int requestedLayoutTemplate: 1
     property bool isActiveTab: typeof isCurrentTarget !== "undefined" ? isCurrentTarget : true
-    property string iconFont: "Font Awesome 6 Free Solid" 
+    property string iconFont: "Iosevka Nerd Font" 
     property string safeActiveEdge: typeof activeEdge !== "undefined" ? activeEdge : "left"
 
     // =========================================================

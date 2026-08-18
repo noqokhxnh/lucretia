@@ -628,7 +628,7 @@ Item {
 
             Text {
                 text: statIcon
-                font.family: "Nerd Font Mono"
+                font.family: "Iosevka Nerd Font"
                 font.pixelSize: dashboardRoot.s(22)
                 color: accentColor
             }
@@ -689,7 +689,7 @@ Item {
                 Text {
                     text: ma.appIcon
                     Layout.alignment: Qt.AlignHCenter
-                    font.family: "Nerd Font Mono"
+                    font.family: "Iosevka Nerd Font"
                     font.pixelSize: dashboardRoot.s(28)
                     color: ma.appColor
                 }

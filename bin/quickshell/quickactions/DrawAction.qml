@@ -22,7 +22,7 @@ Item {
     property bool isActiveTab: typeof isCurrentTarget !== "undefined" ? isCurrentTarget : true
 
     // FIXED: Added missing iconFont property to prevent 'undefined to QString' warnings
-    property string iconFont: "Font Awesome 6 Free Solid" 
+    property string iconFont: "Iosevka Nerd Font" 
 
     // =========================================================
     // --- SCALING & DIMENSIONS

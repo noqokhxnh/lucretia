@@ -105,7 +105,7 @@ Item {
                         Text {
                             anchors.centerIn: parent
                             text: "󰅃"
-                            font.family: "Nerd Font Mono"
+                            font.family: "Iosevka Nerd Font"
                             font.pixelSize: s(18)
                             color: mocha.primary
                         }
@@ -155,7 +155,7 @@ Item {
                             spacing: s(8)
                             Text {
                                 text: Config.dndMode ? "󰂛" : "󰂚"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(18)
                                 color: Config.dndMode ? mocha.red : mocha.subtext0
                             }
@@ -192,7 +192,7 @@ Item {
                             spacing: s(8)
                             Text {
                                 text: "󰃏"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(18)
                                 color: Config.beautifyScreenshot ? mocha.yellow : mocha.subtext0
                             }
@@ -240,7 +240,7 @@ Item {
                             spacing: s(8)
                             Text {
                                 text: "󰏘"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(15)
                                 color: mocha.primary
                             }
@@ -262,7 +262,7 @@ Item {
                                 iconSize: 11
                                 textSize: 10
                                 textFont: "Outfit"
-                                iconFont: "Nerd Font Mono"
+                                iconFont: "Iosevka Nerd Font"
                                 radius: s(8)
                                 baseColor: Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.35)
                                 hoverColor: Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.6)
@@ -282,7 +282,7 @@ Item {
 
                             Text {
                                 text: "󰇚"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(13)
                                 color: mocha.primary
                                 visible: controlCenterRoot.applyingTheme
@@ -352,7 +352,7 @@ Item {
                                     Text {
                                         anchors.centerIn: parent
                                         text: "󰄲"
-                                        font.family: "Nerd Font Mono"
+                                        font.family: "Iosevka Nerd Font"
                                         font.pixelSize: s(15)
                                         font.weight: Font.Black
                                         opacity: isSelected ? 1.0 : 0.0
@@ -523,7 +523,7 @@ Item {
                             spacing: s(8)
                             Text {
                                 text: "󰓅"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(15)
                                 color: mocha.primary
                             }
@@ -576,7 +576,7 @@ Item {
                                         spacing: s(6)
                                         Text {
                                             text: modelData.label
-                                            font.family: "Nerd Font Mono"
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: s(16)
                                             color: isActive ? mocha.base : mocha.text
                                         }
@@ -714,7 +714,7 @@ Item {
                             spacing: s(8)
                             Text {
                                 text: "󰍜"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(15)
                                 color: mocha.primary
                             }
@@ -764,7 +764,7 @@ Item {
 
                                         Text {
                                             text: modelData.icon
-                                            font.family: "Nerd Font Mono"
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: s(13)
                                             color: Config.enabledModules[modelData.key] ? mocha.primary : mocha.subtext0
                                         }
@@ -833,7 +833,7 @@ Item {
                             spacing: s(8)
                             Text {
                                 text: "󰤄"
-                                font.family: "Nerd Font Mono"
+                                font.family: "Iosevka Nerd Font"
                                 font.pixelSize: s(15)
                                 color: mocha.primary
                             }

@@ -161,6 +161,7 @@ ARCH_PKGS=(
     "power-profiles-daemon" "swayosd-git" "nautilus" "polkit-kde-agent"
     "qt5-wayland" "qt5-quickcontrols" "qt5-quickcontrols2" "qt5-graphicaleffects" "qt6-wayland"
     "qt5ct" "qt6ct" "gpu-screen-recorder" "adw-gtk-theme"
+    "inter-font" "ttf-jetbrains-mono-nerd" "ttf-iosevka-nerd" "otf-font-awesome" "ttf-nerd-fonts-symbols" "noto-fonts-emoji"
 )
 
 PKGS=("${ARCH_PKGS[@]}")
@@ -1359,6 +1360,7 @@ echo -e "\n${C_CYAN}[ INFO ]${RESET} Checking and Configuring Fonts..."
 TARGET_FONTS_DIR="$HOME/.local/share/fonts"
 mkdir -p "$TARGET_FONTS_DIR"
 
+# 1. Iosevka Nerd Font
 if ! fc-list : family | grep -qi "Iosevka Nerd Font"; then
     echo -e "  -> Downloading Iosevka Nerd Font..."
     ZIP_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.zip"
@@ -1369,16 +1371,49 @@ if ! fc-list : family | grep -qi "Iosevka Nerd Font"; then
         TEMP_DIR="/tmp/iosevka_fonts"
         mkdir -p "$TEMP_DIR"
         if unzip -q -o "$TEMP_ZIP" -d "$TEMP_DIR"; then
-            cp "$TEMP_DIR"/*.ttf "$TARGET_FONTS_DIR/" 2>/dev/null || cp "$TEMP_DIR"/*.otf "$TARGET_FONTS_DIR/" 2>/dev/null || true
-            printf "  -> Font installed successfully %-10s ${C_GREEN}[ OK ]${RESET}\n" ""
+            find "$TEMP_DIR" -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$TARGET_FONTS_DIR/" \; 2>/dev/null || true
+            printf "  -> Iosevka Nerd Font installed %-10s ${C_GREEN}[ OK ]${RESET}\n" ""
         else
-            echo -e "  -> ${C_RED}[ ERROR ] Failed to extract font files.${RESET}"
+            echo -e "  -> ${C_RED}[ ERROR ] Failed to extract Iosevka font files.${RESET}"
         fi
         rm -rf "$TEMP_ZIP" "$TEMP_DIR"
     else
-        echo -e "  -> ${C_RED}[ ERROR ] Failed to download Iosevka Nerd Font (network timeout or package not found).${RESET}"
+        echo -e "  -> ${C_RED}[ ERROR ] Failed to download Iosevka Nerd Font.${RESET}"
         rm -f "$TEMP_ZIP"
     fi
+fi
+
+# 2. JetBrains Mono
+if ! fc-list : family | grep -qi "JetBrains Mono"; then
+    echo -e "  -> Downloading JetBrainsMono Nerd Font..."
+    ZIP_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+    TEMP_ZIP="/tmp/JetBrainsMono.zip"
+    
+    if curl -L --fail --connect-timeout 15 --retry 3 -o "$TEMP_ZIP" "$ZIP_URL" -s; then
+        TEMP_DIR="/tmp/jb_fonts"
+        mkdir -p "$TEMP_DIR"
+        if unzip -q -o "$TEMP_ZIP" -d "$TEMP_DIR"; then
+            find "$TEMP_DIR" -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$TARGET_FONTS_DIR/" \; 2>/dev/null || true
+            printf "  -> JetBrainsMono Font installed %-9s ${C_GREEN}[ OK ]${RESET}\n" ""
+        fi
+        rm -rf "$TEMP_ZIP" "$TEMP_DIR"
+    fi
+fi
+
+# 3. Outfit Font
+if ! fc-list : family | grep -qi "Outfit"; then
+    echo -e "  -> Downloading Outfit font..."
+    curl -L --fail --connect-timeout 15 --retry 3 -s "https://raw.githubusercontent.com/google/fonts/main/ofl/outfit/Outfit%5Bwght%5D.ttf" -o "$TARGET_FONTS_DIR/Outfit[wght].ttf" 2>/dev/null && \
+        printf "  -> Outfit Font installed %-17s ${C_GREEN}[ OK ]${RESET}\n" "" || \
+        echo -e "  -> ${C_YELLOW}[ WARNING ] Could not download Outfit font.${RESET}"
+fi
+
+# 4. Inter Font
+if ! fc-list : family | grep -qi "Inter"; then
+    echo -e "  -> Downloading Inter font..."
+    curl -L --fail --connect-timeout 15 --retry 3 -s "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf" -o "$TARGET_FONTS_DIR/Inter[opsz,wght].ttf" 2>/dev/null && \
+        printf "  -> Inter Font installed %-18s ${C_GREEN}[ OK ]${RESET}\n" "" || \
+        echo -e "  -> ${C_YELLOW}[ WARNING ] Could not download Inter font.${RESET}"
 fi
 
 if [ -d "$TARGET_FONTS_DIR" ]; then
@@ -1388,6 +1423,7 @@ fi
 
 if command -v fc-cache &> /dev/null; then
     fc-cache -f "$TARGET_FONTS_DIR" > /dev/null 2>&1
+    fc-cache -f > /dev/null 2>&1
     printf "  -> Font cache updated %-21s ${C_GREEN}[ OK ]${RESET}\n" ""
 fi
 
