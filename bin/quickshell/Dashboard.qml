@@ -575,19 +575,6 @@ Item {
             scale: ma.containsMouse ? 1.05 : 1.0
             Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
 
-            // Soft accent glow behind the icon while hovered (color = theme role)
-            Rectangle {
-                anchors.centerIn: parent
-                width: dashboardRoot.s(64)
-                height: width
-                radius: width / 2
-                color: ma.appColor
-                opacity: ma.containsMouse ? 0.16 : 0.0
-                scale: ma.containsMouse ? 1.0 : 0.6
-                Behavior on opacity { NumberAnimation { duration: 200 } }
-                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-            }
-
             ColumnLayout {
                 anchors.centerIn: parent
                 spacing: dashboardRoot.s(6)
