@@ -42,11 +42,10 @@ CurlResponse fetch_url(CURL* curl, const std::string& url, bool head_only = fals
         curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
     }
 
-    // Reset for next request
+    // Reset NOBODY flag for next request (WRITEDATA will be set by next caller)
     if (head_only) {
         curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+        curl_easy_setopt(curl, CURLOPT_HTTPGET, 1L);
     }
 
     return {readBuffer, response_code};
@@ -65,7 +64,9 @@ std::tuple<int,int,int> parse_ver(const std::string& v) {
 }
 
 std::string read_local_version() {
-    std::ifstream f(std::string(std::getenv("HOME")) + "/.local/state/lucretia-version");
+    const char* home = std::getenv("HOME");
+    if (!home) return "0.0.0";
+    std::ifstream f(std::string(home) + "/.local/state/lucretia-version");
     if (!f.is_open()) return "0.0.0";
     std::string line;
     while (std::getline(f, line)) {
@@ -85,7 +86,7 @@ std::string read_local_version() {
 void cmd_version(CURL* curl) {
     auto resp = fetch_url(curl,
         "https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh");
-    std::regex re("^DOTS_VERSION=\"([^\"]+)\"", std::regex::multiline);
+    std::regex re("\nDOTS_VERSION=\"([^\"]+)\"");
     std::smatch m;
     if (std::regex_search(resp.data, m, re)) {
         std::cout << m[1] << std::endl;
