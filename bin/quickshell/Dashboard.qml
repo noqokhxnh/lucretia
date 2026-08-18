@@ -22,7 +22,11 @@ Item {
     // --- Ambient orbit animation ---
     property real globalOrbitAngle: 0
     NumberAnimation on globalOrbitAngle {
-        from: 0; to: Math.PI * 2; duration: 90000; loops: Animation.Infinite; running: true
+        from: 0
+        to: Math.PI * 2
+        duration: 90000
+        loops: Animation.Infinite
+        running: true
     }
 
     property real introHeader: 0
@@ -31,14 +35,39 @@ Item {
 
     ParallelAnimation {
         running: true
-        NumberAnimation { target: dashboardRoot; property: "introHeader"; from: 0; to: 1.0; duration: 800; easing.type: Easing.OutQuart }
-        SequentialAnimation {
-            PauseAnimation { duration: 150 }
-            NumberAnimation { target: dashboardRoot; property: "introTopSection"; from: 0; to: 1.0; duration: 850; easing.type: Easing.OutQuint }
+        NumberAnimation {
+            target: dashboardRoot
+            property: "introHeader"
+            from: 0
+            to: 1.0
+            duration: 800
+            easing.type: Easing.OutQuart
         }
         SequentialAnimation {
-            PauseAnimation { duration: 300 }
-            NumberAnimation { target: dashboardRoot; property: "introBottomSection"; from: 0; to: 1.0; duration: 900; easing.type: Easing.OutExpo }
+            PauseAnimation {
+                duration: 150
+            }
+            NumberAnimation {
+                target: dashboardRoot
+                property: "introTopSection"
+                from: 0
+                to: 1.0
+                duration: 850
+                easing.type: Easing.OutQuint
+            }
+        }
+        SequentialAnimation {
+            PauseAnimation {
+                duration: 300
+            }
+            NumberAnimation {
+                target: dashboardRoot
+                property: "introBottomSection"
+                from: 0
+                to: 1.0
+                duration: 900
+                easing.type: Easing.OutExpo
+            }
         }
     }
 
@@ -60,7 +89,8 @@ Item {
     function pushHistory(arr, val) {
         let copy = arr.slice();
         copy.push(val);
-        if (copy.length > 30) copy.shift();
+        if (copy.length > 30)
+            copy.shift();
         return copy;
     }
 
@@ -92,21 +122,27 @@ Item {
 
         // Ambient color blobs
         Rectangle {
-            width: parent.width * 0.5; height: width; radius: width / 2
+            width: parent.width * 0.5
+            height: width
+            radius: width / 2
             x: (parent.width * 0.75 - width / 2) + Math.cos(dashboardRoot.globalOrbitAngle * 1.5) * s(150)
             y: (parent.height * 0.3 - height / 2) + Math.sin(dashboardRoot.globalOrbitAngle * 1.5) * s(100)
             opacity: 0.025
             color: mocha.mauve
         }
         Rectangle {
-            width: parent.width * 0.6; height: width; radius: width / 2
+            width: parent.width * 0.6
+            height: width
+            radius: width / 2
             x: (parent.width * 0.25 - width / 2) + Math.sin(dashboardRoot.globalOrbitAngle * 1.2) * s(-150)
             y: (parent.height * 0.7 - height / 2) + Math.cos(dashboardRoot.globalOrbitAngle * 1.2) * s(-120)
             opacity: 0.02
             color: mocha.blue
         }
         Rectangle {
-            width: parent.width * 0.45; height: width; radius: width / 2
+            width: parent.width * 0.45
+            height: width
+            radius: width / 2
             x: (parent.width * 0.5 - width / 2) + Math.cos(dashboardRoot.globalOrbitAngle * -1.8) * s(180)
             y: (parent.height * 0.5 - height / 2) + Math.sin(dashboardRoot.globalOrbitAngle * -1.8) * s(-150)
             opacity: 0.015
@@ -129,7 +165,9 @@ Item {
             anchors.right: parent.right
             height: s(60)
             opacity: dashboardRoot.introHeader
-            transform: Translate { y: (1 - dashboardRoot.introHeader) * s(20) }
+            transform: Translate {
+                y: (1 - dashboardRoot.introHeader) * s(20)
+            }
 
             Column {
                 anchors.verticalCenter: parent.verticalCenter
@@ -160,7 +198,9 @@ Item {
             anchors.right: parent.right
             height: (parent.height - s(60) - s(40)) * 0.5
             opacity: dashboardRoot.introTopSection
-            transform: Translate { y: (1 - dashboardRoot.introTopSection) * s(20) }
+            transform: Translate {
+                y: (1 - dashboardRoot.introTopSection) * s(20)
+            }
 
             // LEFT: SYSTEM MONITOR
             Rectangle {
@@ -266,14 +306,54 @@ Item {
                         clip: true
 
                         model: ListModel {
-                            ListElement { name: "Control Center"; icon: "󰒓"; target: "controlcenter"; colorKey: "blue" }
-                            ListElement { name: "Clipboard"; icon: "󰅌"; target: "clipboard"; colorKey: "peach" }
-                            ListElement { name: "Monitors"; icon: "󰍹"; target: "monitors"; colorKey: "green" }
-                            ListElement { name: "Focus Time"; icon: "󱎫"; target: "focustime"; colorKey: "mauve" }
-                            ListElement { name: "Network"; icon: "󰖩"; target: "network"; colorKey: "sapphire" }
-                            ListElement { name: "Volume"; icon: "󰕾"; target: "volume"; colorKey: "yellow" }
-                            ListElement { name: "Updater"; icon: "󰚰"; target: "updater"; colorKey: "teal" }
-                            ListElement { name: "Wallpaper"; icon: "󰸉"; target: "wallpaper"; colorKey: "pink" }
+                            ListElement {
+                                name: "Control Center"
+                                icon: "󰒓"
+                                target: "controlcenter"
+                                colorKey: "blue"
+                            }
+                            ListElement {
+                                name: "Clipboard"
+                                icon: "󰅌"
+                                target: "clipboard"
+                                colorKey: "peach"
+                            }
+                            ListElement {
+                                name: "Monitors"
+                                icon: "󰍹"
+                                target: "monitors"
+                                colorKey: "green"
+                            }
+                            ListElement {
+                                name: "Focus Time"
+                                icon: "󱎫"
+                                target: "focustime"
+                                colorKey: "mauve"
+                            }
+                            ListElement {
+                                name: "Network"
+                                icon: "󰖩"
+                                target: "network"
+                                colorKey: "sapphire"
+                            }
+                            ListElement {
+                                name: "Volume"
+                                icon: "󰕾"
+                                target: "volume"
+                                colorKey: "yellow"
+                            }
+                            ListElement {
+                                name: "Updater"
+                                icon: "󰚰"
+                                target: "updater"
+                                colorKey: "teal"
+                            }
+                            ListElement {
+                                name: "Wallpaper"
+                                icon: "󰸉"
+                                target: "wallpaper"
+                                colorKey: "pink"
+                            }
                         }
 
                         delegate: AppButton {
@@ -304,7 +384,9 @@ Item {
             anchors.left: parent.left
             anchors.right: parent.right
             opacity: dashboardRoot.introBottomSection
-            transform: Translate { y: (1 - dashboardRoot.introBottomSection) * s(20) }
+            transform: Translate {
+                y: (1 - dashboardRoot.introBottomSection) * s(20)
+            }
 
             // LARGE CLOCK
             Rectangle {
@@ -404,8 +486,17 @@ Item {
                                 color: isToday ? mocha.text : (isHovered && isCurrentMonth ? Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.3) : "transparent")
 
                                 scale: isHovered && isCurrentMonth ? 1.15 : 1.0
-                                Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on scale {
+                                    NumberAnimation {
+                                        duration: 250
+                                        easing.type: Easing.OutBack
+                                    }
+                                }
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 150
+                                    }
+                                }
 
                                 Text {
                                     anchors.centerIn: parent
@@ -454,20 +545,34 @@ Item {
 
         calendarModel.clear();
         for (let i = firstDay - 1; i >= 0; i--) {
-            calendarModel.append({ dayNum: (daysInPrevMonth - i).toString(), isCurrentMonth: false, isToday: false });
+            calendarModel.append({
+                dayNum: (daysInPrevMonth - i).toString(),
+                isCurrentMonth: false,
+                isToday: false
+            });
         }
         for (let i = 1; i <= daysInMonth; i++) {
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: true, isToday: (i === todayDate) });
+            calendarModel.append({
+                dayNum: i.toString(),
+                isCurrentMonth: true,
+                isToday: (i === todayDate)
+            });
         }
         let remaining = 42 - calendarModel.count;
         for (let i = 1; i <= remaining; i++) {
-            calendarModel.append({ dayNum: i.toString(), isCurrentMonth: false, isToday: false });
+            calendarModel.append({
+                dayNum: i.toString(),
+                isCurrentMonth: false,
+                isToday: false
+            });
         }
     }
 
     function formatNet(bytes) {
-        if (bytes < 1024) return bytes + " B";
-        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " K";
+        if (bytes < 1024)
+            return bytes + " B";
+        if (bytes < 1048576)
+            return (bytes / 1024).toFixed(1) + " K";
         return (bytes / 1048576).toFixed(1) + " M";
     }
 
@@ -491,9 +596,22 @@ Item {
         border.width: 1
         clip: true
 
-        Behavior on color { ColorAnimation { duration: 200 } }
-        Behavior on border.color { ColorAnimation { duration: 200 } }
-        Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+        Behavior on color {
+            ColorAnimation {
+                duration: 200
+            }
+        }
+        Behavior on border.color {
+            ColorAnimation {
+                duration: 200
+            }
+        }
+        Behavior on scale {
+            NumberAnimation {
+                duration: 250
+                easing.type: Easing.OutBack
+            }
+        }
         scale: isHovered ? 1.02 : 1.0
 
         MouseArea {
@@ -501,30 +619,6 @@ Item {
             hoverEnabled: true
             propagateComposedEvents: true
             onContainsMouseChanged: statCardRoot.isHovered = containsMouse
-        }
-
-        // Sparkline
-        Row {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            height: parent.height * 0.4
-            spacing: 1
-            visible: history.length > 0
-
-            Repeater {
-                model: history.length
-                delegate: Rectangle {
-                    property real val: index < history.length ? history[index] : 0
-                    width: (parent.width - (history.length - 1)) / Math.max(1, history.length)
-                    anchors.bottom: parent.bottom
-                    height: Math.max(1, (val / 100.0) * parent.height)
-                    radius: 1
-                    color: Qt.rgba(accentColor.r, accentColor.g, accentColor.b, 0.08 + (index / Math.max(1, history.length - 1)) * 0.15)
-
-                    Behavior on height { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
-                }
-            }
         }
 
         RowLayout {
@@ -570,10 +664,23 @@ Item {
             border.color: ma.containsMouse ? Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.4) : "transparent"
             border.width: 1
 
-            Behavior on color { ColorAnimation { duration: 200 } }
-            Behavior on border.color { ColorAnimation { duration: 200 } }
+            Behavior on color {
+                ColorAnimation {
+                    duration: 200
+                }
+            }
+            Behavior on border.color {
+                ColorAnimation {
+                    duration: 200
+                }
+            }
             scale: ma.containsMouse ? 1.05 : 1.0
-            Behavior on scale { NumberAnimation { duration: 250; easing.type: Easing.OutBack } }
+            Behavior on scale {
+                NumberAnimation {
+                    duration: 250
+                    easing.type: Easing.OutBack
+                }
+            }
 
             ColumnLayout {
                 anchors.centerIn: parent
@@ -592,7 +699,11 @@ Item {
                     font.family: "Outfit"
                     font.pixelSize: dashboardRoot.s(13)
                     color: ma.containsMouse ? mocha.text : mocha.overlay1
-                    Behavior on color { ColorAnimation { duration: 200 } }
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 200
+                        }
+                    }
                 }
             }
         }
