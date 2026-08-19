@@ -925,75 +925,100 @@ prompt_optional_features_menu() {
 }
 
 # ==============================================================================
-# Main Menu Loop
+# FAST UPDATE PATH: Skip menu entirely for existing installations
 # ==============================================================================
-while true; do
+if [ "$LOCAL_VERSION" != "Not Installed" ] && [ -n "$LOCAL_VERSION" ]; then
     draw_header
+    echo -e "${BOLD}${C_GREEN}=== FAST UPDATE MODE ===${RESET}"
+    echo -e "${C_CYAN}Detected existing installation (v${LOCAL_VERSION}).${RESET}"
+    echo -e "${C_CYAN}Skipping interactive menus. Using saved configuration.${RESET}\n"
 
-    S_PKG=$( [ "$VISITED_PKGS" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
-    S_OVW=$( [ "$VISITED_OVERVIEW" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
-    S_WTH=$( [ "$VISITED_WEATHER" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
-    S_DRV=$( [ "$VISITED_DRIVERS" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
-    S_KBD=$( [ "$VISITED_KEYBOARD" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_RED}[ ]${RESET}" )
-    S_TEL=$( [ "$ENABLE_TELEMETRY" = true ] && echo -e "${C_GREEN}[ON]${RESET}" || echo -e "${DIM}[OFF]${RESET}" )
+    # Mark all sections as visited (reuse saved config)
+    VISITED_PKGS=true
+    VISITED_OVERVIEW=true
+    VISITED_WEATHER=true
+    VISITED_DRIVERS=true
+    VISITED_KEYBOARD=true
+    KEEP_OLD_ENV=true
 
-    if [[ -z "$WEATHER_API_KEY" ]]; then
-        if [ -f "$HOME/.config/niri/bin/quickshell/calendar/.env" ]; then
-            API_DISPLAY="Set (from .env file)"
-        else
-            API_DISPLAY="Not Set"
-        fi
-    elif [[ "$WEATHER_API_KEY" == "Skipped" ]]; then API_DISPLAY="Skipped"
-    else API_DISPLAY="Set ($WEATHER_UNIT, ID: $WEATHER_CITY_ID)"; fi
-
-    if [ "$LOCAL_VERSION" != "Not Installed" ] && [ -n "$LOCAL_VERSION" ]; then
-        INSTALL_LABEL="UPDATE"
-    else
-        INSTALL_LABEL="START"
+    # Preserve driver state from version file
+    if [[ "$DRIVER_CHOICE" == "None (Skipped)" || -z "$DRIVER_CHOICE" ]]; then
+        DRIVER_PKGS=()
     fi
 
-    MENU_ITEMS="1. $S_PKG ${C_GREEN}Manage Packages${RESET} [${#PKGS[@]} queued, Optional]\n"
-    MENU_ITEMS+="2. $S_OVW ${C_CYAN}Overview & Keybinds${RESET} [Optional]\n"
-    MENU_ITEMS+="3. $S_WTH ${C_YELLOW}Set Weather API Key${RESET} [${API_DISPLAY}, Optional]\n"
-    MENU_ITEMS+="4. $S_DRV ${C_RED}[ DRIVERS ] Setup${RESET} [${DRIVER_CHOICE}, Optional]\n"
-    MENU_ITEMS+="5. $S_KBD ${C_BLUE}Keyboard Layout Setup${RESET} [${KB_LAYOUTS_DISPLAY:-$KB_LAYOUTS}]\n"
-    MENU_ITEMS+="6. $S_TEL ${C_CYAN}Telemetry Settings${RESET}\n"
-    MENU_ITEMS+="7. ${BOLD}${C_MAGENTA}${INSTALL_LABEL}${RESET}\n"
-    MENU_ITEMS+="8. ${DIM}Exit${RESET}"
+    echo -e "  ${C_BLUE}→${RESET} Keyboard:   ${C_GREEN}${KB_LAYOUTS_DISPLAY:-$KB_LAYOUTS}${RESET}"
+    echo -e "  ${C_BLUE}→${RESET} Wallpaper:  ${C_GREEN}${WALLPAPER_DIR}${RESET}"
+    echo -e "  ${C_BLUE}→${RESET} Drivers:    ${C_GREEN}${DRIVER_CHOICE}${RESET}"
+    echo -e ""
+    sleep 1
+else
+    # ==============================================================================
+    # Main Menu Loop (Fresh Install Only)
+    # ==============================================================================
+    while true; do
+        draw_header
 
-    MENU_OPTION=$(echo -e "$MENU_ITEMS" | fzf \
-        --ansi \
-        --layout=reverse \
-        --border=rounded \
-        --margin=1,2 \
-        --height=17 \
-        --prompt=" Main Menu > " \
-        --pointer=">" \
-        --header=" Navigate with ARROWS. Select with ENTER. ")
+        S_PKG=$( [ "$VISITED_PKGS" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
+        S_OVW=$( [ "$VISITED_OVERVIEW" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
+        S_WTH=$( [ "$VISITED_WEATHER" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
+        S_DRV=$( [ "$VISITED_DRIVERS" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_YELLOW}[-]${RESET}" )
+        S_KBD=$( [ "$VISITED_KEYBOARD" = true ] && echo -e "${C_GREEN}[✓]${RESET}" || echo -e "${C_RED}[ ]${RESET}" )
+        S_TEL=$( [ "$ENABLE_TELEMETRY" = true ] && echo -e "${C_GREEN}[ON]${RESET}" || echo -e "${DIM}[OFF]${RESET}" )
 
-    case "$MENU_OPTION" in
-        *"1."*) manage_packages ;;
-        *"2."*) show_overview ;;
-        *"3."*) set_weather_api ;;
-        *"4."*) manage_drivers ;;
-        *"5."*) manage_keyboard ;;
-        *"6."*) manage_telemetry ;;
-        *"7."*) 
-            if [ "$VISITED_KEYBOARD" = false ]; then
-                echo -e "\n${C_RED}[!] You must configure your Keyboard Layouts in the submenu before starting.${RESET}"
-                sleep 2.5
-                continue
-            fi
-            if prompt_optional_features_menu; then
-                break 
+        if [[ -z "$WEATHER_API_KEY" ]]; then
+            if [ -f "$HOME/.config/niri/bin/quickshell/calendar/.env" ]; then
+                API_DISPLAY="Set (from .env file)"
             else
-                continue
+                API_DISPLAY="Not Set"
             fi
-            ;;
-        *"8."*) clear; exit 0 ;;
-        *) exit 0 ;;
-    esac
-done
+        elif [[ "$WEATHER_API_KEY" == "Skipped" ]]; then API_DISPLAY="Skipped"
+        else API_DISPLAY="Set ($WEATHER_UNIT, ID: $WEATHER_CITY_ID)"; fi
+
+        INSTALL_LABEL="START"
+
+        MENU_ITEMS="1. $S_PKG ${C_GREEN}Manage Packages${RESET} [${#PKGS[@]} queued, Optional]\n"
+        MENU_ITEMS+="2. $S_OVW ${C_CYAN}Overview & Keybinds${RESET} [Optional]\n"
+        MENU_ITEMS+="3. $S_WTH ${C_YELLOW}Set Weather API Key${RESET} [${API_DISPLAY}, Optional]\n"
+        MENU_ITEMS+="4. $S_DRV ${C_RED}[ DRIVERS ] Setup${RESET} [${DRIVER_CHOICE}, Optional]\n"
+        MENU_ITEMS+="5. $S_KBD ${C_BLUE}Keyboard Layout Setup${RESET} [${KB_LAYOUTS_DISPLAY:-$KB_LAYOUTS}]\n"
+        MENU_ITEMS+="6. $S_TEL ${C_CYAN}Telemetry Settings${RESET}\n"
+        MENU_ITEMS+="7. ${BOLD}${C_MAGENTA}${INSTALL_LABEL}${RESET}\n"
+        MENU_ITEMS+="8. ${DIM}Exit${RESET}"
+
+        MENU_OPTION=$(echo -e "$MENU_ITEMS" | fzf \
+            --ansi \
+            --layout=reverse \
+            --border=rounded \
+            --margin=1,2 \
+            --height=17 \
+            --prompt=" Main Menu > " \
+            --pointer=">" \
+            --header=" Navigate with ARROWS. Select with ENTER. ")
+
+        case "$MENU_OPTION" in
+            *"1."*) manage_packages ;;
+            *"2."*) show_overview ;;
+            *"3."*) set_weather_api ;;
+            *"4."*) manage_drivers ;;
+            *"5."*) manage_keyboard ;;
+            *"6."*) manage_telemetry ;;
+            *"7."*) 
+                if [ "$VISITED_KEYBOARD" = false ]; then
+                    echo -e "\n${C_RED}[!] You must configure your Keyboard Layouts in the submenu before starting.${RESET}"
+                    sleep 2.5
+                    continue
+                fi
+                if prompt_optional_features_menu; then
+                    break 
+                else
+                    continue
+                fi
+                ;;
+            *"8."*) clear; exit 0 ;;
+            *) exit 0 ;;
+        esac
+    done
+fi
 
 # ==============================================================================
 # Installation Process Execution
