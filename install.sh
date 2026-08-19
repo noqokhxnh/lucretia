@@ -76,7 +76,7 @@ spin() {
 run_with_spinner() {
     local msg=$1
     shift
-    eval "$@" &
+    "$@" >/dev/null 2>&1 &
     local pid=$!
     spin "$pid" "$msg"
     wait "$pid" 2>/dev/null
@@ -1723,8 +1723,13 @@ fi
 # ------------------------------------------------------------------------------
 step_done
 step "Enabling Services & Permissions"
-sudo systemctl enable --now NetworkManager.service bluetooth.service power-profiles-daemon.service >/dev/null 2>&1 || true
-printf "  → NetworkManager + Bluetooth + PowerProfiles  ${C_GREEN}[ OK ]${RESET}\n"
+for svc in NetworkManager.service bluetooth.service power-profiles-daemon.service; do
+    if sudo systemctl enable --now "$svc" >/dev/null 2>&1; then
+        printf "  → %-38s %b[ OK ]%b\n" "$svc" "$C_GREEN" "$RESET"
+    else
+        printf "  → %-38s %b[ SKIP ]%b\n" "$svc" "$C_YELLOW" "$RESET"
+    fi
+done
 
 # Network & Wi-Fi Self-Healing
 sudo rfkill unblock all >/dev/null 2>&1 || true
