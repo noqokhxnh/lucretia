@@ -29,5 +29,54 @@ curl -sL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh | 
 | ![screenshot4](public/screenshot4.png) | ![screenshot5](public/screenshot5.png) | ![screenshot6](public/screenshot6.png) |
 | ![screenshot7](public/screenshot7.png) | ![screenshot8](public/screenshot8.png) | ![screenshot9](public/screenshot9.png) |
 
+---
 
+## 🤝 Contributing & Pull Request Guidelines
 
+Contributions, issues, and feature requests are welcome! If you would like to contribute, please follow these guidelines:
+
+### 1. Fork & Branch
+- **Fork** the repository to your own GitHub account.
+- Clone your fork locally and create a new branch from `main`:
+  ```bash
+  git checkout -b feature/your-feature-name
+  # or
+  git checkout -b fix/your-bug-fix
+  ```
+
+### 2. Making Changes
+- Keep changes clean, modular, and focused on a single feature or bug fix.
+- Follow the existing project structure and coding conventions (QML, C++, Bash scripts, or KDL configs).
+- If your change affects UI/styling, please test across different themes/wallpapers if applicable.
+
+### 3. Commit Convention
+Follow [Conventional Commits](https://www.conventionalcommits.org/) format:
+- `feat:` for new features or widgets
+- `fix:` for bug fixes
+- `refactor:` for code refactoring without feature changes
+- `docs:` for documentation updates
+- `style:` for code formatting, styling, or UI aesthetic tweaks
+- `chore:` for maintenance tasks, dependencies, or build scripts
+
+Example:
+```bash
+git commit -m "feat(quickshell): add new battery charging animation"
+```
+
+### 4. Submitting a Pull Request
+1. Push your branch to your fork:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+2. Open a **Pull Request** against the `main` branch of this repository.
+3. Fill out the PR description:
+   - **Summary**: Describe what changes were made and why.
+   - **Screenshots / Recordings**: If UI/visual elements are added or modified, include screenshots or GIFs demonstrating the changes.
+   - **Related Issues**: Link any open issues (e.g., `Closes #12`).
+4. Ensure there are no merge conflicts with `main`.
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
