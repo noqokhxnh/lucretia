@@ -25,6 +25,63 @@ C_GREEN="\e[32m"
 C_YELLOW="\e[33m"
 C_RED="\e[31m"
 C_MAGENTA="\e[35m"
+C_WHITE="\e[97m"
+
+# ==============================================================================
+# UX Helper Functions (Progress Bar, Spinner, Timer)
+# ==============================================================================
+TOTAL_STEPS=11
+CURRENT_STEP=0
+INSTALL_START_TIME=0
+_STEP_START=0
+
+format_time() {
+    local secs=$1
+    if [ "$secs" -ge 60 ]; then
+        printf "%dm %ds" $((secs / 60)) $((secs % 60))
+    else
+        printf "%ds" "$secs"
+    fi
+}
+
+step() {
+    CURRENT_STEP=$((CURRENT_STEP + 1))
+    _STEP_START=$SECONDS
+    local pct=$((CURRENT_STEP * 100 / TOTAL_STEPS))
+    local filled=$((pct / 2))
+    local empty=$((50 - filled))
+    local bar=$(printf "%${filled}s" | tr ' ' '█')
+    local emp=$(printf "%${empty}s" | tr ' ' '░')
+    echo ""
+    printf " ${C_MAGENTA}${BOLD}[${bar}${emp}]${RESET} ${BOLD}${C_WHITE}%3d%%${RESET}  ${C_CYAN}⟨%d/%d⟩${RESET} %s\n" "$pct" "$CURRENT_STEP" "$TOTAL_STEPS" "$1"
+}
+
+step_done() {
+    local elapsed=$(( SECONDS - _STEP_START ))
+    printf "  ${C_GREEN}✓${RESET} ${DIM}Completed in %s${RESET}\n" "$(format_time $elapsed)"
+}
+
+spin() {
+    local pid=$1 msg=$2
+    local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+    local i=0
+    while kill -0 "$pid" 2>/dev/null; do
+        printf "\r  ${C_MAGENTA}%s${RESET} %s" "${frames[$i]}" "$msg"
+        i=$(( (i + 1) % ${#frames[@]} ))
+        sleep 0.08
+    done
+    printf "\r\033[K"
+}
+
+run_with_spinner() {
+    local msg=$1
+    shift
+    eval "$@" &
+    local pid=$!
+    spin "$pid" "$msg"
+    wait "$pid" 2>/dev/null
+    return $?
+}
 
 # Early Distro Detection
 if [ -f /etc/os-release ]; then
@@ -1024,19 +1081,22 @@ fi
 # Installation Process Execution
 # ==============================================================================
 clear
+INSTALL_START_TIME=$SECONDS
 draw_header
-echo -e "${BOLD}${C_BLUE}::${RESET} ${BOLD}Starting Installation Process...${RESET}\n"
+echo -e "${BOLD}${C_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+echo -e "${BOLD}${C_WHITE}  ◈  Installation Process Starting...${RESET}"
+echo -e "${BOLD}${C_MAGENTA}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
 
 send_telemetry "full"
 
-echo -e "${C_CYAN}[ INFO ]${RESET} Requesting sudo privileges for installation..."
+echo -e "\n${C_CYAN}  Requesting sudo privileges...${RESET}"
 if ! sudo -v; then
     echo -e "${C_RED}[ ERROR ] Failed to obtain sudo privileges. Exiting...${RESET}"
     exit 1
 fi
 
 # --- 0. Resolve Package Conflicts ---
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Resolving potential package conflicts..."
+step "Resolving package conflicts"
 for jack_pkg in jack jack2 jack2-dbus; do
     if pacman -Qq "$jack_pkg" &>/dev/null; then
         echo -e "  -> Removing conflicting package '$jack_pkg'..."
@@ -1062,7 +1122,8 @@ done
 ALL_PKGS=("${PKGS[@]}" "${DRIVER_PKGS[@]}")
 MISSING_PKGS=()
 
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Checking for already installed packages..."
+step_done
+step "Checking installed packages"
 
 # Filter out empty entries from ALL_PKGS
 UNIQUE_PKGS=()
@@ -1089,7 +1150,7 @@ if [ ${#MISSING_PKGS[@]} -eq 0 ]; then
     echo -e "  -> ${C_GREEN}All packages are already installed! Skipping package download phase.${RESET}\n"
 else
     echo -e "  -> ${C_YELLOW}Found ${#MISSING_PKGS[@]} missing packages to install.${RESET}"
-    echo -e "\n${C_CYAN}[ INFO ]${RESET} Installing System Packages & Drivers...\n"
+    echo -e "  ${C_CYAN}→${RESET} Installing System Packages & Drivers..."
 
     # Separate official and AUR packages
     MISSING_OFFICIAL=()
@@ -1111,7 +1172,7 @@ else
 
     # Install Official Packages first
     if [ ${#MISSING_OFFICIAL[@]} -gt 0 ]; then
-        echo -e "\n${C_CYAN}[ INFO ]${RESET} Installing Official Packages: ${MISSING_OFFICIAL[*]}..."
+        echo -e "  ${C_CYAN}→${RESET} Installing ${#MISSING_OFFICIAL[@]} Official Packages..."
         if sudo pacman -S --needed --noconfirm "${MISSING_OFFICIAL[@]}"; then
             echo -e "${C_GREEN}[ OK ] Successfully installed official packages.${RESET}"
         else
@@ -1129,7 +1190,7 @@ else
 
     # Install AUR Packages
     if [ ${#MISSING_AUR[@]} -gt 0 ]; then
-        echo -e "\n${C_CYAN}[ INFO ]${RESET} Installing AUR Packages: ${MISSING_AUR[*]}..."
+        echo -e "  ${C_CYAN}→${RESET} Installing ${#MISSING_AUR[@]} AUR Packages..."
         if yes "Y" | $PKG_MANAGER "${MISSING_AUR[@]}"; then
             echo -e "${C_GREEN}[ OK ] Successfully installed AUR packages.${RESET}"
         else
@@ -1145,10 +1206,11 @@ else
         fi
     fi
 fi
+step_done
 
 # --- 1.5. Advanced Proprietary NVIDIA Setup ---
 if [ "$HAS_NVIDIA_PROPRIETARY" = true ]; then
-    echo -e "\n${C_CYAN}[ INFO ]${RESET} Performing Precise NVIDIA Initialization for Wayland..."
+    step "NVIDIA Initialization for Wayland"
     echo -e "  -> Injecting kernel parameters via modprobe (nvidia-drm.modeset=1 nvidia-drm.fbdev=1)..."
     echo -e "options nvidia-drm modeset=1 fbdev=1" | sudo tee /etc/modprobe.d/nvidia.conf > /dev/null
 
@@ -1165,7 +1227,7 @@ fi
 
 # --- 2. Display Manager Configuration ---
 if [[ "$INSTALL_SDDM" == true || "$SETUP_SDDM_THEME" == true || "$REPLACE_DM" == true ]]; then
-    echo -e "\n${C_CYAN}[ INFO ]${RESET} Configuring Display Manager..."
+    step "Configuring Display Manager"
 fi
 
 if [[ "$REPLACE_DM" == true ]]; then
@@ -1187,7 +1249,7 @@ fi
 # ------------------------------------------------------------------------------
 # 3. DEPLOY CONFIGURATION AND CLONING
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting up Dotfiles Configuration..."
+step "Deploying Dotfiles & Configuration"
 REPO_URL="https://github.com/noqokhxnh/lucretia.git"
 TARGET_CONFIG_DIR="$HOME/.config/niri"
 BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d_%H%M%S)"
@@ -1263,7 +1325,8 @@ fi
 # ------------------------------------------------------------------------------
 # 4. FETCH WALLPAPERS
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Fetching Wallpapers..."
+step_done
+step "Fetching Wallpapers"
 mkdir -p "$WALLPAPER_DIR"
 
 if [ "$(ls -A "$WALLPAPER_DIR" 2>/dev/null | grep -E '\.(jpg|png|jpeg|gif|webp)$')" ]; then
@@ -1322,7 +1385,8 @@ fi
 # ------------------------------------------------------------------------------
 # 5. SINGLE SOURCE OF TRUTH (SSoT) SETTINGS MERGING
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Establishing settings.json SSoT..."
+step_done
+step "Merging Settings (SSoT)"
 SETTINGS_FILE="$TARGET_CONFIG_DIR/settings.json"
 UPSTREAM_JSON="$REPO_DIR/default_settings.json"
 
@@ -1414,7 +1478,8 @@ fi
 # ------------------------------------------------------------------------------
 # 6. SYSTEM FONTS SETUP
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Checking and Configuring Fonts..."
+step_done
+step "Installing & Configuring Fonts"
 TARGET_FONTS_DIR="$HOME/.local/share/fonts"
 mkdir -p "$TARGET_FONTS_DIR"
 
@@ -1488,7 +1553,8 @@ fi
 # ------------------------------------------------------------------------------
 # 6.3. ENVIRONMENT PATHS AUTOGENERATION
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Generating dynamic environment paths (env.conf)..."
+step_done
+step "Generating Environment & Adaptability"
 mkdir -p "$TARGET_CONFIG_DIR/config"
 cat <<EOF > "$TARGET_CONFIG_DIR/config/env.conf"
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -1510,7 +1576,7 @@ printf "  -> env.conf generated successfully %-10s ${C_GREEN}[ OK ]${RESET}\n" "
 # 6.5. DESKTOP VS LAPTOP ADAPTABILITY
 # ------------------------------------------------------------------------------
 QS_BAT_DIR="$TARGET_CONFIG_DIR/bin/quickshell/battery"
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Checking chassis for battery presence..."
+echo -e "  ${C_CYAN}→${RESET} Checking chassis for battery presence..."
 if ls /sys/class/power_supply/BAT* 1> /dev/null 2>&1; then
     echo -e "  -> ${C_GREEN}Battery detected.${RESET} Keeping Laptop Battery widget."
     if [ -f "$REPO_DIR/bin/quickshell/battery/BatteryPopup.qml" ]; then
@@ -1526,7 +1592,8 @@ fi
 # ------------------------------------------------------------------------------
 # 6.5. HEALING & REBUILDING QUICKSHELL & CONFIGURING FCITX5
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Checking system library and application state..."
+step_done
+step "Checking System Libraries & Compatibility"
 
 # 6.5a. Check and Rebuild Quickshell if Qt6 mismatch is detected
 if command -v quickshell &>/dev/null; then
@@ -1584,14 +1651,15 @@ fi
 # ------------------------------------------------------------------------------
 # 7. COMPILING CUSTOM C++ DAEMONS
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Compiling Custom C++ Components..."
+step_done
+step "Compiling C++ Components"
 
 # Rebuild all quickshell backends and daemons
 if [ -f "$REPO_DIR/bin/quickshell/rebuild_all.sh" ]; then
-    echo -e "  -> Compiling all Quickshell C++ components (rebuild_all.sh)..."
+    echo -e "  → Compiling all Quickshell C++ components..."
     chmod +x "$REPO_DIR/bin/quickshell/rebuild_all.sh"
-    bash "$REPO_DIR/bin/quickshell/rebuild_all.sh" >/dev/null 2>&1 || true
-    printf "  -> C++ components compiled successfully %-4s ${C_GREEN}[ OK ]${RESET}\n" ""
+    run_with_spinner "Building C++ backends..." "bash '$REPO_DIR/bin/quickshell/rebuild_all.sh' >/dev/null 2>&1" || true
+    printf "  → C++ components compiled successfully %-4s ${C_GREEN}[ OK ]${RESET}\n" ""
 else
     # Fallback to legacy single-daemon compilation if rebuild_all.sh is missing
     if [ -f "$REPO_DIR/bin/quickshell/compile_daemon.sh" ]; then
@@ -1609,7 +1677,8 @@ fi
 # ------------------------------------------------------------------------------
 # 7.5. ENABLE SERVICES & SET PERMISSIONS
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Enabling Core System Services..."
+step_done
+step "Enabling Services & Permissions"
 sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
 printf "  -> NetworkManager enabled & active %-11s ${C_GREEN}[ OK ]${RESET}\n" ""
 sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
@@ -1626,7 +1695,7 @@ nmcli radio wifi on >/dev/null 2>&1 || true
 # Gated by "boostPowerSave" in settings.json; applies on AC events + boot.
 # ------------------------------------------------------------------------------
 if ls /sys/class/power_supply/BAT* 1> /dev/null 2>&1; then
-    echo -e "\n${C_CYAN}[ INFO ]${RESET} Installing CPU turbo boost sync (off on battery)..."
+    echo -e "  ${C_CYAN}→${RESET} Installing CPU turbo boost sync..."
     if [ ! -d /usr/local/bin ]; then
         sudo mkdir -p /usr/local/bin
     fi
@@ -1682,7 +1751,7 @@ EOF
     printf "  -> Turbo boost sync installed %-16s ${C_GREEN}[ OK ]${RESET}\n" ""
 fi
 
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting executable permissions on scripts..."
+echo -e "  ${C_CYAN}→${RESET} Setting executable permissions on scripts..."
 find "$TARGET_CONFIG_DIR/bin" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
 printf "  -> Permissions set successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
 
@@ -1736,7 +1805,8 @@ fi
 # ------------------------------------------------------------------------------
 # 7.6. INITIALIZE MATUGEN DYNAMIC THEME
 # ------------------------------------------------------------------------------
-echo -e "\n${C_CYAN}[ INFO ]${RESET} Initializing Matugen Dynamic Theme..."
+step_done
+step "Initializing Matugen Theme"
 if command -v matugen &>/dev/null; then
     FIRST_WALLPAPER=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) 2>/dev/null | head -n 1)
     if [ -n "$FIRST_WALLPAPER" ]; then
@@ -1758,6 +1828,8 @@ fi
 rm -f ~/.cache/quickshell/updater/update_pending 2>/dev/null || true
 rm -f ~/.local/state/quickshell/wallpaper_picker/wallpaper_initialized 2>/dev/null || true
 
+step_done
+
 # ------------------------------------------------------------------------------
 # 8. FINALIZE VERSION MARKER & USER STATE
 # ------------------------------------------------------------------------------
@@ -1776,12 +1848,18 @@ TELEMETRY_ID="$TELEMETRY_ID"
 ENABLE_TELEMETRY="$ENABLE_TELEMETRY"
 EOF
 
-printf "  -> Configuration and version state saved %-7s ${C_GREEN}[ OK ]${RESET}\n" ""
+printf "  → Configuration and version state saved %-7s ${C_GREEN}[ OK ]${RESET}\n" ""
 
 # ==============================================================================
-# Final Output & Success Banner
+# Final Output & Success Summary
 # ==============================================================================
-echo -e "\n${BOLD}${C_GREEN}"
+TOTAL_TIME=$(( SECONDS - INSTALL_START_TIME ))
+TOTAL_PKG_COUNT=${#UNIQUE_PKGS[@]}
+FAILED_COUNT=${#FAILED_PKGS[@]}
+INSTALLED_COUNT=$(( TOTAL_PKG_COUNT - FAILED_COUNT ))
+
+echo ""
+echo -e "${BOLD}${C_GREEN}"
 cat << "EOF"
   ██╗████████╗███████╗     ██████╗  ██████╗ ███╗   ██╗███████╗██╗ ██████╗ 
   ██║╚══██╔══╝██╔════╝    ██╔════╝ ██╔═══██╗████╗  ██║██╔════╝██║██╔════╝ 
@@ -1790,19 +1868,38 @@ cat << "EOF"
   ██║   ██║   ███████║    ╚██████╗ ╚██████╔╝██║ ╚████║██║     ██║╚██████╔╝
   ╚═╝   ╚═╝   ╚══════╝     ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚═╝     ╚═╝ ╚═════╝ 
 EOF
-echo -e "${RESET}\n"
+echo -e "${RESET}"
 
-if [ ${#FAILED_PKGS[@]} -ne 0 ]; then
-    echo -e "${BOLD}${C_RED}The following packages were NOT installed. Try building them yourself:${RESET}"
-    for fp in "${FAILED_PKGS[@]}"; do
-        echo -e "  - ${C_YELLOW}$fp${RESET}"
-    done
-    echo ""
+echo -e "${C_MAGENTA}  ┌─────────────────────────────────────────────────────────┐${RESET}"
+echo -e "${C_MAGENTA}  │${RESET}${BOLD}${C_GREEN}            ✓  INSTALLATION COMPLETE                    ${RESET}${C_MAGENTA}│${RESET}"
+echo -e "${C_MAGENTA}  ├────────────────────┬────────────────────────────────────┤${RESET}"
+printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${C_GREEN}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Version" "$DOTS_VERSION"
+
+if [ $FAILED_COUNT -eq 0 ]; then
+    printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${C_GREEN}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Packages" "$INSTALLED_COUNT/$TOTAL_PKG_COUNT (all OK)"
+else
+    printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${C_YELLOW}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Packages" "$INSTALLED_COUNT/$TOTAL_PKG_COUNT ($FAILED_COUNT failed)"
 fi
+
+printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${C_CYAN}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Keyboard" "${KB_LAYOUTS_DISPLAY:-$KB_LAYOUTS}"
+printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${C_CYAN}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Drivers" "${DRIVER_CHOICE}"
+printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${C_CYAN}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Time Elapsed" "$(format_time $TOTAL_TIME)"
 
 if [ -n "$BACKUP_DIR" ] && [ -d "$BACKUP_DIR" ]; then
-    echo -e "Old configurations backed up to: ${C_CYAN}$BACKUP_DIR${RESET}"
+    short_backup="~${BACKUP_DIR#$HOME}"
+    printf "${C_MAGENTA}  │${RESET} ${BOLD}%-18s${RESET} ${C_MAGENTA}│${RESET} ${DIM}%-34s${RESET} ${C_MAGENTA}│${RESET}\n" "Backup" "$short_backup"
 fi
-echo -e "Please log out and log back in, or restart Niri to apply all changes."
+
+echo -e "${C_MAGENTA}  └────────────────────┴────────────────────────────────────┘${RESET}"
+
+if [ ${#FAILED_PKGS[@]} -ne 0 ]; then
+    echo -e "\n${BOLD}${C_RED}  ⚠  The following packages were NOT installed:${RESET}"
+    for fp in "${FAILED_PKGS[@]}"; do
+        echo -e "     ${C_YELLOW}• $fp${RESET}"
+    done
+fi
+
+echo -e "\n${BOLD}  Please log out and log back in, or restart Niri to apply all changes.${RESET}"
+echo ""
 
 send_telemetry "done"
