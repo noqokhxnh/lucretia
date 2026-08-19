@@ -1007,7 +1007,7 @@ if [ "$LOCAL_VERSION" != "Not Installed" ] && [ -n "$LOCAL_VERSION" ]; then
     echo -e "  ${C_BLUE}→${RESET} Wallpaper:  ${C_GREEN}${WALLPAPER_DIR}${RESET}"
     echo -e "  ${C_BLUE}→${RESET} Drivers:    ${C_GREEN}${DRIVER_CHOICE}${RESET}"
     echo -e ""
-    sleep 1
+    sleep 0.5
 else
     # ==============================================================================
     # Main Menu Loop (Fresh Install Only)
@@ -1152,11 +1152,13 @@ else
     echo -e "  -> ${C_YELLOW}Found ${#MISSING_PKGS[@]} missing packages to install.${RESET}"
     echo -e "  ${C_CYAN}→${RESET} Installing System Packages & Drivers..."
 
-    # Separate official and AUR packages
+    # Separate official and AUR packages (batch check — single pacman call)
     MISSING_OFFICIAL=()
     MISSING_AUR=()
+    # Get all official packages in one query
+    OFFICIAL_SET=$(pacman -Sp "${MISSING_PKGS[@]}" 2>/dev/null | sed 's|.*/||; s|-[^-]*-[^-]*$||')
     for pkg in "${MISSING_PKGS[@]}"; do
-        if pacman -Sp "$pkg" &>/dev/null; then
+        if echo "$OFFICIAL_SET" | grep -qx "$pkg"; then
             MISSING_OFFICIAL+=("$pkg")
         else
             MISSING_AUR+=("$pkg")
@@ -1166,7 +1168,7 @@ else
     # Safe compile jobs environment variables
     SAFE_JOBS=$(( $(nproc) / 2 ))
     [[ $SAFE_JOBS -lt 1 ]] && SAFE_JOBS=1
-    [[ $SAFE_JOBS -gt 4 ]] && SAFE_JOBS=4
+    [[ $SAFE_JOBS -gt 8 ]] && SAFE_JOBS=8
     export CARGO_BUILD_JOBS="$SAFE_JOBS"
     export MAKEFLAGS="-j$SAFE_JOBS"
 
@@ -1483,60 +1485,73 @@ step "Installing & Configuring Fonts"
 TARGET_FONTS_DIR="$HOME/.local/share/fonts"
 mkdir -p "$TARGET_FONTS_DIR"
 
-# 1. Iosevka Nerd Font
-if ! fc-list : family | grep -qi "Iosevka Nerd Font"; then
-    echo -e "  -> Downloading Iosevka Nerd Font..."
-    ZIP_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.zip"
-    TEMP_ZIP="/tmp/Iosevka.zip"
-    
-    if curl -L --fail --connect-timeout 15 --retry 3 -o "$TEMP_ZIP" "$ZIP_URL" -s; then
-        echo -e "  -> Extracting font files..."
-        TEMP_DIR="/tmp/iosevka_fonts"
-        mkdir -p "$TEMP_DIR"
-        if unzip -q -o "$TEMP_ZIP" -d "$TEMP_DIR"; then
-            find "$TEMP_DIR" -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$TARGET_FONTS_DIR/" \; 2>/dev/null || true
-            printf "  -> Iosevka Nerd Font installed %-10s ${C_GREEN}[ OK ]${RESET}\n" ""
-        else
-            echo -e "  -> ${C_RED}[ ERROR ] Failed to extract Iosevka font files.${RESET}"
+# Cache fc-list once instead of 4 separate calls
+FC_LIST_CACHE=$(fc-list : family 2>/dev/null)
+
+# Download all missing fonts in parallel
+FONT_PIDS=()
+
+if ! echo "$FC_LIST_CACHE" | grep -qi "Iosevka Nerd Font"; then
+    echo -e "  → Downloading Iosevka Nerd Font..."
+    (
+        curl -L --fail --connect-timeout 15 --retry 2 -o /tmp/Iosevka.zip \
+            "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/Iosevka.zip" -s && \
+        mkdir -p /tmp/iosevka_fonts && \
+        unzip -q -o /tmp/Iosevka.zip -d /tmp/iosevka_fonts && \
+        find /tmp/iosevka_fonts -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$TARGET_FONTS_DIR/" \; 2>/dev/null
+        rm -rf /tmp/Iosevka.zip /tmp/iosevka_fonts
+    ) &
+    FONT_PIDS+=($!)
+fi
+
+if ! echo "$FC_LIST_CACHE" | grep -qi "JetBrains Mono"; then
+    echo -e "  → Downloading JetBrainsMono Nerd Font..."
+    (
+        curl -L --fail --connect-timeout 15 --retry 2 -o /tmp/JetBrainsMono.zip \
+            "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip" -s && \
+        mkdir -p /tmp/jb_fonts && \
+        unzip -q -o /tmp/JetBrainsMono.zip -d /tmp/jb_fonts && \
+        find /tmp/jb_fonts -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$TARGET_FONTS_DIR/" \; 2>/dev/null
+        rm -rf /tmp/JetBrainsMono.zip /tmp/jb_fonts
+    ) &
+    FONT_PIDS+=($!)
+fi
+
+if ! echo "$FC_LIST_CACHE" | grep -qi "Outfit"; then
+    echo -e "  → Downloading Outfit font..."
+    (
+        curl -L --fail --connect-timeout 15 --retry 2 -s \
+            "https://raw.githubusercontent.com/google/fonts/main/ofl/outfit/Outfit%5Bwght%5D.ttf" \
+            -o "$TARGET_FONTS_DIR/Outfit[wght].ttf" 2>/dev/null
+    ) &
+    FONT_PIDS+=($!)
+fi
+
+if ! echo "$FC_LIST_CACHE" | grep -qi "Inter"; then
+    echo -e "  → Downloading Inter font..."
+    (
+        curl -L --fail --connect-timeout 15 --retry 2 -s \
+            "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf" \
+            -o "$TARGET_FONTS_DIR/Inter[opsz,wght].ttf" 2>/dev/null
+    ) &
+    FONT_PIDS+=($!)
+fi
+
+# Wait for all font downloads to complete
+if [ ${#FONT_PIDS[@]} -gt 0 ]; then
+    FONT_FAILURES=0
+    for pid in "${FONT_PIDS[@]}"; do
+        if ! wait "$pid" 2>/dev/null; then
+            FONT_FAILURES=$((FONT_FAILURES + 1))
         fi
-        rm -rf "$TEMP_ZIP" "$TEMP_DIR"
+    done
+    if [ $FONT_FAILURES -eq 0 ]; then
+        printf "  → All fonts installed %-20s ${C_GREEN}[ OK ]${RESET}\n" ""
     else
-        echo -e "  -> ${C_RED}[ ERROR ] Failed to download Iosevka Nerd Font.${RESET}"
-        rm -f "$TEMP_ZIP"
+        printf "  → Fonts installed (${C_YELLOW}%d failed${RESET}) %-10s ${C_YELLOW}[ WARN ]${RESET}\n" "$FONT_FAILURES" ""
     fi
-fi
-
-# 2. JetBrains Mono
-if ! fc-list : family | grep -qi "JetBrains Mono"; then
-    echo -e "  -> Downloading JetBrainsMono Nerd Font..."
-    ZIP_URL="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
-    TEMP_ZIP="/tmp/JetBrainsMono.zip"
-    
-    if curl -L --fail --connect-timeout 15 --retry 3 -o "$TEMP_ZIP" "$ZIP_URL" -s; then
-        TEMP_DIR="/tmp/jb_fonts"
-        mkdir -p "$TEMP_DIR"
-        if unzip -q -o "$TEMP_ZIP" -d "$TEMP_DIR"; then
-            find "$TEMP_DIR" -type f \( -name "*.ttf" -o -name "*.otf" \) -exec cp {} "$TARGET_FONTS_DIR/" \; 2>/dev/null || true
-            printf "  -> JetBrainsMono Font installed %-9s ${C_GREEN}[ OK ]${RESET}\n" ""
-        fi
-        rm -rf "$TEMP_ZIP" "$TEMP_DIR"
-    fi
-fi
-
-# 3. Outfit Font
-if ! fc-list : family | grep -qi "Outfit"; then
-    echo -e "  -> Downloading Outfit font..."
-    curl -L --fail --connect-timeout 15 --retry 3 -s "https://raw.githubusercontent.com/google/fonts/main/ofl/outfit/Outfit%5Bwght%5D.ttf" -o "$TARGET_FONTS_DIR/Outfit[wght].ttf" 2>/dev/null && \
-        printf "  -> Outfit Font installed %-17s ${C_GREEN}[ OK ]${RESET}\n" "" || \
-        echo -e "  -> ${C_YELLOW}[ WARNING ] Could not download Outfit font.${RESET}"
-fi
-
-# 4. Inter Font
-if ! fc-list : family | grep -qi "Inter"; then
-    echo -e "  -> Downloading Inter font..."
-    curl -L --fail --connect-timeout 15 --retry 3 -s "https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz%2Cwght%5D.ttf" -o "$TARGET_FONTS_DIR/Inter[opsz,wght].ttf" 2>/dev/null && \
-        printf "  -> Inter Font installed %-18s ${C_GREEN}[ OK ]${RESET}\n" "" || \
-        echo -e "  -> ${C_YELLOW}[ WARNING ] Could not download Inter font.${RESET}"
+else
+    printf "  → All fonts already present %-13s ${C_GREEN}[ OK ]${RESET}\n" ""
 fi
 
 if [ -d "$TARGET_FONTS_DIR" ]; then
@@ -1546,8 +1561,7 @@ fi
 
 if command -v fc-cache &> /dev/null; then
     fc-cache -f "$TARGET_FONTS_DIR" > /dev/null 2>&1
-    fc-cache -f > /dev/null 2>&1
-    printf "  -> Font cache updated %-21s ${C_GREEN}[ OK ]${RESET}\n" ""
+    printf "  → Font cache updated %-21s ${C_GREEN}[ OK ]${RESET}\n" ""
 fi
 
 # ------------------------------------------------------------------------------
@@ -1679,12 +1693,8 @@ fi
 # ------------------------------------------------------------------------------
 step_done
 step "Enabling Services & Permissions"
-sudo systemctl enable --now NetworkManager.service >/dev/null 2>&1 || true
-printf "  -> NetworkManager enabled & active %-11s ${C_GREEN}[ OK ]${RESET}\n" ""
-sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
-printf "  -> Bluetooth service enabled & active %-8s ${C_GREEN}[ OK ]${RESET}\n" ""
-sudo systemctl enable --now power-profiles-daemon.service >/dev/null 2>&1 || true
-printf "  -> Power Profiles Daemon enabled %-13s ${C_GREEN}[ OK ]${RESET}\n" ""
+sudo systemctl enable --now NetworkManager.service bluetooth.service power-profiles-daemon.service >/dev/null 2>&1 || true
+printf "  → NetworkManager + Bluetooth + PowerProfiles  ${C_GREEN}[ OK ]${RESET}\n"
 
 # Network & Wi-Fi Self-Healing
 sudo rfkill unblock all >/dev/null 2>&1 || true
