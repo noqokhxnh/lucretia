@@ -162,6 +162,7 @@ ARCH_PKGS=(
     "qt5-wayland" "qt5-quickcontrols" "qt5-quickcontrols2" "qt5-graphicaleffects" "qt6-wayland"
     "qt5ct" "qt6ct" "gpu-screen-recorder" "adw-gtk-theme"
     "inter-font" "ttf-jetbrains-mono-nerd" "ttf-iosevka-nerd" "otf-font-awesome" "ttf-nerd-fonts-symbols" "noto-fonts-emoji"
+    "nlohmann-json" "zbar" "sqlite" "cmake" "libpng" "pkgconf"
 )
 
 PKGS=("${ARCH_PKGS[@]}")
