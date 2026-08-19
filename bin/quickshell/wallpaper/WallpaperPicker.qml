@@ -267,34 +267,42 @@ Item {
                     
                     URL=$(awk -F'|' -v fname="$SAFE_NAME" '$1 == fname {print $2; exit}' "$MAP_FILE")
                     if [ -n "$URL" ]; then
-                        curl -s -L -A "Mozilla/5.0" "$URL" -o "$DEST_FILE.tmp"
+                        mkdir -p "$(dirname "$DEST_FILE")"
+                        mkdir -p "$(dirname "$FINAL_THUMB")"
+                        mkdir -p "${paths.getCacheDir("wallpaper_picker")}"
                         
-                        if file "$DEST_FILE.tmp" | grep -iq "webp"; then
-                            magick "$DEST_FILE.tmp" "$DEST_FILE"
+                        curl -sSL -f -A "Mozilla/5.0" "$URL" -o "$DEST_FILE.tmp"
+                        
+                        if [ -s "$DEST_FILE.tmp" ]; then
+                            if file "$DEST_FILE.tmp" | grep -iq "webp"; then
+                                magick "$DEST_FILE.tmp" "$DEST_FILE"
+                                rm -f "$DEST_FILE.tmp"
+                            else
+                                mv "$DEST_FILE.tmp" "$DEST_FILE"
+                            fi
+                            
+                            cp "$TEMP_THUMB" "$FINAL_THUMB" 2>/dev/null || true
+                            magick "$DEST_FILE" -resize x420 -quality 70 "$FINAL_THUMB" 2>/dev/null || true
+                            
+                            cp "$DEST_FILE" "${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png" || true
+                            echo "$DEST_FILE" > "${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.path"
+                            rm -f "${paths.getCacheDir("wallpaper_picker")}/current_video.path" 2>/dev/null || true
+                            pkill -x mpvpaper 2>/dev/null || true
+                            pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
+                            
+                            echo "" >> ${logFile}
+                            echo "[$(date +'%H:%M:%S.%3N')] APPLYING NEW DOWNLOAD: $DEST_FILE TO $TARGET_MONITORS" >> ${logFile}
+                            
+                            if [ "$TARGET_MONITORS" = "all" ]; then
+                                awww img "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
+                            else
+                                awww img -o "$TARGET_MONITORS" "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
+                            fi
+                            
+                            ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; bash "$MATUGEN_APPLY" apply "$DEST_FILE" "$DEST_FILE" >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
+                        else
                             rm -f "$DEST_FILE.tmp"
-                        else
-                            mv "$DEST_FILE.tmp" "$DEST_FILE"
                         fi
-                        
-                        cp "$TEMP_THUMB" "$FINAL_THUMB"
-                        magick "$DEST_FILE" -resize x420 -quality 70 "$FINAL_THUMB" || true
-                        
-                        cp "$DEST_FILE" ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.png || true
-                        echo "$DEST_FILE" > ${paths.getCacheDir("wallpaper_picker")}/current_wallpaper.path
-                        rm -f ${paths.getCacheDir("wallpaper_picker")}/current_video.path 2>/dev/null || true
-                        pkill -x mpvpaper 2>/dev/null || true
-                        pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.5)
-                        
-                        echo "" >> ${logFile}
-                        echo "[$(date +'%H:%M:%S.%3N')] APPLYING NEW DOWNLOAD: $DEST_FILE TO $TARGET_MONITORS" >> ${logFile}
-                        
-                        if [ "$TARGET_MONITORS" = "all" ]; then
-                            awww img "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
-                        else
-                            awww img -o "$TARGET_MONITORS" "$DEST_FILE" --transition-type ${randomTransition} --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >> ${logFile} 2>&1 &
-                        fi
-                        
-                        ( echo "[$(date +'%H:%M:%S.%3N')] RUNNING MATUGEN ON $DEST_FILE" >> ${logFile}; bash "$MATUGEN_APPLY" apply "$DEST_FILE" "$DEST_FILE" >> ${logFile} 2>&1 || echo "Matugen failed" >> ${logFile}; echo "[$(date +'%H:%M:%S.%3N')] RUNNING RELOAD_SCRIPT" >> ${logFile}; bash "$RELOAD_SCRIPT" >> ${logFile} 2>&1 || echo "Reload script failed" >> ${logFile} ) &
                     fi
                 `;
                 Quickshell.execDetached(["bash", "-c", downloadScript]);
