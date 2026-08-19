@@ -617,6 +617,10 @@ Item {
                     onPressed: {
                         if (!updateBtn.triggered) {
                             drainAnim.stop();
+                            fillAnim.stop();
+                            fillAnim.from = updateBtn.fillLevel;
+                            fillAnim.to = 1.0;
+                            fillAnim.duration = Math.max(50, 1200 * (1.0 - updateBtn.fillLevel));
                             fillAnim.start();
                         }
                     }
@@ -624,6 +628,21 @@ Item {
                     onReleased: {
                         if (!updateBtn.triggered && updateBtn.fillLevel < 1.0) {
                             fillAnim.stop();
+                            drainAnim.stop();
+                            drainAnim.from = updateBtn.fillLevel;
+                            drainAnim.to = 0.0;
+                            drainAnim.duration = Math.max(50, 800 * updateBtn.fillLevel);
+                            drainAnim.start();
+                        }
+                    }
+
+                    onCanceled: {
+                        if (!updateBtn.triggered && updateBtn.fillLevel < 1.0) {
+                            fillAnim.stop();
+                            drainAnim.stop();
+                            drainAnim.from = updateBtn.fillLevel;
+                            drainAnim.to = 0.0;
+                            drainAnim.duration = Math.max(50, 800 * updateBtn.fillLevel);
                             drainAnim.start();
                         }
                     }
@@ -633,15 +652,22 @@ Item {
                     id: fillAnim
                     target: updateBtn
                     property: "fillLevel"
-                    to: 1.0
-                    duration: 1200 * (1.0 - updateBtn.fillLevel)
                     easing.type: Easing.InSine
                     onFinished: {
-                        updateBtn.triggered = true;
-                        let scriptPath = Quickshell.env("HOME") + "/.config/niri/bin/updater.sh";
-                        let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c '" + scriptPath + "'; else ${TERM:-xterm} -hold -e bash -c '" + scriptPath + "'; fi";
-                        Quickshell.execDetached(["bash", "-c", cmd]);
-                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
+                        if (updateBtn.fillLevel >= 0.99 && !updateBtn.triggered) {
+                            updateBtn.triggered = true;
+                            updateBtn.fillLevel = 1.0;
+                            let scriptPath = Quickshell.env("HOME") + "/.config/niri/bin/updater.sh";
+                            let cmd = "if command -v foot >/dev/null 2>&1; then foot --hold bash -c '" + scriptPath + "'; " +
+                                      "elif command -v kitty >/dev/null 2>&1; then kitty --hold bash -c '" + scriptPath + "'; " +
+                                      "elif command -v ghostty >/dev/null 2>&1; then ghostty -e bash -c '" + scriptPath + "; echo; read -n 1 -s -r -p \"Press any key to close...\"'; " +
+                                      "elif command -v alacritty >/dev/null 2>&1; then alacritty --hold -e bash -c '" + scriptPath + "'; " +
+                                      "elif command -v wezterm >/dev/null 2>&1; then wezterm start -- bash -c '" + scriptPath + "; echo; read -n 1 -s -r -p \"Press any key to close...\"'; " +
+                                      "elif command -v xterm >/dev/null 2>&1; then xterm -hold -e bash -c '" + scriptPath + "'; " +
+                                      "else bash '" + scriptPath + "'; fi";
+                            Quickshell.execDetached(["bash", "-c", cmd]);
+                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
+                        }
                     }
                 }
 
@@ -649,8 +675,6 @@ Item {
                     id: drainAnim
                     target: updateBtn
                     property: "fillLevel"
-                    to: 0.0
-                    duration: 800 * updateBtn.fillLevel
                     easing.type: Easing.OutCubic
                 }
             }

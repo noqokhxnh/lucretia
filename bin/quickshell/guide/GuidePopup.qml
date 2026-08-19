@@ -622,7 +622,13 @@ Item {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; fi";
+                            let cmd = "if command -v foot >/dev/null 2>&1; then foot --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; " +
+                                      "elif command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; " +
+                                      "elif command -v ghostty >/dev/null 2>&1; then ghostty -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"; echo; read -n 1 -s -r -p \"Press any key to close...\"'; " +
+                                      "elif command -v alacritty >/dev/null 2>&1; then alacritty --hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; " +
+                                      "elif command -v wezterm >/dev/null 2>&1; then wezterm start -- bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"; echo; read -n 1 -s -r -p \"Press any key to close...\"'; " +
+                                      "elif command -v xterm >/dev/null 2>&1; then xterm -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; " +
+                                      "else bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; fi";
                             Quickshell.execDetached(["bash", "-c", cmd]);
                         }
                     }
