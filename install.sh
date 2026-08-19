@@ -35,6 +35,7 @@ CURRENT_STEP=0
 INSTALL_START_TIME=0
 _STEP_START=0
 
+# format_time formats a duration in seconds as minutes and seconds.
 format_time() {
     local secs=$1
     if [ "$secs" -ge 60 ]; then
@@ -44,6 +45,7 @@ format_time() {
     fi
 }
 
+# step displays progress for the next installation step and records its start time.
 step() {
     CURRENT_STEP=$((CURRENT_STEP + 1))
     _STEP_START=$SECONDS
@@ -56,11 +58,13 @@ step() {
     printf " ${C_MAGENTA}${BOLD}[${bar}${emp}]${RESET} ${BOLD}${C_WHITE}%3d%%${RESET}  ${C_CYAN}⟨%d/%d⟩${RESET} %s\n" "$pct" "$CURRENT_STEP" "$TOTAL_STEPS" "$1"
 }
 
+# step_done reports the completion time for the current installation step.
 step_done() {
     local elapsed=$(( SECONDS - _STEP_START ))
     printf "  ${C_GREEN}✓${RESET} ${DIM}Completed in %s${RESET}\n" "$(format_time $elapsed)"
 }
 
+# spin displays an animated spinner with a message while the specified process is running.
 spin() {
     local pid=$1 msg=$2
     local frames=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
@@ -73,6 +77,7 @@ spin() {
     printf "\r\033[K"
 }
 
+# run_with_spinner runs a command in the background while displaying a spinner with the specified message.
 run_with_spinner() {
     local msg=$1
     shift
@@ -471,6 +476,7 @@ manage_packages() {
     done
 }
 
+# manage_drivers configures graphics driver packages based on the detected GPU vendor and records the selected driver choice.
 manage_drivers() {
     while true; do
         draw_header
@@ -872,6 +878,7 @@ manage_telemetry() {
     done
 }
 
+# prompt_optional_features_menu interactively configures optional components and installation overrides, returning 0 to proceed or 1 to return to the previous menu.
 prompt_optional_features_menu() {
     DM_SERVICES=("gdm" "gdm3" "lightdm" "sddm" "lxdm" "lxdm-gtk3" "ly")
     CURRENT_DM=""
