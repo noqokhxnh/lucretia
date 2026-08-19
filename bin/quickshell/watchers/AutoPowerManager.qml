@@ -26,9 +26,9 @@ Item {
             let now = Date.now();
             if (now - manager._lastSwitchTime < 30000) return;
 
-            // 1. Peak Load Condition (Instant transition to performance)
+            // 1. Peak Load Condition (Transition to balanced or performance based on saver setting)
             if (cpu >= 75 || temp >= 75) {
-                targetProfile = "performance";
+                targetProfile = Config.autoBatterySaver ? "balanced" : "performance";
                 manager.lowLoadTicks = 0;
             }
             // 2. Idle Load Condition (Sustained low load required for power-saver)

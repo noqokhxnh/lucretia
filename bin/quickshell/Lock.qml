@@ -201,7 +201,7 @@ ShellRoot {
                         }
                     }
                 }
-                Timer { interval: 150; running: true; repeat: true; triggeredOnStart: true; onTriggered: kbPoller.running = true }
+                Timer { interval: 2500; running: true; repeat: true; triggeredOnStart: true; onTriggered: kbPoller.running = true }
 
                 Process {
                     id: batPoller
