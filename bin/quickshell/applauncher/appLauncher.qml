@@ -194,24 +194,9 @@ Item {
         appList.currentIndex = -1;
         appList.positionViewAtBeginning();
 
-        if (handleSpecialQuery(query)) {
-            appModel.clear();
-            return;
-        }
+        let q = (query !== undefined && query !== null) ? query.trim() : "";
 
-        let q = query.trim();
-
-        // Check Prefix Router modes
-        if (q.startsWith("=")) {
-            window.handleSpecialQuery("calc " + q.substring(1).trim());
-            appModel.clear();
-            return;
-        } else if (q.startsWith(":tr ")) {
-            window.handleSpecialQuery("tran " + q.substring(4).trim());
-            appModel.clear();
-            return;
-        } else if (q.startsWith(":df ")) {
-            window.handleSpecialQuery("df " + q.substring(4).trim());
+        if (handleSpecialQuery(q)) {
             appModel.clear();
             return;
         }
@@ -232,13 +217,13 @@ Item {
     }
 
     function processSearchResults(results, query) {
-        let history = window.currentHistory;
-        let settings = window.currentSettings;
+        let history = window.currentHistory || {};
+        let settings = window.currentSettings || { favorites: [], hidden: [] };
         let q = query.trim().toLowerCase();
         let showOnlyHidden = q === ":hidden";
 
-        let hiddenSet = new Set(settings.hidden);
-        let favoritesSet = new Set(settings.favorites);
+        let hiddenSet = new Set(settings.hidden || []);
+        let favoritesSet = new Set(settings.favorites || []);
 
         let filtered = [];
         // Results is an array of objects from C++
@@ -280,83 +265,33 @@ Item {
                 icon: a.icon,
                 terminal: a.terminal || false,
                 isRunning: a.is_running || false,
-                runningWindowId: a.running_window_id || -1,
-                runningWorkspaceId: a.running_workspace_id || -1,
+                runningWindowId: a.running_window_id !== undefined ? a.running_window_id : -1,
+                runningWorkspaceId: a.running_workspace_id !== undefined ? a.running_workspace_id : -1,
                 isFavorite: favoritesSet.has(a.name),
                 isHidden: hiddenSet.has(a.name)
             };
         });
 
-        // Apply diff to appModel (Existing logic)
         syncModel(finalApps);
     }
 
     function syncModel(finalApps) {
-        // Fast-path: if the result set is very different from what's shown
-        // (e.g. user cleared a search), a clear+repopulate is cheaper and
-        // avoids the O(n²) position-map update bug on large diffs.
-        let targetNames = new Set(finalApps.map(a => a.name));
-        let overlapCount = 0;
-        for (let i = 0; i < appModel.count; i++) {
-            if (targetNames.has(appModel.get(i).name)) overlapCount++;
-        }
-        let overlapRatio = appModel.count > 0 ? overlapCount / appModel.count : 0;
-        if (overlapRatio < 0.5 || appModel.count === 0) {
-            appModel.clear();
-            for (let i = 0; i < finalApps.length; i++) appModel.append(finalApps[i]);
-            if (appModel.count > 0) appList.currentIndex = 0;
-            return;
-        }
-
-        // Incremental diff path — remove items that are no longer needed.
-        for (let i = appModel.count - 1; i >= 0; i--) {
-            if (!targetNames.has(appModel.get(i).name)) {
-                appModel.remove(i);
-            }
-        }
-
-        // Rebuild position map after removals (cheap, avoids stale entries).
-        function rebuildPos() {
-            let m = {};
-            for (let i = 0; i < appModel.count; i++) m[appModel.get(i).name] = i;
-            return m;
-        }
-        let currentPos = rebuildPos();
-
+        appModel.clear();
         for (let i = 0; i < finalApps.length; i++) {
-            let targetApp = finalApps[i];
-            if (i < appModel.count) {
-                let currentItem = appModel.get(i);
-                if (currentItem.name !== targetApp.name) {
-                    let foundIdx = currentPos[targetApp.name];
-                    if (foundIdx !== undefined && foundIdx > i) {
-                        appModel.move(foundIdx, i, 1);
-                        // Rebuild map after every move — positions of shifted items
-                        // are invalidated and the map must be fully refreshed.
-                        currentPos = rebuildPos();
-                        appModel.setProperty(i, "isFavorite", targetApp.isFavorite);
-                        appModel.setProperty(i, "isHidden", targetApp.isHidden);
-                    } else {
-                        appModel.insert(i, targetApp);
-                        currentPos = rebuildPos();
-                    }
-                } else {
-                    // Item is in the right place — just refresh mutable flags.
-                    appModel.setProperty(i, "isFavorite", targetApp.isFavorite);
-                    appModel.setProperty(i, "isHidden", targetApp.isHidden);
-                }
-            } else {
-                appModel.append(targetApp);
-                currentPos[targetApp.name] = appModel.count - 1;
-            }
+            appModel.append(finalApps[i]);
         }
-        if (appModel.count > 0) appList.currentIndex = 0;
+        if (appModel.count > 0) {
+            appList.currentIndex = 0;
+        }
     }
 
     // --- SPECIAL MODE HELPERS ---
 
     function tryCalculate(expr) {
+        if (!expr) return null;
         let e = expr.trim()
+            .replace(/^calc\s+/i, "")
+            .replace(/^=\s*/, "")
             .replace(/×/g, "*")
             .replace(/÷/g, "/")
             .replace(/\^/g, "**")
@@ -401,7 +336,7 @@ Item {
     }
 
     function handleSpecialQuery(query) {
-        let q = query.trim();
+        let q = (query !== undefined && query !== null) ? query.trim() : "";
 
         // 1. Calculator detection
         let calcResult = tryCalculate(q);
@@ -413,8 +348,8 @@ Item {
             return true;
         }
 
-        // 2. Translation: tran <text> [to <lang>]
-        let tranMatch = q.match(/^tran\s+(.+)$/i);
+        // 2. Translation: tran <text> [to <lang>] or :tr <text>
+        let tranMatch = q.match(/^(?:tran|:tr)\s+(.+)$/i);
         if (tranMatch) {
             let remainder = tranMatch[1].trim();
             let toMatch = remainder.match(/^(.+?)\s+to\s+(\S+)$/i);
@@ -434,8 +369,8 @@ Item {
             return true;
         }
 
-        // 3. Dictionary: df <word>
-        let dfMatch = q.match(/^df\s+(.+)$/i);
+        // 3. Dictionary: df <word> or :df <word>
+        let dfMatch = q.match(/^(?:df|:df)\s+(.+)$/i);
         if (dfMatch) {
             let word = dfMatch[1].trim();
             window.specialMode = "df";
@@ -490,10 +425,10 @@ Item {
     function launchApp(item, forceNew) {
         if (!item) return;
         let appName = typeof item === "string" ? item : item.name;
-        let execStr = typeof item === "string" ? arguments[1] : item.exec;
-        let isRunning = typeof item === "object" && item.isRunning;
-        let runningWinId = typeof item === "object" ? item.runningWindowId : -1;
-        let isTerminal = typeof item === "object" && item.terminal;
+        let execStr = typeof item === "string" ? (arguments[1] || item) : item.exec;
+        let isRunning = (typeof item === "object" && item.isRunning) || false;
+        let runningWinId = (typeof item === "object" && item.runningWindowId !== undefined) ? item.runningWindowId : -1;
+        let isTerminal = (typeof item === "object" && item.terminal) || false;
 
         // Update history
         let history = getHistory();
@@ -503,8 +438,8 @@ Item {
         if (!forceNew && isRunning && runningWinId > 0) {
             Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", runningWinId.toString()]);
         } else {
-            let finalExec = isTerminal ? ("alacritty -e " + execStr) : execStr;
-            Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && " + finalExec]);
+            let finalExec = isTerminal ? ("foot -e " + execStr) : execStr;
+            Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && exec " + finalExec]);
         }
         Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
     }
@@ -515,7 +450,20 @@ Item {
         interval: 50
         running: true
         repeat: false
-        onTriggered: searchInput.forceActiveFocus()
+        onTriggered: {
+            if (searchInput) searchInput.forceActiveFocus();
+        }
+    }
+
+    Connections {
+        target: Components.QsDaemonClient
+        function onIsConnectedChanged() {
+            if (Components.QsDaemonClient.isConnected) {
+                if (window.visible && (!window.specialMode || window.specialMode === "")) {
+                    filterApps(searchInput ? searchInput.text : "");
+                }
+            }
+        }
     }
 
     Connections {
@@ -525,13 +473,12 @@ Item {
                 focusTimer.restart();
                 introPhaseAnim.restart();
                 // Reload settings + history from disk every time the launcher opens.
-                // This is the fix for favorites/hidden not persisting across sessions:
-                // FileView.onTextChanged only fires if Qt detects a change, which is
-                // unreliable after an external write. Forcing reload ensures we always
-                // have the latest data before filterApps runs.
                 settingsFile.reload();
                 window.currentHistory = getHistory();
-                searchInput.text = "";
+                if (searchInput) {
+                    searchInput.text = "";
+                    searchInput.forceActiveFocus();
+                }
                 filterApps("");
             }
         }
@@ -540,6 +487,10 @@ Item {
     Component.onCompleted: {
         loadSettings();
         window.currentHistory = getHistory();
+        focusTimer.restart();
+        if (searchInput) {
+            filterApps(searchInput.text);
+        }
     }
 
     Keys.onEscapePressed: {
@@ -773,6 +724,9 @@ Item {
                                 Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
                             } else if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
                                 let item = appModel.get(appList.currentIndex);
+                                launchApp(item, forceNew);
+                            } else if (appModel.count > 0) {
+                                let item = appModel.get(0);
                                 launchApp(item, forceNew);
                             }
                             event.accepted = true;
@@ -1204,7 +1158,8 @@ Item {
                                     appContextMenu.popup();
                                 } else {
                                     appList.currentIndex = index;
-                                    launchApp(model.name, model.exec);
+                                    let item = appModel.get(index);
+                                    launchApp(item ? item : model, false);
                                 }
                             }
                         }

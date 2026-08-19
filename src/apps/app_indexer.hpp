@@ -38,5 +38,8 @@ private:
 
     int computeFuzzyScore(const DesktopApp& app, const std::string& query);
     std::vector<RunningWindowInfo> fetchNiriWindows();
+
+    std::vector<RunningWindowInfo> cachedWindows;
+    qint64 lastNiriFetchTime = 0;
 };
 

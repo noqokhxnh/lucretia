@@ -27,6 +27,8 @@ AppIndexer::AppIndexer(QObject* parent) : QObject(parent) {
     scanDesktopApps();
 }
 
+#include <QDateTime>
+
 void AppIndexer::scanDesktopApps() {
     desktopApps.clear();
     std::map<std::string, DesktopApp> appsMap;
@@ -34,8 +36,21 @@ void AppIndexer::scanDesktopApps() {
     std::vector<fs::path> dirs = {
         "/usr/share/applications",
         "/usr/local/share/applications",
-        fs::path(getenv("HOME") ? getenv("HOME") : "") / ".local/share/applications"
+        "/var/lib/flatpak/exports/share/applications",
+        fs::path(getenv("HOME") ? getenv("HOME") : "") / ".local/share/applications",
+        fs::path(getenv("HOME") ? getenv("HOME") : "") / ".local/share/flatpak/exports/share/applications"
     };
+
+    const char* xdgDataDirs = getenv("XDG_DATA_DIRS");
+    if (xdgDataDirs) {
+        std::stringstream ss(xdgDataDirs);
+        std::string item;
+        while (std::getline(ss, item, ':')) {
+            if (!item.empty()) {
+                dirs.push_back(fs::path(item) / "applications");
+            }
+        }
+    }
 
     auto stripIconExt = [](std::string icon) {
         icon = trim_str(icon);
@@ -54,9 +69,11 @@ void AppIndexer::scanDesktopApps() {
     };
 
     for (const auto& dirPath : dirs) {
-        if (!fs::exists(dirPath)) continue;
-        for (const auto& entry : fs::directory_iterator(dirPath)) {
-            if (entry.is_regular_file() && entry.path().extension() == ".desktop") {
+        std::error_code ec;
+        if (!fs::exists(dirPath, ec)) continue;
+        for (const auto& entry : fs::directory_iterator(dirPath, ec)) {
+            if (ec) break;
+            if (entry.is_regular_file(ec) && entry.path().extension() == ".desktop") {
                 std::ifstream file(entry.path());
                 if (!file.is_open()) continue;
 
@@ -125,10 +142,15 @@ void AppIndexer::scanDesktopApps() {
 }
 
 std::vector<RunningWindowInfo> AppIndexer::fetchNiriWindows() {
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (now - lastNiriFetchTime < 1000 && !cachedWindows.empty()) {
+        return cachedWindows;
+    }
+
     std::vector<RunningWindowInfo> windows;
     QProcess proc;
     proc.start("niri", QStringList() << "msg" << "-j" << "windows");
-    if (proc.waitForFinished(150)) {
+    if (proc.waitForFinished(200)) {
         QByteArray output = proc.readAllStandardOutput();
         QJsonDocument doc = QJsonDocument::fromJson(output);
         if (doc.isArray()) {
@@ -146,6 +168,8 @@ std::vector<RunningWindowInfo> AppIndexer::fetchNiriWindows() {
             }
         }
     }
+    cachedWindows = windows;
+    lastNiriFetchTime = now;
     return windows;
 }
 
@@ -210,8 +234,6 @@ QJsonArray AppIndexer::searchApps(const QString& query) {
         scanDesktopApps();
     }
 
-    std::vector<RunningWindowInfo> runningWins = fetchNiriWindows();
-
     QJsonArray arr;
     if (query == "--list") {
         for (const auto& app : desktopApps) {
@@ -224,6 +246,8 @@ QJsonArray AppIndexer::searchApps(const QString& query) {
         }
         return arr;
     }
+
+    std::vector<RunningWindowInfo> runningWins = fetchNiriWindows();
 
     struct ScoreApp {
         DesktopApp app;
