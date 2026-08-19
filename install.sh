@@ -205,20 +205,45 @@ if [ -z "$TELEMETRY_ID" ]; then
     echo "TELEMETRY_ID=\"$TELEMETRY_ID\"" >> "$VERSION_FILE"
 fi
 
-# Main official packages
+# Main official packages & dependencies
 ARCH_PKGS=(
-    "niri" "swayidle" "foot" "pavucontrol" "alsa-utils" "awww" 
-    "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep"
-    "cliphist" "jq" "socat" "inotify-tools" "pamixer" "brightnessctl" "acpi" "iw" "wpa_supplicant" "wireless_tools"
-    "bluez" "bluez-utils" "libnotify" "networkmanager" "network-manager-applet" "lm_sensors" "bc" "rfkill" "iproute2" 
-    "pipewire" "wireplumber" "pipewire-pulse" "pipewire-alsa" "pipewire-jack" "libpulse" "python"
-    "imagemagick" "wget" "file" "git" "psmisc"
-    "matugen-bin" "ffmpeg" "quickshell-git"
-    "grim" "playerctl" "satty" "yq" "xdg-desktop-portal-gtk" "slurp" "mpvpaper"
-    "power-profiles-daemon" "swayosd-git" "nautilus" "polkit-kde-agent"
-    "qt5-wayland" "qt5-quickcontrols" "qt5-quickcontrols2" "qt5-graphicaleffects" "qt6-wayland"
-    "qt5ct" "qt6ct" "gpu-screen-recorder" "adw-gtk-theme"
-    "inter-font" "ttf-jetbrains-mono-nerd" "ttf-iosevka-nerd" "otf-font-awesome" "ttf-nerd-fonts-symbols" "noto-fonts-emoji"
+    # --- Compositor, Wayland & Session Management ---
+    "niri" "xorg-xwayland" "swayidle" "polkit-kde-agent" "xdg-desktop-portal" "xdg-desktop-portal-gtk"
+    "xdg-utils" "xdg-user-dirs" "gnome-keyring" "upower"
+
+    # --- Audio, Sound Stack & Codecs ---
+    "pipewire" "wireplumber" "pipewire-pulse" "pipewire-alsa" "pipewire-jack" "libpulse"
+    "alsa-utils" "alsa-firmware" "sof-firmware" "pavucontrol" "pamixer" "playerctl"
+    "gst-plugin-pipewire" "gst-plugins-good"
+
+    # --- Network, Wireless & Bluetooth ---
+    "networkmanager" "network-manager-applet" "wpa_supplicant" "wireless_tools" "iw"
+    "bluez" "bluez-utils" "rfkill" "iproute2" "usbutils"
+
+    # --- Hardware Sensors, Power & Brightness ---
+    "power-profiles-daemon" "brightnessctl" "acpi" "lm_sensors" "bc"
+
+    # --- Graphical Shell, Utilities & Custom Daemons ---
+    "foot" "nautilus" "quickshell-git" "swayosd-git" "matugen-bin" "awww" "mpvpaper"
+    "wl-clipboard" "cliphist" "grim" "slurp" "satty" "gpu-screen-recorder"
+    "ffmpeg" "imagemagick" "file" "wget" "git" "psmisc" "jq" "yq" "socat"
+    "inotify-tools" "ripgrep" "fd" "python" "libnotify"
+
+    # --- Input Method (Vietnamese & Multilingual Support) ---
+    "fcitx5" "fcitx5-gtk" "fcitx5-qt" "fcitx5-configtool" "fcitx5-unikey"
+
+    # --- Graphics, Vulkan & Hardware Video Acceleration (Universal) ---
+    "vulkan-icd-loader" "lib32-vulkan-icd-loader" "libva-utils"
+
+    # --- Qt5 / Qt6 Ecosystem & Theming ---
+    "qt5-wayland" "qt5-quickcontrols" "qt5-quickcontrols2" "qt5-graphicaleffects"
+    "qt6-wayland" "qt6-multimedia" "qt6-5compat" "qt5ct" "qt6ct" "adw-gtk-theme"
+
+    # --- System Typography & Fonts ---
+    "inter-font" "ttf-jetbrains-mono-nerd" "ttf-iosevka-nerd" "otf-font-awesome"
+    "ttf-nerd-fonts-symbols" "noto-fonts-emoji"
+
+    # --- C++ Backend Build & Runtime Dependencies ---
     "nlohmann-json" "zbar" "sqlite" "cmake" "libpng" "pkgconf"
 )
 
@@ -529,7 +554,7 @@ manage_drivers() {
         if [[ "$choice" == *"Proprietary NVIDIA"* ]]; then
             DRIVER_CHOICE="NVIDIA Proprietary"
             HAS_NVIDIA_PROPRIETARY=true
-            DRIVER_PKGS+=("nvidia-dkms" "nvidia-utils" "lib32-nvidia-utils" "linux-headers" "egl-wayland")
+            DRIVER_PKGS+=("nvidia-dkms" "nvidia-utils" "lib32-nvidia-utils" "linux-headers" "egl-wayland" "nvidia-settings" "opencl-nvidia")
 
         elif [[ "$choice" == *"Nouveau"* ]]; then
             DRIVER_CHOICE="NVIDIA Nouveau"
@@ -541,11 +566,11 @@ manage_drivers() {
 
         elif [[ "$choice" == *"Intel"* ]]; then
             DRIVER_CHOICE="Intel Drivers"
-            DRIVER_PKGS+=("mesa" "vulkan-intel" "lib32-vulkan-intel" "lib32-mesa" "intel-media-driver")
+            DRIVER_PKGS+=("mesa" "vulkan-intel" "lib32-vulkan-intel" "lib32-mesa" "intel-media-driver" "libva-intel-driver")
 
         elif [[ "$choice" == *"Generic"* ]]; then
             DRIVER_CHOICE="Generic / VM"
-            DRIVER_PKGS+=("mesa" "lib32-mesa")
+            DRIVER_PKGS+=("mesa" "lib32-mesa" "vulkan-swrast" "lib32-vulkan-swrast")
 
         elif [[ "$choice" == *"Skip"* ]]; then
             DRIVER_CHOICE="Skipped"
@@ -1660,6 +1685,11 @@ EOF
         sleep 1
         fcitx5 -d &>/dev/null &
     fi
+fi
+
+# 6.5c. Ensure XDG standard user directories are generated
+if command -v xdg-user-dirs-update &>/dev/null; then
+    xdg-user-dirs-update >/dev/null 2>&1 || true
 fi
 
 # ------------------------------------------------------------------------------
