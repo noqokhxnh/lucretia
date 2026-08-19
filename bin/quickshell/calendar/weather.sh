@@ -105,11 +105,30 @@ get_data() {
     # ---------------------------------------------------------
     # STANDARD API FETCH LOGIC
     # ---------------------------------------------------------
-    forecast_url="http://api.openweathermap.org/data/2.5/forecast?APPID=${KEY}&id=${ID}&units=${UNIT}"
-    raw_api=$(curl -sf "$forecast_url")
+    local loc_param=""
+    if [[ -n "$ID" && "$ID" =~ ^[0-9]+$ ]]; then
+        loc_param="id=${ID}"
+    elif [[ -n "$ID" && "$ID" != "OPENWEATHER_CITY_ID" ]]; then
+        loc_param="q=$(echo "$ID" | tr ' ' '+')"
+    else
+        # Auto-detect city by IP if City ID was omitted
+        local auto_city
+        auto_city=$(curl -sf --connect-timeout 3 --max-time 5 "https://ipapi.co/city" 2>/dev/null || curl -sf --connect-timeout 3 --max-time 5 "http://ip-api.com/line?fields=city" 2>/dev/null || echo "")
+        if [[ -n "$auto_city" ]]; then
+            loc_param="q=$(echo "$auto_city" | tr ' ' '+')"
+        fi
+    fi
+
+    if [[ -z "$loc_param" ]]; then
+        if [ ! -f "$json_file" ]; then write_dummy_data; fi
+        return
+    fi
+
+    forecast_url="http://api.openweathermap.org/data/2.5/forecast?APPID=${KEY}&${loc_param}&units=${UNIT}"
+    raw_api=$(curl -sf --max-time 10 "$forecast_url")
     
-    weather_url="http://api.openweathermap.org/data/2.5/weather?APPID=${KEY}&id=${ID}&units=${UNIT}"
-    raw_weather=$(curl -sf "$weather_url")
+    weather_url="http://api.openweathermap.org/data/2.5/weather?APPID=${KEY}&${loc_param}&units=${UNIT}"
+    raw_weather=$(curl -sf --max-time 10 "$weather_url")
     
     # Check if curl failed OR if OpenWeather returned an error
     api_cod=$(echo "$raw_api" | jq -r '.cod' 2>/dev/null)

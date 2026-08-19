@@ -153,7 +153,7 @@ ARCH_PKGS=(
     "niri" "swayidle" "foot" "pavucontrol" "alsa-utils" "awww" 
     "wl-clipboard" "fd" "qt6-multimedia" "qt6-5compat" "ripgrep"
     "cliphist" "jq" "socat" "inotify-tools" "pamixer" "brightnessctl" "acpi" "iw" "wpa_supplicant" "wireless_tools"
-    "bluez" "bluez-utils" "libnotify" "networkmanager" "network-manager-applet" "lm_sensors" "bc" 
+    "bluez" "bluez-utils" "libnotify" "networkmanager" "network-manager-applet" "lm_sensors" "bc" "rfkill" "iproute2" 
     "pipewire" "wireplumber" "pipewire-pulse" "pipewire-alsa" "pipewire-jack" "libpulse" "python"
     "imagemagick" "wget" "file" "git" "psmisc"
     "matugen-bin" "ffmpeg" "quickshell-git"
@@ -1349,9 +1349,10 @@ printf "  -> Configuration merged %-23s ${C_GREEN}[ OK ]${RESET}\n" ""
 # ------------------------------------------------------------------------------
 # 5.5. WEATHER ENVIRONMENT PERSISTENCE
 # ------------------------------------------------------------------------------
+WEATHER_ENV="$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env"
+mkdir -p "$(dirname "$WEATHER_ENV")"
+
 if [[ "$WEATHER_API_KEY" != "Skipped" && -n "$WEATHER_API_KEY" ]]; then
-    WEATHER_ENV="$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env"
-    mkdir -p "$(dirname "$WEATHER_ENV")"
     cat <<EOF > "$WEATHER_ENV"
 OPENWEATHER_KEY='$WEATHER_API_KEY'
 OPENWEATHER_CITY_ID='$WEATHER_CITY_ID'
@@ -1360,11 +1361,19 @@ EOF
     chmod 600 "$WEATHER_ENV"
     printf "  -> Weather environment saved %-20s ${C_GREEN}[ OK ]${RESET}\n" ""
 elif [[ "$KEEP_OLD_ENV" == true && -f "$BACKUP_DIR/weather.env" ]]; then
-    WEATHER_ENV="$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env"
-    mkdir -p "$(dirname "$WEATHER_ENV")"
     cp "$BACKUP_DIR/weather.env" "$WEATHER_ENV"
     chmod 600 "$WEATHER_ENV"
     printf "  -> Weather environment restored from backup %-5s ${C_GREEN}[ OK ]${RESET}\n" ""
+else
+    if [ ! -f "$WEATHER_ENV" ]; then
+        cat <<EOF > "$WEATHER_ENV"
+OPENWEATHER_KEY=''
+OPENWEATHER_CITY_ID=''
+OPENWEATHER_UNIT='metric'
+EOF
+        chmod 600 "$WEATHER_ENV"
+        printf "  -> Weather environment initialized %-15s ${C_GREEN}[ OK ]${RESET}\n" ""
+    fi
 fi
 
 # ------------------------------------------------------------------------------
@@ -1572,6 +1581,10 @@ sudo systemctl enable --now bluetooth.service >/dev/null 2>&1 || true
 printf "  -> Bluetooth service enabled & active %-8s ${C_GREEN}[ OK ]${RESET}\n" ""
 sudo systemctl enable --now power-profiles-daemon.service >/dev/null 2>&1 || true
 printf "  -> Power Profiles Daemon enabled %-13s ${C_GREEN}[ OK ]${RESET}\n" ""
+
+# Network & Wi-Fi Self-Healing
+sudo rfkill unblock all >/dev/null 2>&1 || true
+nmcli radio wifi on >/dev/null 2>&1 || true
 
 # ------------------------------------------------------------------------------
 # 7.5b. CPU TURBO BOOST — OFF ON BATTERY (udev rule + boot sync)

@@ -210,7 +210,7 @@ Item {
         };
         
         config.updateEnvBulk(config.weatherEnvPath, envs);
-        sh(`rm -rf "${paths.getCacheDir('weather')}"`);
+        sh(`rm -rf "${paths.getCacheDir('weather')}"; bash "${qsScriptsDir}/calendar/weather.sh" --getdata`);
         // Weather config saved silently
     }
 

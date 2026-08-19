@@ -50,3 +50,7 @@ bin/quickshell/watchers/sys_fetcher
 .mimocode/*
 .nodeterm/
 insta
+.claude/
+.codewhale/
+.mimocode
+.opencode
