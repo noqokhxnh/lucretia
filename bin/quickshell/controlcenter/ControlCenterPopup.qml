@@ -688,6 +688,159 @@ Item {
                                 }
                             }
                         }
+
+                        // Critical Battery Protection (suspend/shutdown on low battery)
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: s(8)
+
+                            ColumnLayout {
+                                spacing: 1
+                                Layout.fillWidth: true
+
+                                Text {
+                                    text: "Critical Battery Protection"
+                                    font.family: "Outfit"
+                                    font.pixelSize: s(11)
+                                    font.weight: Font.Medium
+                                    color: mocha.text
+                                }
+
+                                Text {
+                                    text: "Notify at 15%, auto suspend at 5% & shutdown at 2%"
+                                    font.family: "Outfit"
+                                    font.pixelSize: s(9)
+                                    color: mocha.subtext0
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            Rectangle {
+                                width: s(38); height: s(20); radius: s(10)
+                                color: Config.critProtect ? mocha.green : Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6)
+                                Behavior on color { ColorAnimation { duration: 200 } }
+
+                                Rectangle {
+                                    width: s(16); height: s(16); radius: s(8)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    x: Config.critProtect ? s(20) : s(2)
+                                    color: mocha.base
+                                    Behavior on x { NumberAnimation { duration: Math.round(150 / Config.animSpeedMultiplier); easing.type: Easing.OutExpo } }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Config.critProtect = !Config.critProtect;
+                                        saveTimer.restart();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Auto Bluetooth Off on Battery
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: s(8)
+
+                            ColumnLayout {
+                                spacing: 1
+                                Layout.fillWidth: true
+
+                                Text {
+                                    text: "Auto Turn Off Bluetooth"
+                                    font.family: "Outfit"
+                                    font.pixelSize: s(11)
+                                    font.weight: Font.Medium
+                                    color: mocha.text
+                                }
+
+                                Text {
+                                    text: "Power off the Bluetooth radio when unplugged"
+                                    font.family: "Outfit"
+                                    font.pixelSize: s(9)
+                                    color: mocha.subtext0
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            Rectangle {
+                                width: s(38); height: s(20); radius: s(10)
+                                color: Config.bluetoothPowerSave ? mocha.green : Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6)
+                                Behavior on color { ColorAnimation { duration: 200 } }
+
+                                Rectangle {
+                                    width: s(16); height: s(16); radius: s(8)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    x: Config.bluetoothPowerSave ? s(20) : s(2)
+                                    color: mocha.base
+                                    Behavior on x { NumberAnimation { duration: Math.round(150 / Config.animSpeedMultiplier); easing.type: Easing.OutExpo } }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Config.bluetoothPowerSave = !Config.bluetoothPowerSave;
+                                        saveTimer.restart();
+                                    }
+                                }
+                            }
+                        }
+
+                        // Turbo Boost Off on Battery
+                        RowLayout {
+                            Layout.fillWidth: true
+                            spacing: s(8)
+
+                            ColumnLayout {
+                                spacing: 1
+                                Layout.fillWidth: true
+
+                                Text {
+                                    text: "Turbo Boost Off on Battery"
+                                    font.family: "Outfit"
+                                    font.pixelSize: s(11)
+                                    font.weight: Font.Medium
+                                    color: mocha.text
+                                }
+
+                                Text {
+                                    text: "Limit CPU turbo frequency while running on battery"
+                                    font.family: "Outfit"
+                                    font.pixelSize: s(9)
+                                    color: mocha.subtext0
+                                    elide: Text.ElideRight
+                                    Layout.fillWidth: true
+                                }
+                            }
+
+                            Rectangle {
+                                width: s(38); height: s(20); radius: s(10)
+                                color: Config.boostPowerSave ? mocha.green : Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6)
+                                Behavior on color { ColorAnimation { duration: 200 } }
+
+                                Rectangle {
+                                    width: s(16); height: s(16); radius: s(8)
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    x: Config.boostPowerSave ? s(20) : s(2)
+                                    color: mocha.base
+                                    Behavior on x { NumberAnimation { duration: Math.round(150 / Config.animSpeedMultiplier); easing.type: Easing.OutExpo } }
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        Config.boostPowerSave = !Config.boostPowerSave;
+                                        saveTimer.restart();
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

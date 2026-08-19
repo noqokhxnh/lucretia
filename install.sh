@@ -1573,6 +1573,67 @@ printf "  -> Bluetooth service enabled & active %-8s ${C_GREEN}[ OK ]${RESET}\n"
 sudo systemctl enable --now power-profiles-daemon.service >/dev/null 2>&1 || true
 printf "  -> Power Profiles Daemon enabled %-13s ${C_GREEN}[ OK ]${RESET}\n" ""
 
+# ------------------------------------------------------------------------------
+# 7.5b. CPU TURBO BOOST — OFF ON BATTERY (udev rule + boot sync)
+# Gated by "boostPowerSave" in settings.json; applies on AC events + boot.
+# ------------------------------------------------------------------------------
+if ls /sys/class/power_supply/BAT* 1> /dev/null 2>&1; then
+    echo -e "\n${C_CYAN}[ INFO ]${RESET} Installing CPU turbo boost sync (off on battery)..."
+    if [ ! -d /usr/local/bin ]; then
+        sudo mkdir -p /usr/local/bin
+    fi
+
+    cat <<EOF | sudo tee /usr/local/bin/niri-boost-sync.sh > /dev/null
+#!/usr/bin/env bash
+# Sync CPU turbo boost with AC state, gated by boostPowerSave in settings.json
+SETTINGS_FILE="$TARGET_CONFIG_DIR/settings.json"
+BOOST="/sys/devices/system/cpu/cpufreq/boost"
+
+AC_PATH="/sys/class/power_supply/AC0/online"
+AC_TYPE_PATH=\$(grep -l "Mains" /sys/class/power_supply/*/type 2>/dev/null | head -n1)
+if [ -n "\$AC_TYPE_PATH" ]; then
+    AC_PATH="\$(dirname "\$AC_TYPE_PATH")/online"
+fi
+[ -f "\$AC_PATH" ] || exit 0
+
+ENABLE="true"
+if [ -f "\$SETTINGS_FILE" ]; then
+    ENABLE=\$(jq -r '.boostPowerSave // true' "\$SETTINGS_FILE" 2>/dev/null)
+    [ "\$ENABLE" = "true" ] || [ "\$ENABLE" = "false" ] || ENABLE="true"
+fi
+
+if [ "\$ENABLE" = "true" ]; then
+    echo "\$(cat "\$AC_PATH" 2>/dev/null)" > "\$BOOST" 2>/dev/null
+else
+    echo 1 > "\$BOOST" 2>/dev/null
+fi
+EOF
+    sudo chmod +x /usr/local/bin/niri-boost-sync.sh
+
+    cat <<EOF | sudo tee /etc/udev/rules.d/99-niri-boost.rules > /dev/null
+ACTION=="add|change", SUBSYSTEM=="power_supply", ATTR{online}=="1", RUN+="/usr/local/bin/niri-boost-sync.sh"
+ACTION=="add|change", SUBSYSTEM=="power_supply", ATTR{online}=="0", RUN+="/usr/local/bin/niri-boost-sync.sh"
+EOF
+
+    cat <<EOF | sudo tee /etc/systemd/system/niri-boost-sync.service > /dev/null
+[Unit]
+Description=Sync CPU boost with AC state (niri)
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/niri-boost-sync.sh
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    sudo udevadm control --reload
+    sudo udevadm trigger --subsystem-match=power_supply
+    sudo systemctl enable --now niri-boost-sync.service >/dev/null 2>&1 || true
+    printf "  -> Turbo boost sync installed %-16s ${C_GREEN}[ OK ]${RESET}\n" ""
+fi
+
 echo -e "\n${C_CYAN}[ INFO ]${RESET} Setting executable permissions on scripts..."
 find "$TARGET_CONFIG_DIR/bin" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
 printf "  -> Permissions set successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""

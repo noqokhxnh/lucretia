@@ -6,6 +6,12 @@
   "wallpaperDir": "",
   "language": "us",
   "kbOptions": "grp:alt_shift_toggle",
+  "critProtect": true,
+  "critBatteryWarn": 15,
+  "critBatterySuspend": 5,
+  "critBatteryShutdown": 2,
+  "bluetoothPowerSave": true,
+  "boostPowerSave": true,
   "monitors": [],
   "keybinds": [
     {

@@ -116,6 +116,9 @@ Item {
     property bool autoPowerMode: false
     property bool autoPowerNotify: false
     property bool autoBatterySaver: true
+    property bool critProtect: true
+    property bool bluetoothPowerSave: true
+    property bool boostPowerSave: true
     property bool beautifyScreenshot: true
     property bool dndMode: false
     property string powerProfile: "balanced"
@@ -171,6 +174,9 @@ Item {
             "enabledModules": config.enabledModules,
             "autoPowerMode": config.autoPowerMode,
             "autoBatterySaver": config.autoBatterySaver,
+            "critProtect": config.critProtect,
+            "bluetoothPowerSave": config.bluetoothPowerSave,
+            "boostPowerSave": config.boostPowerSave,
             "beautifyScreenshot": config.beautifyScreenshot,
             "autoPowerNotify": config.autoPowerNotify,
             "dndMode": config.dndMode,
@@ -495,6 +501,9 @@ Item {
                         }
                         if (config.rawSettings.autoPowerMode !== undefined) config.autoPowerMode = config.rawSettings.autoPowerMode;
                         if (config.rawSettings.autoBatterySaver !== undefined) config.autoBatterySaver = config.rawSettings.autoBatterySaver;
+                        if (config.rawSettings.critProtect !== undefined) config.critProtect = config.rawSettings.critProtect;
+                        if (config.rawSettings.bluetoothPowerSave !== undefined) config.bluetoothPowerSave = config.rawSettings.bluetoothPowerSave;
+                        if (config.rawSettings.boostPowerSave !== undefined) config.boostPowerSave = config.rawSettings.boostPowerSave;
                         if (config.rawSettings.beautifyScreenshot !== undefined) config.beautifyScreenshot = config.rawSettings.beautifyScreenshot;
                         if (config.rawSettings.autoPowerNotify !== undefined) config.autoPowerNotify = config.rawSettings.autoPowerNotify;
                         if (config.rawSettings.dndMode !== undefined) {
