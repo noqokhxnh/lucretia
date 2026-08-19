@@ -20,8 +20,24 @@ Item {
         currentWidth: Screen.width
     }
     
-    function s(val) { 
-        return scaler.s(val); 
+    function s(val) {
+        return scaler.s(val);
+    }
+
+    // Vertical offset of the old centered band inside the now full-screen
+    // window, so the filter bar and cards stay exactly where they were.
+    readonly property real bandTop: {
+        let h = Math.min(window.s(650), Math.floor(Screen.height * 0.85));
+        return Math.floor((Screen.height - h) / 2);
+    }
+
+    // Full-screen click-catcher: any click that doesn't land on picker
+    // content closes the picker.
+    MouseArea {
+        id: closeBackdrop
+        anchors.fill: parent
+        enabled: !window.isApplying
+        onClicked: Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"])
     }
 
     MatugenColors { id: _theme }
@@ -940,7 +956,17 @@ Item {
         } 
     }
     
-    Shortcut { sequence: "Escape"; enabled: !window.isApplying; onActivated: { if (window.currentFilter === "Search") { window.currentFilter = "All"; } } }
+    Shortcut {
+        sequence: "Escape"
+        enabled: !window.isApplying
+        onActivated: {
+            if (window.currentFilter === "Search") {
+                window.currentFilter = "All";
+            } else {
+                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
+            }
+        }
+    }
     Shortcut { sequence: "Tab"; enabled: !window.isApplying; onActivated: window.cycleFilter(1) }
     Shortcut { sequence: "Backtab"; enabled: !window.isApplying; onActivated: window.cycleFilter(-1) }
 
@@ -1366,7 +1392,7 @@ Item {
         id: filterBarBackground
         anchors.top: parent.top
         
-        anchors.topMargin: window.isReady ? window.s(40) : window.s(-100)
+        anchors.topMargin: window.isReady ? window.bandTop + window.s(40) : window.s(-100)
         opacity: window.isReady ? 1.0 : 0.0
         Behavior on anchors.topMargin { NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
         Behavior on opacity { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }

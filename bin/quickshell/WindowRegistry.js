@@ -99,10 +99,12 @@ function getLayout(name, mx, my, mw, mh, userScale) {
         rx = Math.floor((mw - w) / 2);
         ry = mh - h;
     } else if (item.pos === "wallpaper") {
+        // Full-screen window so clicks on empty screen close the picker
+        // (WallpaperPicker keeps its UI band at the same spot via bandTop)
         w = mw;
-        h = Math.min(s(650, scale), Math.floor(mh * 0.85));
+        h = mh;
         rx = 0;
-        ry = Math.floor((mh - h) / 2);
+        ry = 0;
     } else if (item.pos === "left-span") {
         w = Math.min(s(450, scale), Math.floor(mw * 0.4));
         h = mh;
