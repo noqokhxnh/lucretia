@@ -1,0 +1,10 @@
+layout {
+    focus-ring {
+        active-color "#{{colors.primary.default.hex_stripped}}ee"
+        inactive-color "#{{colors.surface_container_high.default.hex_stripped}}88"
+    }
+    border {
+        active-color "#{{colors.on_primary_fixed_variant.default.hex_stripped}}aa"
+        inactive-color "#{{colors.surface_container.default.hex_stripped}}66"
+    }
+}

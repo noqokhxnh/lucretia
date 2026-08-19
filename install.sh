@@ -1226,6 +1226,15 @@ if [ "$INSTALL_FISH" = true ]; then
     echo -e "  -> Fish Shell package queued. Setting up default config structure..."
 fi
 
+# Deploy Matugen Configuration & Templates
+echo -e "  -> Deploying Matugen configuration and templates..."
+mkdir -p "$HOME/.config/matugen/templates"
+mkdir -p "$HOME/.config/kitty" "$HOME/.config/nvim" "$HOME/.config/cava" "$HOME/.config/swayosd" "$HOME/.cache/matugen" "$HOME/.config/qt5ct/colors" "$HOME/.config/qt6ct/colors" "$HOME/.config/qt5ct/qss" "$HOME/.config/qt6ct/qss"
+if [ -d "$REPO_DIR/matugen" ]; then
+    cp -r "$REPO_DIR/matugen/"* "$HOME/.config/matugen/" 2>/dev/null || true
+    printf "  -> Matugen templates deployed %-18s ${C_GREEN}[ OK ]${RESET}\n" ""
+fi
+
 # ------------------------------------------------------------------------------
 # 4. FETCH WALLPAPERS
 # ------------------------------------------------------------------------------
@@ -1697,6 +1706,27 @@ EOF
         fi
         printf "  -> SDDM Theme configured %-17s ${C_GREEN}[ OK ]${RESET}\n" ""
     fi
+fi
+
+# ------------------------------------------------------------------------------
+# 7.6. INITIALIZE MATUGEN DYNAMIC THEME
+# ------------------------------------------------------------------------------
+echo -e "\n${C_CYAN}[ INFO ]${RESET} Initializing Matugen Dynamic Theme..."
+if command -v matugen &>/dev/null; then
+    FIRST_WALLPAPER=$(find "$WALLPAPER_DIR" -maxdepth 1 -type f \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" -o -iname "*.webp" \) 2>/dev/null | head -n 1)
+    if [ -n "$FIRST_WALLPAPER" ]; then
+        echo -e "  -> Generating Matugen colors from wallpaper: $(basename "$FIRST_WALLPAPER")..."
+        matugen image "$FIRST_WALLPAPER" --source-color-index 0 >/dev/null 2>&1 || true
+        if [ -f "$TARGET_CONFIG_DIR/bin/quickshell/wallpaper/matugen_reload.sh" ]; then
+            chmod +x "$TARGET_CONFIG_DIR/bin/quickshell/wallpaper/matugen_reload.sh"
+            bash "$TARGET_CONFIG_DIR/bin/quickshell/wallpaper/matugen_reload.sh" >/dev/null 2>&1 || true
+        fi
+        printf "  -> Matugen color palette generated %-12s ${C_GREEN}[ OK ]${RESET}\n" ""
+    else
+        echo -e "  -> ${C_YELLOW}No wallpaper found in $WALLPAPER_DIR to extract colors.${RESET}"
+    fi
+else
+    echo -e "  -> ${C_YELLOW}Matugen binary not found in PATH. Skipping initial color generation.${RESET}"
 fi
 
 # Clean caches
