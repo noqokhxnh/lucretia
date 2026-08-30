@@ -138,6 +138,24 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "right": { anchor: "left" } 
             } 
         },
+        "applauncher": { 
+            w: 800, h: 700, comp: "applauncher/appLauncher.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "clipboard": { 
+            w: 800, h: 700, comp: "clipboard/ClipboardManager.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
         "notes": { 
             w: 800, h: 560, comp: "notes/NotesPopup.qml", 
             pos: { 

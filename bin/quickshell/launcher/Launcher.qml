@@ -22,7 +22,7 @@ PanelWindow {
     color: "transparent"
 
     mask: Region {
-        item: (launcherWindow.isVisible || container.animProgress > 0.001) ? maskBoundary : null
+        item: launcherWindow.isVisible ? launcherWindow : ((container.animProgress > 0.001) ? maskBoundary : null)
     }
 
     anchors {
@@ -168,6 +168,140 @@ PanelWindow {
         }
     }
 
+    // -------------------------------------------------------------------------
+    // SETTINGS (Favorites & Hidden Apps)
+    // -------------------------------------------------------------------------
+    property var currentSettings: ({ favorites: [], hidden: [] })
+
+    FileView {
+        id: settingsFile
+        path: Quickshell.env("HOME") + "/.cache/applauncher_settings.json"
+        onTextChanged: launcherWindow.loadSettings()
+        onLoaded: launcherWindow.loadSettings()
+    }
+
+    function loadSettings() {
+        let txt = settingsFile.text();
+        if (!txt || txt.trim().length === 0) {
+            launcherWindow.currentSettings = { favorites: [], hidden: [] };
+            return;
+        }
+        try {
+            let s = JSON.parse(txt.trim());
+            launcherWindow.currentSettings = {
+                favorites: Array.isArray(s.favorites) ? s.favorites : [],
+                hidden: Array.isArray(s.hidden) ? s.hidden : []
+            };
+        } catch(e) {
+            launcherWindow.currentSettings = { favorites: [], hidden: [] };
+        }
+        launcherWindow.loadApps();
+        launcherWindow.executeFilter(searchInput.text);
+    }
+
+    function saveSettings(s) {
+        launcherWindow.currentSettings = s;
+        let path = Quickshell.env("HOME") + "/.cache/applauncher_settings.json";
+        let data = JSON.stringify(s);
+        let escaped = data.replace(/\\/g, "\\\\").replace(/'/g, "'\\''");
+        Quickshell.execDetached(["bash", "-c",
+            "printf '%s' '" + escaped + "' > " + path + ".tmp && mv " + path + ".tmp " + path]);
+        launcherWindow.loadApps();
+        launcherWindow.executeFilter(searchInput.text);
+    }
+
+    function toggleFavorite(idOrName) {
+        if (!idOrName) return;
+        let s = launcherWindow.currentSettings || { favorites: [], hidden: [] };
+        let favs = (s.favorites || []).slice();
+        let idx = favs.indexOf(idOrName);
+        if (idx === -1) favs.push(idOrName);
+        else favs.splice(idx, 1);
+        saveSettings({ favorites: favs, hidden: s.hidden || [] });
+    }
+
+    function toggleHidden(idOrName) {
+        if (!idOrName) return;
+        let s = launcherWindow.currentSettings || { favorites: [], hidden: [] };
+        let hid = (s.hidden || []).slice();
+        let idx = hid.indexOf(idOrName);
+        if (idx === -1) hid.push(idOrName);
+        else hid.splice(idx, 1);
+        saveSettings({ favorites: s.favorites || [], hidden: hid });
+    }
+
+    // -------------------------------------------------------------------------
+    // TOOLS (Translator & Dictionary)
+    // -------------------------------------------------------------------------
+    property string toolMode: ""
+    property string toolResult: ""
+    property bool toolLoading: false
+    property string activeToolQuery: ""
+
+    function getLangCode(lang) {
+        if (!lang) return "vi";
+        let map = {
+            "vi": "vi", "viet": "vi", "vietnamese": "vi", "tieng viet": "vi",
+            "en": "en", "english": "en", "anh": "en",
+            "sp": "es", "es": "es", "spanish": "es",
+            "fr": "fr", "french": "fr", "phap": "fr",
+            "de": "de", "german": "de", "duc": "de",
+            "ja": "ja", "jp": "ja", "japanese": "ja",
+            "ko": "ko", "kr": "ko", "korean": "ko",
+            "zh": "zh", "cn": "zh", "chinese": "zh", "trung": "zh",
+            "it": "it", "italian": "it",
+            "pt": "pt", "portuguese": "pt",
+            "ru": "ru", "russian": "ru", "nga": "ru",
+            "ar": "ar", "arabic": "ar",
+            "th": "th", "thai": "th"
+        };
+        return map[lang.toLowerCase().trim()] || lang.toLowerCase().trim();
+    }
+
+    Timer {
+        id: toolDebounceTimer
+        interval: 350
+        repeat: false
+        property string pendingMode: ""
+        property string pendingQuery: ""
+        property string pendingExtra: ""
+        onTriggered: {
+            toolFetcherProc.mode = pendingMode;
+            toolFetcherProc.query = pendingQuery;
+            toolFetcherProc.extra = pendingExtra;
+            toolFetcherProc.running = false;
+            toolFetcherProc.running = true;
+        }
+    }
+
+    Process {
+        id: toolFetcherProc
+        property string mode: ""
+        property string query: ""
+        property string extra: ""
+        command: [
+            Caching.qsDir + "/applauncher/tools_fetcher",
+            mode,
+            query,
+            extra
+        ]
+        running: false
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let data = JSON.parse(this.text.trim());
+                    launcherWindow.toolResult = data.result || "No result";
+                    launcherWindow.toolLoading = false;
+                    launcherWindow.executeFilter(searchInput.text);
+                } catch(e) {
+                    launcherWindow.toolResult = "No definition found or error.";
+                    launcherWindow.toolLoading = false;
+                    launcherWindow.executeFilter(searchInput.text);
+                }
+            }
+        }
+    }
+
     Process {
         id: rankFetcher
         running: false
@@ -295,12 +429,17 @@ PanelWindow {
 
     function loadApps() {
         let arr = [];
+        let favSet = new Set((launcherWindow.currentSettings && launcherWindow.currentSettings.favorites) || []);
+        let hidSet = new Set((launcherWindow.currentSettings && launcherWindow.currentSettings.hidden) || []);
 
         if (typeof DesktopEntries !== "undefined" && DesktopEntries.applications && DesktopEntries.applications.values) {
             let entries = DesktopEntries.applications.values;
             for (let i = 0; i < entries.length; i++) {
                 let e = entries[i];
                 if (e.noDisplay) continue;
+
+                let isFav = favSet.has(e.id) || favSet.has(e.name);
+                let isHid = hidSet.has(e.id) || hidSet.has(e.name);
 
                 let score = 0;
                 if (launcherWindow.smartRanking) {
@@ -321,6 +460,10 @@ PanelWindow {
                     score = f_score + l_score + (0.5 * c_score);
                 }
 
+                if (isFav) {
+                    score += 5000000;
+                }
+
                 arr.push({
                     name: e.name,
                     description: e.comment || "",
@@ -332,8 +475,12 @@ PanelWindow {
                     command: "",
                     isCalc: false,
                     calcResult: "",
+                    isTool: false,
+                    toolResult: "",
                     isWidget: false,
-                    widgetTarget: ""
+                    widgetTarget: "",
+                    isFavorite: isFav,
+                    isHidden: isHid
                 });
             }
         }
@@ -345,9 +492,16 @@ PanelWindow {
         for (let j = 0; j < widgetList.length; j++) {
             let w = widgetList[j];
             let wScore = 0;
+            let isFav = favSet.has("qs-widget-" + w.id) || favSet.has(w.name);
+            let isHid = hidSet.has("qs-widget-" + w.id) || hidSet.has(w.name);
+
             if (launcherWindow.smartRanking) {
                 wScore = (usageRanks.launch && (usageRanks.launch[w.id] || usageRanks.launch[w.name] || usageRanks.launch["qs-widget-" + w.id])) || 0;
             }
+            if (isFav) {
+                wScore += 5000000;
+            }
+
             arr.push({
                 name: w.name,
                 description: w.description || "",
@@ -359,13 +513,17 @@ PanelWindow {
                 command: "",
                 isCalc: false,
                 calcResult: "",
+                isTool: false,
+                toolResult: "",
                 isWidget: true,
-                widgetTarget: w.id
+                widgetTarget: w.id,
+                isFavorite: isFav,
+                isHidden: isHid
             });
         }
 
         arr.sort(function(a, b) {
-            if (launcherWindow.smartRanking && a.score !== b.score) {
+            if (a.score !== b.score) {
                 return b.score - a.score;
             }
             return a.name.localeCompare(b.name);
@@ -412,6 +570,7 @@ PanelWindow {
         let q = query.toLowerCase().trim();
         let filtered = [];
 
+        // 1. Terminal Command Execution (Starts with >)
         if (rawTrimmed.startsWith(">")) {
             let cmd = rawTrimmed.substring(1).trim();
             if (cmd.length > 0) {
@@ -426,8 +585,12 @@ PanelWindow {
                     command: cmd,
                     isCalc: false,
                     calcResult: "",
+                    isTool: false,
+                    toolResult: "",
                     isWidget: false,
-                    widgetTarget: ""
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false
                 });
             } else {
                 filtered.push({
@@ -441,12 +604,99 @@ PanelWindow {
                     command: "",
                     isCalc: false,
                     calcResult: "",
+                    isTool: false,
+                    toolResult: "",
                     isWidget: false,
-                    widgetTarget: ""
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false
                 });
             }
         }
 
+        // 2. Translation (tran <text> [to <lang>] or :tr <text>)
+        let tranMatch = rawTrimmed.match(/^(?:tran|:tr)\s+(.+)$/i);
+        if (tranMatch) {
+            let remainder = tranMatch[1].trim();
+            let toMatch = remainder.match(/^(.+?)\s+to\s+(\S+)$/i);
+            let text, targetLang;
+            if (toMatch) {
+                text = toMatch[1].trim();
+                targetLang = getLangCode(toMatch[2]);
+            } else {
+                text = remainder;
+                targetLang = "vi";
+            }
+
+            let fullQueryKey = text + "::" + targetLang;
+            if (activeToolQuery !== fullQueryKey) {
+                activeToolQuery = fullQueryKey;
+                toolMode = "tran";
+                toolLoading = true;
+                toolResult = "";
+                toolDebounceTimer.pendingMode = "tran";
+                toolDebounceTimer.pendingQuery = text;
+                toolDebounceTimer.pendingExtra = targetLang;
+                toolDebounceTimer.restart();
+            }
+
+            filtered.push({
+                name: toolLoading ? ("Translating: " + text + "...") : (toolResult !== "" ? toolResult : ("Translate: " + text)),
+                description: "Translation to " + targetLang.toUpperCase() + " — Press Enter to copy result",
+                desktop_id: "",
+                icon: "",
+                fontIcon: "󰗊",
+                score: 10000000,
+                isCommand: false,
+                command: "",
+                isCalc: false,
+                calcResult: "",
+                isTool: true,
+                toolResult: toolResult || text,
+                isWidget: false,
+                widgetTarget: "",
+                isFavorite: false,
+                isHidden: false
+            });
+        }
+
+        // 3. Dictionary Definition (df <word> or :df <word>)
+        let dfMatch = rawTrimmed.match(/^(?:df|:df)\s+(.+)$/i);
+        if (dfMatch) {
+            let word = dfMatch[1].trim();
+            let fullQueryKey = "df::" + word;
+            if (activeToolQuery !== fullQueryKey) {
+                activeToolQuery = fullQueryKey;
+                toolMode = "df";
+                toolLoading = true;
+                toolResult = "";
+                toolDebounceTimer.pendingMode = "df";
+                toolDebounceTimer.pendingQuery = word;
+                toolDebounceTimer.pendingExtra = "";
+                toolDebounceTimer.restart();
+            }
+
+            filtered.push({
+                name: toolLoading ? ("Looking up: " + word + "...") : (toolResult !== "" ? toolResult : ("Dictionary: " + word)),
+                description: "Dictionary Definition — Press Enter to copy",
+                desktop_id: "",
+                icon: "",
+                fontIcon: "󰤧",
+                score: 10000000,
+                isCommand: false,
+                command: "",
+                isCalc: false,
+                calcResult: "",
+                isTool: true,
+                toolResult: toolResult || word,
+                isWidget: false,
+                widgetTarget: "",
+                isFavorite: false,
+                isHidden: false
+            });
+        }
+
+        // 4. Live Math Calculator
         let mathResult = evaluateMath(rawTrimmed);
         if (mathResult !== null) {
             filtered.push({
@@ -460,60 +710,80 @@ PanelWindow {
                 command: "",
                 isCalc: true,
                 calcResult: mathResult,
+                isTool: false,
+                toolResult: "",
                 isWidget: false,
-                widgetTarget: ""
+                widgetTarget: "",
+                isFavorite: false,
+                isHidden: false
             });
         }
 
-        for (let i = 0; i < allApps.length; i++) {
-            let app = allApps[i];
-            let nameLower = app.name ? app.name.toLowerCase() : "";
-            let descLower = app.description ? app.description.toLowerCase() : "";
+        // 5. Desktop Apps & Widgets
+        let showOnlyHidden = (q === ":hidden" || q === "hidden");
 
-            let matchQuality = 0;
-            let matches = false;
+        if (!tranMatch && !dfMatch) {
+            for (let i = 0; i < allApps.length; i++) {
+                let app = allApps[i];
 
-            if (q.length === 0) {
-                matches = true;
-            } else if (!rawTrimmed.startsWith(">")) {
-                if (nameLower === q) {
-                    matchQuality = 100000;
-                    matches = true;
-                } else if (nameLower.startsWith(q)) {
-                    matchQuality = 50000;
-                    matches = true;
-                } else if (nameLower.includes(q)) {
-                    matchQuality = 10000;
-                    matches = true;
-                } else if (descLower.includes(q)) {
-                    matchQuality = 5000;
-                    matches = true;
-                } else if (isSubsequence(q, nameLower)) {
-                    matchQuality = 1000;
-                    matches = true;
+                if (showOnlyHidden) {
+                    if (!app.isHidden) continue;
+                } else {
+                    if (app.isHidden) continue;
                 }
-            }
 
-            if (matches) {
-                let appCopy = {
-                    name: app.name,
-                    description: app.description,
-                    desktop_id: app.desktop_id,
-                    icon: app.icon,
-                    fontIcon: app.fontIcon || "",
-                    score: app.score + matchQuality,
-                    isCommand: false,
-                    command: "",
-                    isCalc: false,
-                    calcResult: "",
-                    isWidget: app.isWidget || false,
-                    widgetTarget: app.widgetTarget || ""
-                };
-                filtered.push(appCopy);
+                let nameLower = app.name ? app.name.toLowerCase() : "";
+                let descLower = app.description ? app.description.toLowerCase() : "";
+
+                let matchQuality = 0;
+                let matches = false;
+
+                if (q.length === 0 || showOnlyHidden) {
+                    matches = true;
+                } else if (!rawTrimmed.startsWith(">")) {
+                    if (nameLower === q) {
+                        matchQuality = 100000;
+                        matches = true;
+                    } else if (nameLower.startsWith(q)) {
+                        matchQuality = 50000;
+                        matches = true;
+                    } else if (nameLower.includes(q)) {
+                        matchQuality = 10000;
+                        matches = true;
+                    } else if (descLower.includes(q)) {
+                        matchQuality = 5000;
+                        matches = true;
+                    } else if (isSubsequence(q, nameLower)) {
+                        matchQuality = 1000;
+                        matches = true;
+                    }
+                }
+
+                if (matches) {
+                    let appCopy = {
+                        name: app.name,
+                        description: app.description,
+                        desktop_id: app.desktop_id,
+                        icon: app.icon,
+                        fontIcon: app.fontIcon || "",
+                        score: app.score + matchQuality,
+                        isCommand: false,
+                        command: "",
+                        isCalc: false,
+                        calcResult: "",
+                        isTool: false,
+                        toolResult: "",
+                        isWidget: app.isWidget || false,
+                        widgetTarget: app.widgetTarget || "",
+                        isFavorite: !!app.isFavorite,
+                        isHidden: !!app.isHidden
+                    };
+                    filtered.push(appCopy);
+                }
             }
         }
 
-        if (q.length > 0) {
+        if (q.length > 0 && !showOnlyHidden) {
             filtered.sort(function(a, b) {
                 if (a.score !== b.score) {
                     return b.score - a.score;
@@ -551,6 +821,14 @@ PanelWindow {
 
         if (item.isCalc) {
             Quickshell.execDetached(["wl-copy", "--", item.calcResult]);
+            closeLauncher();
+            return;
+        }
+
+        if (item.isTool) {
+            if (item.toolResult) {
+                Quickshell.execDetached(["wl-copy", "--", item.toolResult]);
+            }
             closeLauncher();
             return;
         }
@@ -940,6 +1218,29 @@ PanelWindow {
                     }
                     onCleared: filterApps("")
 
+                    Keys.onPressed: function(event) {
+                        if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_F) {
+                            if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
+                                let it = appModel.get(appList.currentIndex);
+                                if (it && !it.isCommand && !it.isCalc && !it.isTool) {
+                                    launcherWindow.toggleFavorite(it.desktop_id || it.name);
+                                }
+                            }
+                            event.accepted = true;
+                            return;
+                        }
+                        if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_H) {
+                            if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
+                                let it = appModel.get(appList.currentIndex);
+                                if (it && !it.isCommand && !it.isCalc && !it.isTool) {
+                                    launcherWindow.toggleHidden(it.desktop_id || it.name);
+                                }
+                            }
+                            event.accepted = true;
+                            return;
+                        }
+                    }
+
                     Keys.onDownPressed: function(event) {
                         launcherWindow.isKeyboardNav = true;
                         keyboardNavTimer.restart();
@@ -1127,18 +1428,32 @@ PanelWindow {
                                     Layout.alignment: Qt.AlignVCenter
                                     spacing: launcherWindow.s(1)
 
-                                    Text {
-                                        id: delegateText
+                                    RowLayout {
                                         Layout.fillWidth: true
-                                        text: model.name
-                                        font.family: ThemeBackend.fontFamily
-                                        font.pixelSize: launcherWindow.s(12)
-                                        font.weight: delegateRoot.isSelected ? Font.Bold : Font.Medium
-                                        color: delegateRoot.isSelected ? ThemeBackend.crust : ThemeBackend.text
-                                        elide: Text.ElideRight
-                                        verticalAlignment: Text.AlignVCenter
+                                        spacing: launcherWindow.s(6)
 
-                                        Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                                        Text {
+                                            id: delegateText
+                                            Layout.fillWidth: true
+                                            text: model.name
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: launcherWindow.s(12)
+                                            font.weight: delegateRoot.isSelected ? Font.Bold : Font.Medium
+                                            color: delegateRoot.isSelected ? ThemeBackend.crust : ThemeBackend.text
+                                            elide: Text.ElideRight
+                                            verticalAlignment: Text.AlignVCenter
+
+                                            Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                                        }
+
+                                        Text {
+                                            visible: !!model.isFavorite
+                                            text: "󰓎"
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: launcherWindow.s(13)
+                                            color: delegateRoot.isSelected ? ThemeBackend.crust : (ThemeBackend.yellow || "#f9e2af")
+                                            verticalAlignment: Text.AlignVCenter
+                                        }
                                     }
 
                                     Text {
@@ -1155,6 +1470,62 @@ PanelWindow {
                                         verticalAlignment: Text.AlignVCenter
 
                                         Behavior on color { ColorAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                                    }
+                                }
+
+                                RowLayout {
+                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                                    spacing: launcherWindow.s(4)
+                                    visible: ma.containsMouse && !model.isCommand && !model.isCalc && !model.isTool
+
+                                    Rectangle {
+                                        width: launcherWindow.s(24)
+                                        height: launcherWindow.s(24)
+                                        radius: launcherWindow.s(6)
+                                        color: favMa.containsMouse ? (delegateRoot.isSelected ? Qt.rgba(0,0,0,0.15) : ThemeBackend.surface2) : "transparent"
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: model.isFavorite ? "󰓎" : "󰓏"
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: launcherWindow.s(13)
+                                            color: model.isFavorite ? (delegateRoot.isSelected ? ThemeBackend.crust : (ThemeBackend.yellow || "#f9e2af")) : (delegateRoot.isSelected ? ThemeBackend.crust : ThemeBackend.subtext0)
+                                        }
+
+                                        MouseArea {
+                                            id: favMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                launcherWindow.toggleFavorite(model.desktop_id || model.name);
+                                            }
+                                        }
+                                    }
+
+                                    Rectangle {
+                                        width: launcherWindow.s(24)
+                                        height: launcherWindow.s(24)
+                                        radius: launcherWindow.s(6)
+                                        color: hidMa.containsMouse ? (delegateRoot.isSelected ? Qt.rgba(0,0,0,0.15) : ThemeBackend.surface2) : "transparent"
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: model.isHidden ? "󰘓" : "󰘔"
+                                            font.family: ThemeBackend.fontFamily
+                                            font.pixelSize: launcherWindow.s(13)
+                                            color: delegateRoot.isSelected ? ThemeBackend.crust : ThemeBackend.subtext0
+                                        }
+
+                                        MouseArea {
+                                            id: hidMa
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                launcherWindow.toggleHidden(model.desktop_id || model.name);
+                                            }
+                                        }
                                     }
                                 }
                             }

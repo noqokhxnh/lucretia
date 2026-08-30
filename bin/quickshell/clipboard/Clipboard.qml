@@ -22,7 +22,7 @@ PanelWindow {
     color: "transparent"
 
     mask: Region {
-        item: (clipboardWindow.isVisible || container.animProgress > 0.001) ? maskBoundary : null
+        item: clipboardWindow.isVisible ? clipboardWindow : ((container.animProgress > 0.001) ? maskBoundary : null)
     }
 
     anchors {

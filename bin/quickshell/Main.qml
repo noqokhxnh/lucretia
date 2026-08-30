@@ -47,7 +47,7 @@ PanelWindow {
                 return;
             }
 
-            if (cmd === "launcher" || targetWidget === "launcher") {
+            if (cmd === "launcher" || targetWidget === "launcher" || cmd === "applauncher" || targetWidget === "applauncher") {
                 if (cmd === "close") {
                     LauncherController.hide();
                 } else if (cmd === "open") {
