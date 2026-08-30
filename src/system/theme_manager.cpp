@@ -40,7 +40,12 @@ QJsonArray ThemeManager::listThemes() const {
                     themeSummary["file"] = fi.fileName();
                     themeSummary["path"] = fi.absoluteFilePath();
                     themeSummary["isCustom"] = isCustom;
-                    themeSummary["colors"] = obj;
+                    themeSummary["isMatugen"] = (themeName.compare("Matugen", Qt::CaseInsensitive) == 0);
+                    if (obj.contains("colors") && obj["colors"].isObject()) {
+                        themeSummary["colors"] = obj["colors"].toObject();
+                    } else {
+                        themeSummary["colors"] = obj;
+                    }
                     result.append(themeSummary);
                 }
             }

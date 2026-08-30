@@ -357,13 +357,23 @@ Item {
         prevMatugenPeach = matugenColors.peach || ThemeBackend.peach;
         prevMatugenGreen = matugenColors.green || ThemeBackend.green;
         prevMatugenRed = matugenColors.red || ThemeBackend.red;
+    function getCardBase(m) {
+        if (!m) return ThemeBackend.base;
+        if (m.isMatugen) return themeTabRoot.prevMatugenBase;
+        let c = (m.colors && m.colors.colors) ? m.colors.colors : m.colors;
+        return (c && c.base) ? c.base : ThemeBackend.base;
     }
-
-    function getCardBase(m) { return m.isMatugen ? themeTabRoot.prevMatugenBase : (m.colors && m.colors.base ? m.colors.base : ThemeBackend.base); }
-    function getCardText(m) { return m.isMatugen ? themeTabRoot.prevMatugenText : (m.colors && m.colors.text ? m.colors.text : ThemeBackend.text); }
+    function getCardText(m) {
+        if (!m) return ThemeBackend.text;
+        if (m.isMatugen) return themeTabRoot.prevMatugenText;
+        let c = (m.colors && m.colors.colors) ? m.colors.colors : m.colors;
+        return (c && c.text) ? c.text : ThemeBackend.text;
+    }
     function getCardDots(m) {
+        if (!m) return [];
         if (m.isMatugen) return [themeTabRoot.prevMatugenBase, themeTabRoot.prevMatugenBlue, themeTabRoot.prevMatugenMauve, themeTabRoot.prevMatugenPeach, themeTabRoot.prevMatugenGreen, themeTabRoot.prevMatugenRed];
-        if (m.colors) return [m.colors.text || ThemeBackend.text, m.colors.blue || ThemeBackend.blue, m.colors.mauve || ThemeBackend.mauve, m.colors.peach || ThemeBackend.peach, m.colors.green || ThemeBackend.green, m.colors.red || ThemeBackend.red];
+        let c = (m.colors && m.colors.colors) ? m.colors.colors : m.colors;
+        if (c) return [c.text || ThemeBackend.text, c.blue || ThemeBackend.blue, c.mauve || ThemeBackend.mauve, c.peach || ThemeBackend.peach, c.green || ThemeBackend.green, c.red || ThemeBackend.red];
         return [];
     }
 
@@ -382,20 +392,21 @@ Item {
 
     function reloadThemes() {
         QsDaemonClient.sendRequest("theme", "list", {}, function(data) {
+            let sys = [{ name: "Matugen", isMatugen: true, isCustom: false }];
+            let usr = [];
             if (Array.isArray(data) && data.length > 0) {
-                let sys = [];
-                let usr = [];
                 for (let i = 0; i < data.length; i++) {
                     let item = data[i];
+                    if (item.name === "Matugen" || item.isMatugen === true) continue;
                     if (item.isCustom === true) {
                         usr.push(item);
                     } else {
                         sys.push(item);
                     }
                 }
-                themeTabRoot.systemPresets = sys;
-                themeTabRoot.userPresets = usr;
             }
+            themeTabRoot.systemPresets = sys;
+            themeTabRoot.userPresets = usr;
         });
     }
 
@@ -479,11 +490,12 @@ Item {
         themeTabRoot.currentPreset = modelData.name;
         themeTabRoot.useMatugen = modelData.isMatugen === true;
 
+        let rawColors = (modelData.colors && modelData.colors.colors) ? modelData.colors.colors : (modelData.colors || {});
         let current = Config.getSetting("theme", themeTabRoot.defaultThemeSettings);
         current.activePreset = modelData.name;
         current.matugen = modelData.isMatugen === true;
         if (!modelData.isMatugen) {
-            current.colors = modelData.colors;
+            current.colors = rawColors;
         }
 
         Config.setSetting("theme", current);
@@ -505,10 +517,10 @@ Item {
             }
         } else {
             if (typeof ThemeBackend !== "undefined" && typeof ThemeBackend.applyColorObject === "function") {
-                ThemeBackend.applyColorObject(modelData.colors);
+                ThemeBackend.applyColorObject(rawColors);
             }
             if (typeof Matugen !== "undefined" && typeof Matugen.generateFromStatic === "function") {
-                Matugen.generateFromStatic(modelData.colors, current.mode);
+                Matugen.generateFromStatic(rawColors, current.mode);
             }
         }
     }
