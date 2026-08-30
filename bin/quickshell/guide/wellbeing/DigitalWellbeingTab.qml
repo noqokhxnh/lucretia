@@ -7,7 +7,7 @@ import Quickshell
 import Quickshell.Io
 import "../../"
 import "../../reusables"
-import "../../../components"
+import "../../components"
 
 Item {
     id: tabRoot
