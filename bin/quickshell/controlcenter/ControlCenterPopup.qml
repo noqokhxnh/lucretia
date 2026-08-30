@@ -919,7 +919,7 @@ Item {
                                             text: modelData.icon
                                             font.family: "Iosevka Nerd Font"
                                             font.pixelSize: s(13)
-                                            color: Config.enabledModules[modelData.key] ? mocha.primary : mocha.subtext0
+                                            color: (Config.enabledModules && Config.enabledModules[modelData.key]) ? mocha.primary : mocha.subtext0
                                         }
 
                                         Text {
@@ -933,22 +933,22 @@ Item {
 
                                         Rectangle {
                                             width: s(28); height: s(14); radius: s(7)
-                                            color: Config.enabledModules[modelData.key] ? mocha.green : Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.b, 0.6)
+                                            color: (Config.enabledModules && Config.enabledModules[modelData.key]) ? mocha.green : Qt.rgba(mocha.surface1.r, mocha.surface1.g, mocha.surface1.g, 0.6)
                                             Behavior on color { ColorAnimation { duration: 180 } }
 
                                             Rectangle {
                                                 width: s(10); height: s(10); radius: s(5)
                                                 anchors.verticalCenter: parent.verticalCenter
-                                                x: Config.enabledModules[modelData.key] ? s(15) : s(2)
+                                                x: (Config.enabledModules && Config.enabledModules[modelData.key]) ? s(15) : s(2)
                                                 color: mocha.base
-                                                Behavior on x { NumberAnimation { duration: Math.round(150 / Config.animSpeedMultiplier); easing.type: Easing.OutExpo } }
+                                                Behavior on x { NumberAnimation { duration: Math.round(150 / (Config.animSpeedMultiplier || 1.0)); easing.type: Easing.OutExpo } }
                                             }
 
                                             MouseArea {
                                                 anchors.fill: parent
                                                 cursorShape: Qt.PointingHandCursor
                                                 onClicked: {
-                                                    let mods = Object.assign({}, Config.enabledModules);
+                                                    let mods = Object.assign({}, Config.enabledModules || {});
                                                     if (mods[modelData.key] === undefined) mods[modelData.key] = false;
                                                     else mods[modelData.key] = !mods[modelData.key];
                                                     Config.enabledModules = mods;

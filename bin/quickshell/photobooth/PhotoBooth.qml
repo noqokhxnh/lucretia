@@ -90,9 +90,9 @@ Item {
     }
 
     Connections {
-        target: masterWindow
+        target: typeof masterWindow !== "undefined" ? masterWindow : null
         function onCurrentActiveChanged() {
-            if (masterWindow.currentActive !== "photobooth") {
+            if (masterWindow && masterWindow.currentActive !== "photobooth") {
                 // If it's not minimized, then close session
                 if (!window.isMinimized) {
                     console.log("Closing Photo Booth session")

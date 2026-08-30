@@ -226,7 +226,7 @@ Item {
         command: [
             "bash",
             "-c",
-            "cat '" + Caching.getCacheDir("wallpaper") + "/current_" + (masterWindow.screen ? masterWindow.screen.name : "") + "_name' 2>/dev/null || cat '" + Caching.getCacheDir("wallpaper") + "/current_default_name' 2>/dev/null || echo ''"
+            "cat '" + Caching.getCacheDir("wallpaper") + "/current_" + (typeof masterWindow !== "undefined" && masterWindow.screen ? masterWindow.screen.name : (Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "")) + "_name' 2>/dev/null || cat '" + Caching.getCacheDir("wallpaper") + "/current_default_name' 2>/dev/null || echo ''"
         ]
         stdout: StdioCollector {
             onStreamFinished: {
