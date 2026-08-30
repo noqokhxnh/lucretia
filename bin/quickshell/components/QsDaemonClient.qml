@@ -261,4 +261,12 @@ Item {
     function setSpectrumBars(bars, callback) {
         return sendRequest("spectrum", "set_bars", { bars: bars }, callback);
     }
+
+    function loadWidgetLayout(monitor, callback) {
+        return sendRequest("widgets", "load", { monitor: monitor || "default" }, callback);
+    }
+
+    function saveWidgetLayout(monitor, layout, callback) {
+        return sendRequest("widgets", "save", { monitor: monitor || "default", layout: layout }, callback);
+    }
 }

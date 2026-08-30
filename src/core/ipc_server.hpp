@@ -27,6 +27,7 @@
 #include "system/dbus_watcher.hpp"
 #include "system/weather_engine.hpp"
 #include "system/theme_manager.hpp"
+#include "widgets/widget_manager.hpp"
 
 class DaemonServer;
 
@@ -55,6 +56,7 @@ public:
     ClipboardManager* getClipboardManager() const { return clipboardManager; }
     WeatherEngine* getWeatherEngine() const { return weatherEngine; }
     ThemeManager* getThemeManager() const { return themeManager; }
+    WidgetManager* getWidgetManager() const { return widgetManager; }
     QNetworkAccessManager* getNetManager() const { return netManager; }
 
     void addSysSubscriber(QLocalSocket* client) { if (!sysSubscribers.contains(client)) sysSubscribers.append(client); }
@@ -96,6 +98,7 @@ private:
     DBusWatcherService* dbusWatcher;
     WeatherEngine* weatherEngine;
     ThemeManager* themeManager;
+    WidgetManager* widgetManager;
     QNetworkAccessManager* netManager;
 
     std::unordered_map<std::string, std::shared_ptr<ICommandHandler>> handlers;

@@ -304,6 +304,27 @@ public:
     }
 };
 
+class WidgetHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* wm = server->getWidgetManager();
+        if (!wm) {
+            server->sendResponse(client, reqId, QJsonArray(), "error");
+            return;
+        }
+
+        if (action == "load" || action == "get_layout") {
+            QString monitor = req["monitor"].toString("default");
+            server->sendResponse(client, reqId, wm->loadLayout(monitor));
+        } else if (action == "save" || action == "save_layout") {
+            QString monitor = req["monitor"].toString("default");
+            QJsonArray layout = req["layout"].toArray();
+            bool ok = wm->saveLayout(monitor, layout);
+            server->sendResponse(client, reqId, ok ? "ok" : "error");
+        }
+    }
+};
+
 // -----------------------------------------------------------------------------
 // DAEMON SERVER IMPLEMENTATION
 // -----------------------------------------------------------------------------
@@ -321,6 +342,7 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     netManager = new QNetworkAccessManager(this);
     weatherEngine = new WeatherEngine(netManager, this);
     themeManager = new ThemeManager(this);
+    widgetManager = new WidgetManager(this);
 
     connect(audioSpectrum, &AudioSpectrumService::spectrumUpdated, this, [this](const QJsonArray& levels) {
         QJsonObject eventObj;
@@ -444,6 +466,10 @@ void DaemonServer::registerHandlers() {
 
     auto specH = std::make_shared<SpectrumHandler>();
     handlers["spectrum"] = specH;
+
+    auto widgetH = std::make_shared<WidgetHandler>();
+    handlers["widgets"] = widgetH;
+    handlers["widget"] = widgetH;
 }
 
 void DaemonServer::onNewConnection() {
