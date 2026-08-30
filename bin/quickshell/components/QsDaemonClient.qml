@@ -41,11 +41,29 @@ Item {
         artUrl: ""
     })
 
+    property var weatherData: ({
+        temp: 0,
+        temp_formatted: "--°",
+        feels_like: 0,
+        feels_like_formatted: "--°",
+        humidity: 0,
+        wind: 0,
+        wind_formatted: "0 km/h",
+        icon: "󰖐",
+        description: "Loading...",
+        hex: "#89b4fa",
+        unit_sym: "°C",
+        city: "",
+        forecast: [],
+        hourly: []
+    })
+
     property bool isConnected: daemonSocket.connected
 
     // --- Real-time Event Signals ---
     signal sysDataReceived(var data)
     signal musicStateReceived(var data)
+    signal weatherReceived(var data)
     signal eqStateReceived(var data)
     signal focusStatsReceived(var data)
     signal clipboardReceived(var data)
@@ -113,6 +131,9 @@ Item {
                             root.toolsReceived(payload);
                         } else if (eventType === "photobooth") {
                             root.photoboothReceived(payload);
+                        } else if (eventType === "weather") {
+                            root.weatherData = payload;
+                            root.weatherReceived(payload);
                         } else if (eventType === "screenshot") {
                             root.screenshotReceived(payload);
                         }
@@ -205,5 +226,21 @@ Item {
             }
         }
         return reqIdStr;
+    }
+
+    function fetchWeather(callback) {
+        return sendRequest("weather", "get", {}, callback);
+    }
+
+    function refreshWeather(callback) {
+        return sendRequest("weather", "refresh", {}, callback);
+    }
+
+    function setWeatherLocation(lat, lon, city, callback) {
+        return sendRequest("weather", "set_location", { lat: lat, lon: lon, city: city }, callback);
+    }
+
+    function setWeatherUnit(unit, callback) {
+        return sendRequest("weather", "set_unit", { unit: unit }, callback);
     }
 }

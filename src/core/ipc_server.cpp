@@ -220,6 +220,34 @@ public:
     }
 };
 
+class WeatherHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* weatherEngine = server->getWeatherEngine();
+        if (!weatherEngine) {
+            server->sendResponse(client, reqId, QJsonObject(), "error");
+            return;
+        }
+
+        if (action == "get" || action == "fetch") {
+            server->sendResponse(client, reqId, weatherEngine->getWeatherData());
+        } else if (action == "refresh") {
+            weatherEngine->refresh(true);
+            server->sendResponse(client, reqId, weatherEngine->getWeatherData());
+        } else if (action == "set_location") {
+            double lat = req["lat"].toDouble(21.0285);
+            double lon = req["lon"].toDouble(105.8542);
+            QString city = req["city"].toString();
+            weatherEngine->setLocation(lat, lon, city);
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "set_unit") {
+            QString unit = req["unit"].toString("metric");
+            weatherEngine->setUnit(unit);
+            server->sendResponse(client, reqId, "ok");
+        }
+    }
+};
+
 // -----------------------------------------------------------------------------
 // DAEMON SERVER IMPLEMENTATION
 // -----------------------------------------------------------------------------
@@ -234,6 +262,21 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     fileWatcher = new FileWatcherService(this);
     dbusWatcher = new DBusWatcherService(this);
     netManager = new QNetworkAccessManager(this);
+    weatherEngine = new WeatherEngine(netManager, this);
+
+    connect(weatherEngine, &WeatherEngine::weatherUpdated, this, [this](const QJsonObject& data) {
+        QJsonObject eventObj;
+        eventObj["event"] = "weather";
+        eventObj["data"] = data;
+        QJsonDocument doc(eventObj);
+        QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
+        for (QLocalSocket* client : clients) {
+            if (client && client->state() == QLocalSocket::ConnectedState) {
+                client->write(payload);
+                client->flush();
+            }
+        }
+    });
 
     connect(fileWatcher, &FileWatcherService::fileChanged, this, [this](const QString& eventType, const QString& path) {
         QJsonObject eventObj;
@@ -319,6 +362,9 @@ void DaemonServer::registerHandlers() {
 
     auto wpH = std::make_shared<WallpaperHandler>();
     handlers["wallpaper"] = wpH;
+
+    auto weatherH = std::make_shared<WeatherHandler>();
+    handlers["weather"] = weatherH;
 }
 
 void DaemonServer::onNewConnection() {

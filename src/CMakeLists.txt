@@ -23,6 +23,7 @@ set(DAEMON_SOURCES
     system/system_monitor.cpp
     system/file_watcher.cpp
     system/dbus_watcher.cpp
+    system/weather_engine.cpp
     music/music_manager.cpp
     focus/focus_tracker.cpp
     apps/app_indexer.cpp
@@ -36,6 +37,7 @@ set(DAEMON_HEADERS
     system/system_monitor.hpp
     system/file_watcher.hpp
     system/dbus_watcher.hpp
+    system/weather_engine.hpp
     music/music_manager.hpp
     focus/focus_tracker.hpp
     apps/app_indexer.hpp

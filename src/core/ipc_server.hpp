@@ -24,6 +24,7 @@
 
 #include "system/file_watcher.hpp"
 #include "system/dbus_watcher.hpp"
+#include "system/weather_engine.hpp"
 
 class DaemonServer;
 
@@ -49,6 +50,7 @@ public:
     ServiceManager* getServiceManager() const { return serviceManager; }
     MediaProcessor* getMediaProcessor() const { return mediaProcessor; }
     ClipboardManager* getClipboardManager() const { return clipboardManager; }
+    WeatherEngine* getWeatherEngine() const { return weatherEngine; }
     QNetworkAccessManager* getNetManager() const { return netManager; }
 
     void addSysSubscriber(QLocalSocket* client) { if (!sysSubscribers.contains(client)) sysSubscribers.append(client); }
@@ -87,6 +89,7 @@ private:
     ClipboardManager* clipboardManager;
     FileWatcherService* fileWatcher;
     DBusWatcherService* dbusWatcher;
+    WeatherEngine* weatherEngine;
     QNetworkAccessManager* netManager;
 
     std::unordered_map<std::string, std::shared_ptr<ICommandHandler>> handlers;
