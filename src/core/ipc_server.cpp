@@ -248,6 +248,39 @@ public:
     }
 };
 
+class ThemeHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* tm = server->getThemeManager();
+        if (!tm) {
+            server->sendResponse(client, reqId, QJsonObject(), "error");
+            return;
+        }
+
+        if (action == "list" || action == "list_themes") {
+            server->sendResponse(client, reqId, tm->listThemes());
+        } else if (action == "get") {
+            QString name = req["name"].toString();
+            server->sendResponse(client, reqId, tm->getTheme(name));
+        } else if (action == "save" || action == "save_custom") {
+            QString name = req["name"].toString();
+            QJsonObject colors = req["colors"].toObject();
+            bool ok = tm->saveCustomTheme(name, colors);
+            server->sendResponse(client, reqId, ok ? "ok" : "error");
+        } else if (action == "apply") {
+            QString name = req["name"].toString();
+            bool ok = tm->applyTheme(name);
+            server->sendResponse(client, reqId, ok ? "ok" : "error");
+        } else if (action == "fonts" || action == "list_fonts") {
+            QJsonArray fontArr;
+            for (const QString& f : tm->listFonts()) {
+                fontArr.append(f);
+            }
+            server->sendResponse(client, reqId, fontArr);
+        }
+    }
+};
+
 // -----------------------------------------------------------------------------
 // DAEMON SERVER IMPLEMENTATION
 // -----------------------------------------------------------------------------
@@ -263,6 +296,7 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     dbusWatcher = new DBusWatcherService(this);
     netManager = new QNetworkAccessManager(this);
     weatherEngine = new WeatherEngine(netManager, this);
+    themeManager = new ThemeManager(this);
 
     connect(weatherEngine, &WeatherEngine::weatherUpdated, this, [this](const QJsonObject& data) {
         QJsonObject eventObj;
@@ -365,6 +399,10 @@ void DaemonServer::registerHandlers() {
 
     auto weatherH = std::make_shared<WeatherHandler>();
     handlers["weather"] = weatherH;
+
+    auto themeH = std::make_shared<ThemeHandler>();
+    handlers["theme"] = themeH;
+    handlers["fonts"] = themeH;
 }
 
 void DaemonServer::onNewConnection() {
