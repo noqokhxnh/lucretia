@@ -1,0 +1,5 @@
+singleton Sounds 1.0 Sounds.qml
+singleton I18n 1.0 I18n.qml
+singleton DateTime 1.0 DateTime.qml
+singleton TimerState 1.0 TimerState.qml
+singleton ThemeBackend 1.0 ThemeBackend.qml
