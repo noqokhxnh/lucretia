@@ -327,16 +327,22 @@ Item {
         }
     }
 
+    Connections {
+        target: typeof QsDaemonClient !== "undefined" ? QsDaemonClient : null
+        function onIsConnectedChanged() {
+            if (QsDaemonClient && QsDaemonClient.isConnected) {
+                themeTabRoot.reloadThemes();
+            }
+        }
+    }
+
     function activateTab() {
         themeTabRoot.loadAvailableFonts();
         wallpaperDirScanner.running = false;
         wallpaperDirScanner.running = true;
         wallFetcher.running = false;
         wallFetcher.running = true;
-        if (themeTabRoot._needsReload) {
-            themeTabRoot._needsReload = false;
-            themeTabRoot.reloadThemes();
-        }
+        themeTabRoot.reloadThemes();
     }
 
     onVisibleChanged: {
@@ -558,8 +564,7 @@ Item {
 
             radius: ThemeBackend.borderRadius
             color: delegateContainer.baseC
-
-            opacity: 0.0
+            opacity: 1.0
             scale: (presetMouse.pressed ? 0.96 : (delegateContainer.isHovered ? 1.03 : 1.0)) * popScale
 
             property bool isSelected: themeTabRoot.currentPreset === modelData.name
