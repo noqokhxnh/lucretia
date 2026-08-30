@@ -155,7 +155,6 @@ binds {
     Super+Shift+T { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle focustime"; }
     Super+Shift+V { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle volume"; }
     Super+D { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle guide"; }
-    // Super+D { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle dashboard"; }
     Super+Shift+M { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle monitors"; }
     // --- SwayOSD Controls ---
     Caps_Lock { spawn "bash" "-c" "sleep 0.1 && swayosd-client --caps-lock"; }
