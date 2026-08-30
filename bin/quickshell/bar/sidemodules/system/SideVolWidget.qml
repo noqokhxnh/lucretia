@@ -51,6 +51,6 @@ Rectangle {
         iconFontSize: barWindow ? barWindow.s(15) : 15
         accentColor: (!isMuted && sysVolume > 0) ? ThemeBackend.mauve : ThemeBackend.surface1
         textColor: (!isMuted && sysVolume > 0) ? ThemeBackend.base : ThemeBackend.subtext0
-        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle volume"])
+        onClicked: Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "volume"])
     }
 }

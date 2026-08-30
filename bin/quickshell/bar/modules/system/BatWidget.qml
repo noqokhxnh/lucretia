@@ -258,7 +258,7 @@ Rectangle {
             MouseArea {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle system"])
+                onClicked: Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "system"])
             }
         }
     }

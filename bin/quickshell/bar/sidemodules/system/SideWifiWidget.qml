@@ -49,6 +49,6 @@ Rectangle {
         accentColor: Networking.wifiEnabled ? ThemeBackend.blue : ThemeBackend.surface0
         textColor: Networking.wifiEnabled ? ThemeBackend.base : ThemeBackend.text
         iconOffsetX: -3
-        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network wifi"])
+        onClicked: Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "network", "wifi"])
     }
 }

@@ -48,6 +48,6 @@ Rectangle {
         iconFontSize: barWindow ? barWindow.s(15) : 15
         accentColor: (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) ? ThemeBackend.mauve : ThemeBackend.surface0
         textColor: (Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) ? ThemeBackend.base : ThemeBackend.text
-        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle network bt"])
+        onClicked: Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "network", "bt"])
     }
 }

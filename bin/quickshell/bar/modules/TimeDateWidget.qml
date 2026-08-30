@@ -60,7 +60,7 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         onClicked: {
             if (Caching.serpantinumDir) {
-                Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "toggle", "calendar"]);
+                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "calendar"]);
             }
         }
     }

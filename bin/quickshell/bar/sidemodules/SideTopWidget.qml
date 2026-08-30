@@ -51,6 +51,6 @@ Rectangle {
         iconFontSize: barWindow ? barWindow.s(15) : 15
         accentColor: ThemeBackend.surface0
         textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
-        onClicked: Quickshell.execDetached(["bash", "-c", Caching.serpantinumDir + "/scripts/qs_manager.sh toggle guide"])
+        onClicked: Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "guide"])
     }
 }
