@@ -19,7 +19,7 @@ Item {
         return Scaler.s(val);
     }
 
-    readonly property string scriptDir: Caching.serpantinumDir + "/scripts/wallpaper"
+    readonly property string scriptDir: Caching.qsDir + "/wallpaper"
 
     property string widgetArg: ""
     property string targetWallName: ""
@@ -296,8 +296,15 @@ Item {
     }
 
     function loadMonitors() {
-        monitorDetector.running = false;
-        monitorDetector.running = true;
+        let screens = Quickshell.screens;
+        let names = [];
+        for (let i = 0; i < screens.length; i++) {
+            if (screens[i] && screens[i].name) {
+                names.push(screens[i].name);
+            }
+        }
+        if (names.length === 0) names.push("default");
+        window.updateMonitorsFromList(names);
     }
 
     function updateMonitorsFromList(screenNames) {
@@ -344,6 +351,8 @@ Item {
         let outputs = window.getMonitorOutputs();
         if (outputs === "none") return;
 
+        let isVid = targetFile.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/) !== null;
+
         if (outputs === "all") {
             Quickshell.execDetached(["quickshell", "-p", Caching.mainQml, "ipc", "call", "wallpaper", "setWallpaper", "all", targetFile, transition]);
         } else {
@@ -351,6 +360,12 @@ Item {
             for (let i = 0; i < monArr.length; i++) {
                 Quickshell.execDetached(["quickshell", "-p", Caching.mainQml, "ipc", "call", "wallpaper", "setWallpaper", monArr[i], targetFile, transition]);
             }
+        }
+
+        if (isVid) {
+            Quickshell.execDetached(["bash", "-c", "pkill -f mpvpaper 2>/dev/null || true; mpvpaper -o 'no-audio loop' '*' '" + targetFile + "' >/dev/null 2>&1 &"]);
+        } else {
+            Quickshell.execDetached(["bash", "-c", "pkill -f mpvpaper 2>/dev/null || true; awww img '" + targetFile + "' --transition-type wipe --transition-duration 1 >/dev/null 2>&1 || true"]);
         }
     }
 

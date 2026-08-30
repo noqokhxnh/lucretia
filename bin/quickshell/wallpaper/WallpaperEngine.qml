@@ -5,7 +5,7 @@ import Quickshell.Io
 import QtMultimedia
 import "../"
 
-ShellRoot {
+Item {
     id: globalRoot
 
     signal wallpaperChanged(string screenName, string path, string transition)
@@ -266,7 +266,8 @@ ShellRoot {
                         " && printf '%s' '" + origName + "' > '" + wpStatePath + "_name'" +
                         " && cp -f '" + cleanPath + "' '" + dest + "'" +
                         (vid ? "" : " && cp -f '" + cleanPath + "' '" + snapshotPath + "' && cp -f '" + cleanPath + "' '" + monSnapshotPath + "'") +
-                        " && ( HIST='" + histFile + "'; if [ -f \"$HIST\" ]; then grep -v -F -x '" + origName + "' \"$HIST\" > \"$HIST.tmp\" 2>/dev/null || true; printf '%s\n' '" + origName + "' | cat - \"$HIST.tmp\" > \"$HIST\" 2>/dev/null; rm -f \"$HIST.tmp\"; else printf '%s\n' '" + origName + "' > \"$HIST\"; fi )"
+                        " && ( HIST='" + histFile + "'; if [ -f \"$HIST\" ]; then grep -v -F -x '" + origName + "' \"$HIST\" > \"$HIST.tmp\" 2>/dev/null || true; printf '%s\n' '" + origName + "' | cat - \"$HIST.tmp\" > \"$HIST\" 2>/dev/null; rm -f \"$HIST.tmp\"; else printf '%s\n' '" + origName + "' > \"$HIST\"; fi )" +
+                        (vid ? " && ( pkill -f mpvpaper 2>/dev/null || true; mpvpaper -o 'no-audio loop' '*' '" + cleanPath + "' >/dev/null 2>&1 & )" : " && ( pkill -f mpvpaper 2>/dev/null || true; awww img '" + cleanPath + "' --transition-type wipe --transition-duration 1 >/dev/null 2>&1 || true )")
                     ]);
 
                     if (vid) {
