@@ -4,3 +4,4 @@ singleton DateTime 1.0 DateTime.qml
 singleton TimerState 1.0 TimerState.qml
 singleton ThemeBackend 1.0 ThemeBackend.qml
 singleton Weather 1.0 Weather.qml
+singleton Cava 1.0 Cava.qml

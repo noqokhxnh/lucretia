@@ -29,6 +29,7 @@ set(DAEMON_SOURCES
     focus/focus_tracker.cpp
     apps/app_indexer.cpp
     media/media_processor.cpp
+    media/audio_spectrum.cpp
     services/service_manager.cpp
     clipboard/clipboard_manager.cpp
 )
@@ -44,6 +45,7 @@ set(DAEMON_HEADERS
     focus/focus_tracker.hpp
     apps/app_indexer.hpp
     media/media_processor.hpp
+    media/audio_spectrum.hpp
     services/service_manager.hpp
     clipboard/clipboard_manager.hpp
 )

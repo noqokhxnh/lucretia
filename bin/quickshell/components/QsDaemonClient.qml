@@ -58,12 +58,15 @@ Item {
         hourly: []
     })
 
+    property var spectrumLevels: []
+
     property bool isConnected: daemonSocket.connected
 
     // --- Real-time Event Signals ---
     signal sysDataReceived(var data)
     signal musicStateReceived(var data)
     signal weatherReceived(var data)
+    signal spectrumReceived(var levels)
     signal eqStateReceived(var data)
     signal focusStatsReceived(var data)
     signal clipboardReceived(var data)
@@ -134,6 +137,9 @@ Item {
                         } else if (eventType === "weather") {
                             root.weatherData = payload;
                             root.weatherReceived(payload);
+                        } else if (eventType === "spectrum") {
+                            root.spectrumLevels = payload;
+                            root.spectrumReceived(payload);
                         } else if (eventType === "screenshot") {
                             root.screenshotReceived(payload);
                         }
@@ -242,5 +248,17 @@ Item {
 
     function setWeatherUnit(unit, callback) {
         return sendRequest("weather", "set_unit", { unit: unit }, callback);
+    }
+
+    function subscribeSpectrum(callback) {
+        return sendRequest("spectrum", "subscribe", {}, callback);
+    }
+
+    function unsubscribeSpectrum(callback) {
+        return sendRequest("spectrum", "unsubscribe", {}, callback);
+    }
+
+    function setSpectrumBars(bars, callback) {
+        return sendRequest("spectrum", "set_bars", { bars: bars }, callback);
     }
 }

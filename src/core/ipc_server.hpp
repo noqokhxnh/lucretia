@@ -20,6 +20,7 @@
 #include "apps/app_indexer.hpp"
 #include "services/service_manager.hpp"
 #include "media/media_processor.hpp"
+#include "media/audio_spectrum.hpp"
 #include "clipboard/clipboard_manager.hpp"
 
 #include "system/file_watcher.hpp"
@@ -50,6 +51,7 @@ public:
     AppIndexer* getAppIndexer() const { return appIndexer; }
     ServiceManager* getServiceManager() const { return serviceManager; }
     MediaProcessor* getMediaProcessor() const { return mediaProcessor; }
+    AudioSpectrumService* getAudioSpectrum() const { return audioSpectrum; }
     ClipboardManager* getClipboardManager() const { return clipboardManager; }
     WeatherEngine* getWeatherEngine() const { return weatherEngine; }
     ThemeManager* getThemeManager() const { return themeManager; }
@@ -88,6 +90,7 @@ private:
     AppIndexer* appIndexer;
     ServiceManager* serviceManager;
     MediaProcessor* mediaProcessor;
+    AudioSpectrumService* audioSpectrum;
     ClipboardManager* clipboardManager;
     FileWatcherService* fileWatcher;
     DBusWatcherService* dbusWatcher;

@@ -281,6 +281,29 @@ public:
     }
 };
 
+class SpectrumHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* spec = server->getAudioSpectrum();
+        if (!spec) {
+            server->sendResponse(client, reqId, "error");
+            return;
+        }
+
+        if (action == "subscribe") {
+            spec->addSubscriber();
+            server->sendResponse(client, reqId, "subscribed");
+        } else if (action == "unsubscribe") {
+            spec->removeSubscriber();
+            server->sendResponse(client, reqId, "unsubscribed");
+        } else if (action == "set_bars") {
+            int bars = req["bars"].toInt(32);
+            spec->setBarCount(bars);
+            server->sendResponse(client, reqId, "ok");
+        }
+    }
+};
+
 // -----------------------------------------------------------------------------
 // DAEMON SERVER IMPLEMENTATION
 // -----------------------------------------------------------------------------
@@ -291,12 +314,27 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     appIndexer = new AppIndexer(this);
     serviceManager = new ServiceManager(this);
     mediaProcessor = new MediaProcessor(this);
+    audioSpectrum = new AudioSpectrumService(this);
     clipboardManager = new ClipboardManager(this);
     fileWatcher = new FileWatcherService(this);
     dbusWatcher = new DBusWatcherService(this);
     netManager = new QNetworkAccessManager(this);
     weatherEngine = new WeatherEngine(netManager, this);
     themeManager = new ThemeManager(this);
+
+    connect(audioSpectrum, &AudioSpectrumService::spectrumUpdated, this, [this](const QJsonArray& levels) {
+        QJsonObject eventObj;
+        eventObj["event"] = "spectrum";
+        eventObj["data"] = levels;
+        QJsonDocument doc(eventObj);
+        QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
+        for (QLocalSocket* client : clients) {
+            if (client && client->state() == QLocalSocket::ConnectedState) {
+                client->write(payload);
+                client->flush();
+            }
+        }
+    });
 
     connect(weatherEngine, &WeatherEngine::weatherUpdated, this, [this](const QJsonObject& data) {
         QJsonObject eventObj;
@@ -403,6 +441,9 @@ void DaemonServer::registerHandlers() {
     auto themeH = std::make_shared<ThemeHandler>();
     handlers["theme"] = themeH;
     handlers["fonts"] = themeH;
+
+    auto specH = std::make_shared<SpectrumHandler>();
+    handlers["spectrum"] = specH;
 }
 
 void DaemonServer::onNewConnection() {
