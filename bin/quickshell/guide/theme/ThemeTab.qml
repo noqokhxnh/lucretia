@@ -357,6 +357,8 @@ Item {
         prevMatugenPeach = matugenColors.peach || ThemeBackend.peach;
         prevMatugenGreen = matugenColors.green || ThemeBackend.green;
         prevMatugenRed = matugenColors.red || ThemeBackend.red;
+    }
+
     function getCardBase(m) {
         if (!m) return ThemeBackend.base;
         if (m.isMatugen) return themeTabRoot.prevMatugenBase;
