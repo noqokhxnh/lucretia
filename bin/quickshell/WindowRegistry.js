@@ -138,6 +138,87 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "right": { anchor: "left" } 
             } 
         },
+        "notes": { 
+            w: 800, h: 560, comp: "notes/NotesPopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "focustime": { 
+            w: 640, h: 520, comp: "focustime/FocusTimePopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "photobooth": { 
+            w: 700, h: 620, comp: "photobooth/PhotoBooth.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "services": { 
+            w: 680, h: 540, comp: "services/ServicesOverlay.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "monitors": { 
+            w: 600, h: 480, comp: "monitors/MonitorPopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "battery": { 
+            w: 360, h: 400, comp: "battery/BatteryPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-right", mt: 52, mr: 5 }, 
+                "bottom": { anchor: "bottom-right", mb: 52, mr: 5 }, 
+                "left": { anchor: "bottom-left", ml: 52, mb: 5 }, 
+                "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
+            } 
+        },
+        "settings": { 
+            w: 1200, h: 750, comp: "guide/GuidePopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "updater": { 
+            w: 500, h: 450, comp: "updater/UpdaterPopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "controlcenter": { 
+            w: 420, h: 580, comp: "controlcenter/ControlCenterPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-right", mt: 52, mr: 5 }, 
+                "bottom": { anchor: "bottom-right", mb: 52, mr: 5 }, 
+                "left": { anchor: "bottom-left", ml: 52, mb: 5 }, 
+                "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
+            } 
+        },
         "system": { 
             w: 500, h: "fill", comp: "syspanel/SystemPanel.qml", 
             pos: { 
