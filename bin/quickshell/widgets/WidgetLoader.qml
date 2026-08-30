@@ -21,6 +21,8 @@ Item {
 
     ListModel { id: widgetsModel }
 
+    property bool layoutLoaded: false
+
     function toBase64(str) {
         let utf8 = unescape(encodeURIComponent(str));
         let bytes = [];
@@ -61,46 +63,59 @@ Item {
 
     function loadLayout() {
         QsDaemonClient.loadWidgetLayout(loaderRoot.safeMonitorName, function(data) {
-            if (Array.isArray(data)) {
-                widgetsModel.clear();
-                let needSave = false;
-                for (let i = 0; i < data.length; i++) {
-                    let item = data[i];
-                    let itemId = item.wId || item.id;
-                    if (!itemId) {
-                        itemId = "w_" + Date.now() + "_" + i + "_" + Math.floor(Math.random() * 1000);
-                        needSave = true;
-                    }
-
-                    let type = item.wType || item.type || "time";
-                    let variant = item.wVariant || item.variant || WidgetRegistry.defaultVariant(type);
-                    let defSize = WidgetRegistry.defaultSize(type);
-
-                    let w = item.wWidth !== undefined ? parseFloat(item.wWidth) : defSize.w;
-                    let h = item.wHeight !== undefined ? parseFloat(item.wHeight) : defSize.h;
-                    let x = item.wX !== undefined ? parseFloat(item.wX) : 100;
-                    let y = item.wY !== undefined ? parseFloat(item.wY) : 100;
-                    let op = item.wOpacity !== undefined ? parseFloat(item.wOpacity) : 1.0;
-                    let imgPath = item.wImagePath || item.imagePath || item.path || "";
-
-                    widgetsModel.append({
-                        wType: type,
-                        wVariant: variant,
-                        wX: x,
-                        wY: y,
-                        wWidth: w,
-                        wHeight: h,
-                        wOpacity: op,
-                        wImagePath: imgPath,
-                        wId: String(itemId),
-                        isRemoving: false
-                    });
+            if (!Array.isArray(data)) {
+                // Got null — daemon not ready yet, retry is handled via onIsConnectedChanged
+                return;
+            }
+            loaderRoot.layoutLoaded = true;
+            widgetsModel.clear();
+            let needSave = false;
+            for (let i = 0; i < data.length; i++) {
+                let item = data[i];
+                let itemId = item.wId || item.id;
+                if (!itemId) {
+                    itemId = "w_" + Date.now() + "_" + i + "_" + Math.floor(Math.random() * 1000);
+                    needSave = true;
                 }
-                if (needSave) {
-                    loaderRoot.saveNow();
-                }
+
+                let type = item.wType || item.type || "time";
+                let variant = item.wVariant || item.variant || WidgetRegistry.defaultVariant(type);
+                let defSize = WidgetRegistry.defaultSize(type);
+
+                let w = item.wWidth !== undefined ? parseFloat(item.wWidth) : defSize.w;
+                let h = item.wHeight !== undefined ? parseFloat(item.wHeight) : defSize.h;
+                let x = item.wX !== undefined ? parseFloat(item.wX) : 100;
+                let y = item.wY !== undefined ? parseFloat(item.wY) : 100;
+                let op = item.wOpacity !== undefined ? parseFloat(item.wOpacity) : 1.0;
+                let imgPath = item.wImagePath || item.imagePath || item.path || "";
+
+                widgetsModel.append({
+                    wType: type,
+                    wVariant: variant,
+                    wX: x,
+                    wY: y,
+                    wWidth: w,
+                    wHeight: h,
+                    wOpacity: op,
+                    wImagePath: imgPath,
+                    wId: String(itemId),
+                    isRemoving: false
+                });
+            }
+            if (needSave) {
+                loaderRoot.saveNow();
             }
         });
+    }
+
+    // Retry loading when daemon socket becomes available
+    Connections {
+        target: QsDaemonClient
+        function onIsConnectedChanged() {
+            if (QsDaemonClient.isConnected && !loaderRoot.layoutLoaded) {
+                loaderRoot.loadLayout();
+            }
+        }
     }
 
     Component.onCompleted: {

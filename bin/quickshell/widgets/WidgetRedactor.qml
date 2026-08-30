@@ -1575,7 +1575,11 @@ PanelWindow {
 
         FileView {
             id: layoutFile
-            path: (Caching.getStateDir && redactorWindow.safeMonitorName) ? (Caching.getStateDir("widgets/" + redactorWindow.safeMonitorName) + "/layout.json") : ""
+            // Daemon (widget_manager.cpp) always writes to ~/.local/state/quickshell/widgets/<monitor>/layout.json
+            // Caching.getStateDir() points to serpantinum state dir — wrong path, so hardcode the daemon path here
+            path: redactorWindow.safeMonitorName
+                  ? (Caching.home + "/.local/state/quickshell/widgets/" + redactorWindow.safeMonitorName + "/layout.json")
+                  : ""
             watchChanges: false
             onLoaded: redactorMode.loadLayoutFromText(text())
         }

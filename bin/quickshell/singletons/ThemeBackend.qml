@@ -290,35 +290,37 @@ Item {
         safeAssign("maroon",    c.maroon);
         safeAssign("teal",      c.teal);
 
-        let fullObj = {
-            "name": c.name || "custom",
-            "colors": {
-                "base": root.base.toString(),
-                "mantle": root.mantle.toString(),
-                "crust": root.crust.toString(),
-                "surface0": root.surface0.toString(),
-                "surface1": root.surface1.toString(),
-                "surface2": root.surface2.toString(),
-                "overlay0": root.overlay0.toString(),
-                "overlay1": root.overlay1.toString(),
-                "overlay2": root.overlay2.toString(),
-                "text": root.text.toString(),
-                "subtext0": root.subtext0.toString(),
-                "subtext1": root.subtext1.toString(),
-                "blue": root.blue.toString(),
-                "sapphire": root.sapphire.toString(),
-                "peach": root.peach.toString(),
-                "green": root.green.toString(),
-                "red": root.red.toString(),
-                "mauve": root.mauve.toString(),
-                "pink": root.pink.toString(),
-                "yellow": root.yellow.toString(),
-                "maroon": root.maroon.toString(),
-                "teal": root.teal.toString()
-            }
-        };
-        let colorsJsonStr = JSON.stringify(fullObj, null, 2);
-        Quickshell.execDetached(["bash", "-c", "echo '" + colorsJsonStr.replace(/'/g, "'\\''") + "' > \"" + root.configPath + "\""]);
+        if (!root.isMatugenTheme()) {
+            let fullObj = {
+                "name": c.name || "custom",
+                "colors": {
+                    "base": root.base.toString(),
+                    "mantle": root.mantle.toString(),
+                    "crust": root.crust.toString(),
+                    "surface0": root.surface0.toString(),
+                    "surface1": root.surface1.toString(),
+                    "surface2": root.surface2.toString(),
+                    "overlay0": root.overlay0.toString(),
+                    "overlay1": root.overlay1.toString(),
+                    "overlay2": root.overlay2.toString(),
+                    "text": root.text.toString(),
+                    "subtext0": root.subtext0.toString(),
+                    "subtext1": root.subtext1.toString(),
+                    "blue": root.blue.toString(),
+                    "sapphire": root.sapphire.toString(),
+                    "peach": root.peach.toString(),
+                    "green": root.green.toString(),
+                    "red": root.red.toString(),
+                    "mauve": root.mauve.toString(),
+                    "pink": root.pink.toString(),
+                    "yellow": root.yellow.toString(),
+                    "maroon": root.maroon.toString(),
+                    "teal": root.teal.toString()
+                }
+            };
+            let colorsJsonStr = JSON.stringify(fullObj, null, 2);
+            Quickshell.execDetached(["bash", "-c", "echo '" + colorsJsonStr.replace(/'/g, "'\\''") + "' > \"" + root.configPath + "\""]);
+        }
     }
 
     FileView {
