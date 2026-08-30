@@ -7,6 +7,7 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import "../../reusables"
 import "../../"
+import "../../singletons"
 
 Item {
     id: root

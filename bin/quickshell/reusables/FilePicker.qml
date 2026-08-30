@@ -6,6 +6,7 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import "../"
 import "../singletons"
+import "../singletons"
 
 Popup {
     id: pickerRoot

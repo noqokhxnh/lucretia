@@ -7,6 +7,7 @@ import Quickshell.Wayland
 import Quickshell.Io
 import "../"
 import "../reusables"
+import "../singletons"
 import "faces"
 
 PanelWindow {

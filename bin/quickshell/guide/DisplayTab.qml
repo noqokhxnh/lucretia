@@ -943,15 +943,11 @@ Item {
                                     accentColor: ThemeBackend.mauve
                                     textColor: ThemeBackend.crust
                                     onClicked: {
-                                        let mon = monDelegate.monName;
-                                        let runnerTarget = Caching.serpantinumDir ? (Caching.serpantinumDir + "/quickshell/Runner.qml") : "";
-                                        let redactorTarget = Caching.widgetRedactor || (Caching.serpantinumDir ? Caching.serpantinumDir + "/quickshell/widgets/WidgetRedactor.qml" : Caching.mainQml);
-                                        let launchCmd = "{ mkdir -p '" + Caching.runDir + "' && printf '%s' '" + mon + "' > '" + Caching.runDir + "/redactor_target_monitor' && QS_WIDGET_MONITOR='" + mon + "' SERPANTINUM_TARGET_FILE='" + redactorTarget + "' quickshell -p '" + runnerTarget + "'; } >> /tmp/redactor_debug.log 2>&1";
-                                        Quickshell.execDetached(["bash", "-c", launchCmd]);
+                                        let mon = monDelegate.monName || "";
+                                        let home = Quickshell.env("HOME") || "";
+                                        Quickshell.execDetached(["bash", home + "/.config/niri/bin/qs_manager.sh", "widgets", mon]);
                                         if (rootObj && typeof rootObj.closePopup === "function") {
                                             rootObj.closePopup();
-                                        } else {
-                                            Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "close"]);
                                         }
                                     }
                                 }

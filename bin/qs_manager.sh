@@ -50,6 +50,25 @@ if [[ "$ACTION" == "close" ]]; then
     exit 0
 fi
 
+if [[ "$ACTION" == "widgetredactor" || "$ACTION" == "widgets" || "$TARGET" == "widgets" || "$TARGET" == "widgetredactor" ]]; then
+    quickshell -p "$SHELL_QML_PATH" ipc call main handleCommand "close" "" "" >/dev/null 2>&1
+    MONITOR=""
+    if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
+        MONITOR="$SUBTARGET"
+    else
+        MONITOR="$TARGET"
+    fi
+    [[ "$MONITOR" == "widgets" || "$MONITOR" == "widgetredactor" ]] && MONITOR=""
+
+    QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/quickshell"
+    mkdir -p "$QS_RUN_DIR"
+    [[ -n "$MONITOR" ]] && echo "$MONITOR" > "$QS_RUN_DIR/redactor_target_monitor"
+
+    QS_WIDGET_MONITOR="$MONITOR" SERPANTINUM_TARGET_FILE="$SCRIPTS_DIR/widgets/WidgetRedactor.qml" quickshell -p "$SCRIPTS_DIR/Runner.qml" >/dev/null 2>&1 &
+    disown
+    exit 0
+fi
+
 
 # -----------------------------------------------------------------------------
 # SLOW PATH: Everything below only runs for non-workspace actions

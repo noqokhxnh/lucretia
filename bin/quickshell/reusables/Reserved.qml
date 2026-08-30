@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import "../"
 import "../singletons"
+import "../singletons"
 
 Item {
     id: root

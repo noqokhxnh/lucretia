@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Io
 import "faces"
 import "../"
+import "../singletons"
 import "../components"
 
 Item {

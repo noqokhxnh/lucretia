@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import "../"
+import "../singletons"
 
 Item {
     id: root

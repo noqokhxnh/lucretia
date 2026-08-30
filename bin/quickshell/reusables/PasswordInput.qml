@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtCore
 import "../singletons"
 import "../"
+import "../singletons"
 
 FocusScope {
     id: root

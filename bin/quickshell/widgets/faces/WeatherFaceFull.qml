@@ -5,6 +5,7 @@ import Quickshell.Io
 import "../../reusables"
 import "../../"
 import "../../singletons"
+import "../../singletons"
 
 Item {
     id: root
