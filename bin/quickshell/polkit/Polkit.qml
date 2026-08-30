@@ -5,6 +5,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Wayland
 import "../reusables"
+import "../singletons"
 import "../"
 
 PanelWindow {

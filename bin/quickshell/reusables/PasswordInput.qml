@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import QtCore
+import "../singletons"
 import "../"
 
 FocusScope {

@@ -13,8 +13,12 @@ PanelWindow {
 
     readonly property real sf: Scaler.baseScale
 
+    property var popupModel: NotificationManager.activePopupsModel
+    property real uiScale: 1.0
+    signal removeRequested(var uid)
+
     function s(val) {
-        return Math.round(val * popupWindow.sf);
+        return Math.round(val * popupWindow.sf * popupWindow.uiScale);
     }
 
     property bool hasCriticalPopup: {
