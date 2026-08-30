@@ -9,6 +9,7 @@ import Quickshell
 import Quickshell.Io
 import "../"
 import "../reusables"
+import "../singletons"
 
 Item {
     id: window
