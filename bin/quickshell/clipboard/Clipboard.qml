@@ -41,6 +41,12 @@ PanelWindow {
     }
 
     property bool isVisible: ClipboardController.isVisible
+    onIsVisibleChanged: {
+        if (isVisible) {
+            clipboardWindow.refreshClips();
+            grabInputFocus();
+        }
+    }
     property int configRevision: 0
 
     Connections {
@@ -338,14 +344,14 @@ PanelWindow {
         if (clipFetcherProc.running || !clipboardWindow.hasMoreClips) return;
         let qsDir = (typeof Caching !== "undefined" && Caching.qsDir) ? Caching.qsDir : "";
         let cacheDir = (typeof Caching !== "undefined" && Caching.getCacheDir) ? Caching.getCacheDir("clipboard") : "";
-        clipFetcherProc.command = ["python3", qsDir + "/clipboard/clip_fetcher.py", clipboardWindow.clipOffset.toString(), clipboardWindow.clipPageSize.toString(), cacheDir];
+        clipFetcherProc.command = [qsDir + "/clipboard/clip_fetcher", clipboardWindow.clipOffset.toString(), clipboardWindow.clipPageSize.toString(), cacheDir];
         clipFetcherProc.running = true;
     }
 
     function copyClip(id, isPinned) {
         if (typeof Sounds !== "undefined") Sounds.playSfx("system/quick_click.wav");
         if (isPinned) {
-            Quickshell.execDetached(["bash", "-c", "cliphist decode " + id + " | wl-copy && (sleep 0.15; NEW_ID=$(cliphist list | head -n 1 | awk '{print $1}'); python3 " + Caching.qsDir + "/clipboard/clip_fetcher.py pin $NEW_ID " + Caching.getCacheDir("clipboard") + ") &"]);
+            Quickshell.execDetached(["bash", "-c", "cliphist decode " + id + " | wl-copy && (sleep 0.15; NEW_ID=$(cliphist list | head -n 1 | awk '{print $1}'); " + Caching.qsDir + "/clipboard/clip_fetcher toggle-pin $NEW_ID " + Caching.getCacheDir("clipboard") + ") &"]);
         } else {
             Quickshell.execDetached(["bash", "-c", "cliphist decode " + id + " | wl-copy"]);
         }
@@ -353,7 +359,7 @@ PanelWindow {
     }
 
     function pinClip(id, index) {
-        clipActionProc.command = ["python3", Caching.qsDir + "/clipboard/clip_fetcher.py", "pin", id.toString(), Caching.getCacheDir("clipboard")];
+        clipActionProc.command = [Caching.qsDir + "/clipboard/clip_fetcher", "toggle-pin", id.toString(), Caching.getCacheDir("clipboard")];
         clipActionProc.running = true;
         for (let i = 0; i < clipboardWindow.allFetchedClips.length; i++) {
             if (clipboardWindow.allFetchedClips[i].id.toString() === id.toString()) {
@@ -365,7 +371,7 @@ PanelWindow {
     }
 
     function deleteClip(id, index) {
-        clipActionProc.command = ["python3", Caching.qsDir + "/clipboard/clip_fetcher.py", "delete", id.toString(), Caching.getCacheDir("clipboard")];
+        clipActionProc.command = [Caching.qsDir + "/clipboard/clip_fetcher", "delete", id.toString(), Caching.getCacheDir("clipboard")];
         clipActionProc.running = true;
         clipboardWindow.allFetchedClips = clipboardWindow.allFetchedClips.filter(item => item.id.toString() !== id.toString());
         clipBoxModel.remove(index);
@@ -374,7 +380,7 @@ PanelWindow {
     function clearAllClips() {
         clipboardWindow.allFetchedClips = [];
         clipBoxModel.clear();
-        clipActionProc.command = ["python3", Caching.qsDir + "/clipboard/clip_fetcher.py", "wipe", Caching.getCacheDir("clipboard")];
+        clipActionProc.command = ["bash", "-c", "cliphist wipe"];
         clipActionProc.running = true;
     }
 

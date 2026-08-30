@@ -61,4 +61,5 @@ Floating 1.0 quickactions/Floating.qml
 Bar 1.0 bar/Bar.qml
 Keycast 1.0 Keycast.qml
 MatugenColors 1.0 MatugenColors.qml
+OrbitBackground 1.0 OrbitBackground.qml
 
