@@ -3,6 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "watchers" as Watchers
+import "polkit" as Polkit
 // import "overview" as OverviewModule (removed)
 
 ShellRoot {
@@ -79,7 +80,7 @@ ShellRoot {
                 TopBar {}
                 Floating {}
                 Keycast {}
-                // OverviewModule.Overview {} (removed)
+                Polkit.Polkit {}
             }
         }
     }
