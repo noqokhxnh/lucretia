@@ -5,11 +5,12 @@ import Quickshell
 QtObject {
     id: root
 
-    readonly property string serpantinumDir: Quickshell.env("SERPANTINUM_DIR")
-    readonly property string qsDir: Quickshell.env("QS_DIR")
-    readonly property string mainQml: Quickshell.env("MAIN_QML")
+    readonly property string home: Quickshell.env("HOME") || "/home/khxnh"
+    readonly property string qsDir: Quickshell.env("QS_DIR") ? Quickshell.env("QS_DIR") : (home + "/.config/niri/bin/quickshell")
+    readonly property string serpantinumDir: Quickshell.env("SERPANTINUM_DIR") ? Quickshell.env("SERPANTINUM_DIR") : qsDir
+    readonly property string mainQml: Quickshell.env("MAIN_QML") ? Quickshell.env("MAIN_QML") : (qsDir + "/Shell.qml")
+    readonly property string assetsDir: qsDir + "/assets"
 
-    readonly property string home: Quickshell.env("HOME")
     readonly property string xdgRuntimeDir: Quickshell.env("XDG_RUNTIME_DIR")
 
     readonly property string cacheDir: Quickshell.env("QS_CACHE_DIR") ? Quickshell.env("QS_CACHE_DIR") : (home + "/.cache/serpantinum")

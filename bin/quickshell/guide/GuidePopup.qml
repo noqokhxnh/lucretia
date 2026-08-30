@@ -344,7 +344,10 @@ Item {
                                         }
 
                                         Text {
-                                            text: I18n.t("guide.tabs." + modelData.key)
+                                            text: {
+                                                let tr = I18n.t("guide.tabs." + modelData.key);
+                                                return (tr && tr !== ("guide.tabs." + modelData.key)) ? tr : (modelData.name || modelData.key);
+                                            }
                                             font.family: ThemeBackend.fontFamily
                                             font.weight: tabItem.isActive ? Font.Bold : Font.Medium
                                             font.pixelSize: root.s(13)

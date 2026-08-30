@@ -7,7 +7,7 @@ import "../"
 Item {
     id: root
 
-    readonly property string i18nDir: Caching.serpantinumDir + "/assets/languages"
+    readonly property string i18nDir: Caching.assetsDir + "/languages"
     property string currentLang: "en"
     property var translations: ({})
     property bool isReady: false
@@ -52,13 +52,29 @@ Item {
     }
 
     function t(key, args) {
-        if (!root.isReady || !root.translations || !root.translations[root.currentLang]) return key;
+        if (!root.isReady || !root.translations) return key;
 
+        let lang = root.currentLang || "en";
         let parts = key.split('.');
-        let current = root.translations[root.currentLang];
+        let current = root.translations[lang] || root.translations["en"];
+
+        if (!current) return key;
 
         for (let i = 0; i < parts.length; i++) {
             if (current === null || current === undefined || current[parts[i]] === undefined) {
+                if (lang !== "en" && root.translations["en"]) {
+                    let fallback = root.translations["en"];
+                    for (let j = 0; j < parts.length; j++) {
+                        if (fallback === null || fallback === undefined || fallback[parts[j]] === undefined) {
+                            return key;
+                        }
+                        fallback = fallback[parts[j]];
+                    }
+                    if (typeof fallback === "string") {
+                        current = fallback;
+                        break;
+                    }
+                }
                 return key;
             }
             current = current[parts[i]];
