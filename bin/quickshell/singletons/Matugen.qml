@@ -160,14 +160,22 @@ Item {
         let selectedMode = mode || themeConfig.mode || "dark";
         let selectedType = schemeType || themeConfig.schemeType || "scheme-tonal-spot";
 
+        let bashCmd = "IMG=\"" + cleanPath.replace(/"/g, '\\"') + "\"; " +
+            "if [ -f \"$IMG\" ] && [[ \"$IMG\" == *.path || \"$IMG\" == *.txt ]]; then IMG=$(cat \"$IMG\" | tr -d '\\r\\n'); fi; " +
+            "if [ ! -f \"$IMG\" ]; then " +
+            "  C1=\"$HOME/.cache/serpantinum/wallpaper/current_wallpaper.png\"; " +
+            "  C2=\"$HOME/.cache/serpantinum/wallpaper/current_wallpaper.path\"; " +
+            "  if [ -f \"$C2\" ]; then IMG=$(cat \"$C2\" | tr -d '\\r\\n'); fi; " +
+            "  if [ ! -f \"$IMG\" ] && [ -f \"$C1\" ]; then IMG=\"$C1\"; fi; " +
+            "fi; " +
+            "if [ -f \"$IMG\" ]; then " +
+            "  matugen image \"$IMG\" -c \"" + root.configPath + "\" -m \"" + selectedMode + "\" -t \"" + selectedType + "\" --source-color-index 0; " +
+            "else " +
+            "  echo 'No image found'; exit 1; " +
+            "fi";
+
         matugenProcess.reqType = "image";
-        matugenProcess.command = [
-            "matugen", "image", cleanPath,
-            "-c", root.configPath,
-            "-m", selectedMode,
-            "-t", selectedType,
-            "--source-color-index", "0"
-        ];
+        matugenProcess.command = ["bash", "-c", bashCmd];
         root.generationStarted();
         matugenProcess.running = true;
     }
@@ -214,11 +222,14 @@ Item {
             let success = (exitCode === 0);
 
             if (success) {
+                let stateDir = (typeof Caching !== "undefined" && Caching.stateDir) ? Caching.stateDir : (Quickshell.env("HOME") + "/.local/state/serpantinum");
                 if (matugenProcess.reqType === "image") {
-                    let stateDir = (typeof Caching !== "undefined" && Caching.stateDir) ? Caching.stateDir : (Quickshell.env("HOME") + "/.local/state/serpantinum");
                     Quickshell.execDetached(["bash", "-c", "mkdir -p \"" + stateDir + "\" && cp -f \"" + stateDir + "/qs_colors.json\" \"" + stateDir + "/qs_matugen_colors.json\" 2>/dev/null || true"]);
                 }
                 Quickshell.execDetached(["bash", "-c", "killall -USR1 .kitty-wrapped 2>/dev/null || pkill -SIGUSR1 kitty 2>/dev/null || true"]);
+                if (typeof ThemeBackend !== "undefined") {
+                    ThemeBackend.reloadColors();
+                }
             }
 
             root.generationFinished(success);

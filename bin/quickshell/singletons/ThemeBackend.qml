@@ -41,8 +41,8 @@ Item {
     property color maroon: "#eba0ac"
     property color teal: "#94e2d5"
 
-    property string configPath: Quickshell.env("QS_COLORS_JSON") ?? ((Quickshell.env("HOME") ?? "") + "/.config/niri/bin/quickshell/qs_colors.json")
-    property string matugenConfigPath: (Quickshell.env("HOME") ?? "") + "/.config/niri/bin/quickshell/qs_colors.json"
+    property string configPath: (typeof Caching !== "undefined" && Caching.stateDir ? Caching.stateDir : ((Quickshell.env("HOME") ?? "") + "/.local/state/serpantinum")) + "/qs_colors.json"
+    property string matugenConfigPath: (typeof Caching !== "undefined" && Caching.stateDir ? Caching.stateDir : ((Quickshell.env("HOME") ?? "") + "/.local/state/serpantinum")) + "/qs_matugen_colors.json"
 
     property bool _readInProgress: false
     property var matugenColors: null
