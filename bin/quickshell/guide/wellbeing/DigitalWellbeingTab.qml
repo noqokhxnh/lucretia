@@ -7,7 +7,7 @@ import Quickshell
 import Quickshell.Io
 import "../../"
 import "../../reusables"
-import "../../components"
+import "../../../components"
 
 Item {
     id: tabRoot
@@ -236,9 +236,13 @@ Item {
     }
 
     function requestDataUpdate() {
-        let isoDate = getIsoDate(tabRoot.activeDate);
-        let appFilter = tabRoot.selectedAppClass !== "" ? tabRoot.selectedAppClass : "";
-        QsDaemonClient.sendRequest("focustime", "get_stats", { date: isoDate, app: appFilter }, function(data) {
+        let req = {
+            date: getIsoDate(tabRoot.activeDate)
+        };
+        if (tabRoot.selectedAppClass !== "") {
+            req.app = tabRoot.selectedAppClass;
+        }
+        QsDaemonClient.sendRequest("focustime", "get_stats", req, function(data) {
             if (data && typeof data === "object") {
                 tabRoot.updateFromData(data);
             }

@@ -1,0 +1,64 @@
+Clipboard 1.0 clipboard/Clipboard.qml
+Launcher 1.0 launcher/Launcher.qml
+
+Dim 1.0 Dim.qml
+Main 1.0 Main.qml
+
+TrayBase 1.0 popouts/TrayBase.qml
+Osd 1.0 popouts/Osd.qml
+SideMusicPopout 1.0 popouts/SideMusicPopout.qml
+
+singleton Audio 1.0 singletons/Audio.qml
+singleton Caching 1.0 singletons/Caching.qml
+singleton Cava 1.0 singletons/Cava.qml
+singleton Config 1.0 singletons/Config.qml
+singleton I18n 1.0 singletons/I18n.qml
+singleton Scaler 1.0 singletons/Scaler.qml
+singleton Sounds 1.0 singletons/Sounds.qml
+singleton ThemeBackend 1.0 singletons/ThemeBackend.qml
+singleton MprisController 1.0 singletons/MprisController.qml
+singleton CurrentFocus 1.0 singletons/CurrentFocus.qml
+singleton Location 1.0 singletons/Location.qml
+singleton SysNotif 1.0 singletons/SysNotif.qml
+singleton Matugen 1.0 singletons/Matugen.qml
+singleton DateTime 1.0 singletons/DateTime.qml
+singleton Weather 1.0 singletons/Weather.qml
+singleton TimerState 1.0 singletons/TimerState.qml
+singleton Updater 1.0 singletons/Updater.qml
+
+singleton TrayMenuController 1.0 singletons/widgetcontrols/TrayMenuController.qml
+singleton LauncherController 1.0 singletons/widgetcontrols/LauncherController.qml
+singleton OsdController 1.0 singletons/widgetcontrols/OsdController.qml
+singleton SideMusicController 1.0 singletons/widgetcontrols/SideMusicController.qml
+singleton ClipboardController 1.0 singletons/widgetcontrols/ClipboardController.qml
+
+PopoutManager 1.0 popouts/PopoutManager.qml
+
+WidgetLoader 1.0 widgets/WidgetLoader.qml
+WidgetRedactor 1.0 widgets/WidgetRedactor.qml
+
+WallpaperEngine 1.0 wallpaper/WallpaperEngine.qml
+
+ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
+
+Idle 1.0 idle/Idle.qml
+
+Start 1.0 serp/Start.qml
+Serpantinum 1.0 serp/Serpantinum.qml
+
+singleton SystemInfo 1.0 info/SystemInfo.qml
+singleton SysData 1.0 info/SysData.qml
+
+Lock 1.0 lock/Lock.qml
+
+Polkit 1.0 polkit/Polkit.qml
+singleton PolkitService 1.0 polkit/PolkitService.qml
+
+singleton NotificationManager 1.0 notifications/NotificationManager.qml
+
+Floating 1.0 quickactions/Floating.qml
+
+Bar 1.0 bar/Bar.qml
+Keycast 1.0 Keycast.qml
+MatugenColors 1.0 MatugenColors.qml
+

@@ -102,47 +102,9 @@ Item {
             }
         });
     }
-                        let item = data[i];
-                        let itemId = item.wId || item.id;
-                        if (!itemId) {
-                            itemId = "w_" + Date.now() + "_" + i + "_" + Math.floor(Math.random() * 1000);
-                            needSave = true;
-                        }
-
-                        let type = item.wType || item.type || "time";
-                        let variant = item.wVariant || item.variant || WidgetRegistry.defaultVariant(type);
-                        let defSize = WidgetRegistry.defaultSize(type);
-
-                        let w = item.wWidth !== undefined ? parseFloat(item.wWidth) : defSize.w;
-                        let h = item.wHeight !== undefined ? parseFloat(item.wHeight) : defSize.h;
-                        let x = item.wX !== undefined ? parseFloat(item.wX) : 100;
-                        let y = item.wY !== undefined ? parseFloat(item.wY) : 100;
-                        let op = item.wOpacity !== undefined ? parseFloat(item.wOpacity) : 1.0;
-                        let imgPath = item.wImagePath || item.imagePath || item.path || "";
-
-                        widgetsModel.append({
-                            wType: type,
-                            wVariant: variant,
-                            wX: x,
-                            wY: y,
-                            wWidth: w,
-                            wHeight: h,
-                            wOpacity: op,
-                            wImagePath: imgPath,
-                            wId: String(itemId),
-                            isRemoving: false
-                        });
-                    }
-                    if (needSave) {
-                        loaderRoot.saveNow();
-                    }
-                } catch (e) {}
-            }
-        }
-    }
 
     Component.onCompleted: {
-        loadProcess.running = true;
+        loaderRoot.loadLayout();
     }
 
     IpcHandler {
@@ -364,9 +326,5 @@ Item {
             wOpacity: model.wOpacity !== undefined ? model.wOpacity : 1.0
             wImagePath: model.wImagePath || ""
         }
-    }
-
-    Component.onCompleted: {
-        loaderRoot.loadLayout();
     }
 }
