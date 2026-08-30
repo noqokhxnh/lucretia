@@ -232,11 +232,30 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
         CURRENT_SRC=""
 
         # Detect current wallpaper from saved path, mpvpaper, video path, or awww cache
-        if [ -f "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path" ]; then
-            SAVED_PATH=$(cat "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path" 2>/dev/null)
-            if [ -f "$SAVED_PATH" ]; then
-                CURRENT_SRC="$SAVED_PATH"
+        for p in "$HOME/.cache/serpantinum/wallpaper/current_wallpaper.path" \
+                 "$QS_CACHE_DIR/wallpaper/current_wallpaper.path" \
+                 "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path"; do
+            if [ -f "$p" ]; then
+                SAVED_PATH=$(cat "$p" 2>/dev/null)
+                if [ -n "$SAVED_PATH" ] && [ -f "$SAVED_PATH" ]; then
+                    CURRENT_SRC="$SAVED_PATH"
+                    break
+                fi
             fi
+        done
+
+        if [ -z "$CURRENT_SRC" ]; then
+            for p in "$HOME/.cache/serpantinum/wallpaper/current_video.path" \
+                     "$QS_CACHE_DIR/wallpaper/current_video.path" \
+                     "$QS_CACHE_WALLPAPER_PICKER/current_video.path"; do
+                if [ -f "$p" ]; then
+                    SAVED_VID=$(cat "$p" 2>/dev/null)
+                    if [ -n "$SAVED_VID" ] && [ -f "$SAVED_VID" ]; then
+                        CURRENT_SRC="$SAVED_VID"
+                        break
+                    fi
+                fi
+            done
         fi
 
         if [ -z "$CURRENT_SRC" ] && pgrep mpvpaper > /dev/null 2>&1; then
@@ -248,13 +267,6 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
                     break
                 fi
             done
-        fi
-
-        if [ -z "$CURRENT_SRC" ] && [ -f "$QS_CACHE_WALLPAPER_PICKER/current_video.path" ]; then
-            SAVED_VID=$(cat "$QS_CACHE_WALLPAPER_PICKER/current_video.path" 2>/dev/null)
-            if [ -f "$SAVED_VID" ]; then
-                CURRENT_SRC="$SAVED_VID"
-            fi
         fi
 
         # Fallback: read awww state cache (stores image path per monitor)

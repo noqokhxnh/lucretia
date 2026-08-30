@@ -223,11 +223,27 @@ Item {
     Process {
         id: wallpaperMonitorTracker
         running: false
-        command: [
-            "bash",
-            "-c",
-            "cat '" + Caching.getCacheDir("wallpaper") + "/current_" + (typeof masterWindow !== "undefined" && masterWindow.screen ? masterWindow.screen.name : (Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].name : "")) + "_name' 2>/dev/null || cat '" + Caching.getCacheDir("wallpaper") + "/current_default_name' 2>/dev/null || echo ''"
-        ]
+        command: {
+            let cacheDir = Caching.getCacheDir("wallpaper");
+            let screenName = (typeof masterWindow !== "undefined" && masterWindow.screen ? masterWindow.screen.name : (Quickshell.screens && Quickshell.screens.length > 0 ? Quickshell.screens[0].name : ""));
+            let script =
+                "CACHE='" + cacheDir + "'\n" +
+                "SCREEN='" + screenName + "'\n" +
+                "val=''\n" +
+                "[ -n \"$SCREEN\" ] && val=$(cat \"$CACHE/current_${SCREEN}_name\" 2>/dev/null)\n" +
+                "[ -z \"$val\" ] && val=$(cat \"$CACHE/current_default_name\" 2>/dev/null)\n" +
+                "if [ -z \"$val\" ]; then\n" +
+                "    vid=$(cat \"$CACHE/current_video.path\" 2>/dev/null)\n" +
+                "    if [ -n \"$vid\" ]; then\n" +
+                "        val=\"000_$(basename \"$vid\")\"\n" +
+                "    else\n" +
+                "        img=$(cat \"$CACHE/current_wallpaper.path\" 2>/dev/null)\n" +
+                "        [ -n \"$img\" ] && val=\"$(basename \"$img\")\"\n" +
+                "    fi\n" +
+                "fi\n" +
+                "echo \"$val\"\n";
+            return ["bash", "-c", script];
+        }
         stdout: StdioCollector {
             onStreamFinished: {
                 let activeWallpaper = this.text.trim();
@@ -362,11 +378,24 @@ Item {
         let origName = slash !== -1 ? targetFile.substring(slash + 1) : targetFile;
 
         let script = "";
+        // Build screen-state writes for wpStateWatcher / wallFetcher
+        let writeScreenFiles = "";
+        let screens = Quickshell.screens;
+        for (let i = 0; i < screens.length; i++) {
+            let sn = screens[i] ? screens[i].name : "";
+            if (!sn) continue;
+            if (outputs === "all" || outputs.split(",").indexOf(sn) !== -1) {
+                writeScreenFiles += "printf '%s' '" + targetFile + "' > '" + stateDir + "/current_" + sn + "'\n";
+                writeScreenFiles += "printf '%s' '" + origName + "' > '" + stateDir + "/current_" + sn + "_name'\n";
+            }
+        }
+
         if (isVid) {
             script = `
                 mkdir -p '${stateDir}'
                 echo '${targetFile}' > '${stateDir}/current_video.path'
                 echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
+                ${writeScreenFiles}
                 pkill -x mpvpaper 2>/dev/null || true
                 if [ '${outputs}' = 'all' ]; then
                     mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' '*' '${targetFile}' >/dev/null 2>&1 &
@@ -384,6 +413,7 @@ Item {
                 rm -f '${stateDir}/current_video.path' 2>/dev/null || true
                 echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
                 cp -f '${targetFile}' '${stateDir}/current_wallpaper.png' 2>/dev/null || true
+                ${writeScreenFiles}
                 pkill -x mpvpaper 2>/dev/null || true
                 pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.3)
                 if [ '${outputs}' = 'all' ]; then
@@ -1070,7 +1100,7 @@ Item {
         let targetIndex = -1;
         let anchorIndex = -1;
 
-        let focusName = (window.currentFilter === "Search" && window.hasSearched && !window.trackerResolved) ? window.lastSearchName : window.targetWallName;
+        let focusName = (window.currentFilter === "Search" && window.hasSearched && !window.trackerResolved) ? window.lastSearchName : (window.targetWallName || window.lastSearchName);
         let cleanTarget = window.getCleanBaseName(focusName);
         let fullTarget = window.getCleanName(focusName);
 
@@ -1244,6 +1274,11 @@ Item {
             if (forceSnap) {
                 view.forceLayout();
                 view.positionViewAtIndex(indexToFocus, ListView.Center);
+                Qt.callLater(() => {
+                    if (view && indexToFocus >= 0 && indexToFocus < displayModel.count) {
+                        view.positionViewAtIndex(indexToFocus, ListView.Center);
+                    }
+                });
             }
 
             if (targetIndex !== -1 || cleanTarget === "") {

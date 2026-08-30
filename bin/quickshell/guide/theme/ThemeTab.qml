@@ -206,68 +206,30 @@ Item {
         id: wallFetcher
         running: false
         command: {
-            let screenName = themeTabRoot.activeScreenName;
-            let mainQmlPath = Caching.mainQml || "";
+            let screen = themeTabRoot.activeScreenName || "";
+            let cacheDir = Caching.getCacheDir("wallpaper");
             let curDir = themeTabRoot.currentWallpaperDir || "";
-            let pyScript =
-                "import os, subprocess, sys\n" +
-                "home = os.path.expanduser('~')\n" +
-                "main_qml = sys.argv[1]\n" +
-                "screen = sys.argv[2]\n" +
-                "cur_dir = sys.argv[3]\n" +
-                "if not main_qml or not screen:\n" +
-                "    print('')\n" +
-                "    sys.exit(0)\n" +
-                "try:\n" +
-                "    p = subprocess.run(['quickshell', '-p', main_qml, 'ipc', 'call', 'wallpaper', 'getWallpaperPath', screen], capture_output=True, text=True)\n" +
-                "    val = p.stdout.strip()\n" +
-                "except Exception:\n" +
-                "    val = ''\n" +
-                "if not val:\n" +
-                "    try:\n" +
-                "        p = subprocess.run(['quickshell', '-p', main_qml, 'ipc', 'call', 'wallpaper', 'getWallpaper', screen], capture_output=True, text=True)\n" +
-                "        val = p.stdout.strip()\n" +
-                "    except Exception:\n" +
-                "        val = ''\n" +
-                "if not val:\n" +
-                "    print('')\n" +
-                "    sys.exit(0)\n" +
-                "if os.path.isabs(val) and os.path.exists(val):\n" +
-                "    print(val)\n" +
-                "    sys.exit(0)\n" +
-                "candidates = []\n" +
-                "if cur_dir and os.path.isdir(cur_dir):\n" +
-                "    candidates.append(cur_dir)\n" +
-                "candidates.extend([\n" +
-                "    os.path.join(home, 'Pictures', 'Wallpapers'),\n" +
-                "    os.path.join(home, 'Wallpapers'),\n" +
-                "    os.path.join(home, 'Pictures'),\n" +
-                "    os.path.join(home, 'Videos'),\n" +
-                "    os.path.join(home, 'Videos', 'Wallpapers'),\n" +
-                "    os.path.join(home, '.local/share/wallpapers'),\n" +
-                "    '/usr/share/backgrounds',\n" +
-                "    '/usr/share/wallpapers'\n" +
-                "])\n" +
-                "base_name = os.path.basename(val)\n" +
-                "found = ''\n" +
-                "for d in candidates:\n" +
-                "    target = os.path.join(d, base_name)\n" +
-                "    if os.path.isfile(target):\n" +
-                "        found = target\n" +
-                "        break\n" +
-                "if not found:\n" +
-                "    for root_dir in [os.path.join(home, 'Pictures'), os.path.join(home, 'Wallpapers'), '/usr/share/backgrounds']:\n" +
-                "        if os.path.isdir(root_dir):\n" +
-                "            for root, dirs, files in os.walk(root_dir):\n" +
-                "                if base_name in files:\n" +
-                "                    found = os.path.join(root, base_name)\n" +
-                "                    break\n" +
-                "            if found:\n" +
-                "                break\n" +
-                "if not found:\n" +
-                "    found = os.path.join(cur_dir, val) if cur_dir else val\n" +
-                "print(found)\n";
-            return ["python3", "-c", pyScript, mainQmlPath, screenName, curDir];
+            // Read from cache files directly (no IPC needed):
+            // 1. current_<screen>  — written by WallpaperEngine
+            // 2. current_wallpaper.path — written by awww via WallpaperPicker
+            let script =
+                "CACHE='" + cacheDir + "'\n" +
+                "SCREEN='" + screen + "'\n" +
+                "CUR_DIR='" + curDir + "'\n" +
+                "val=''\n" +
+                "[ -n \"$SCREEN\" ] && val=$(cat \"$CACHE/current_$SCREEN\" 2>/dev/null || echo '')\n" +
+                "[ -z \"$val\" ] && val=$(cat \"$CACHE/current_wallpaper.path\" 2>/dev/null || echo '')\n" +
+                "[ -z \"$val\" ] && { echo ''; exit 0; }\n" +
+                "[ -f \"$val\" ] && { echo \"$val\"; exit 0; }\n" +
+                // val might be just basename — search in srcDir then common dirs
+                "base=$(basename \"$val\")\n" +
+                "found=''\n" +
+                "for d in \"$CUR_DIR\" \"$HOME/Pictures/Wallpapers\" \"$HOME/Wallpapers\" \"$HOME/Pictures\" \"$HOME/Videos/Wallpapers\" \"$HOME/.local/share/wallpapers\" /usr/share/backgrounds /usr/share/wallpapers; do\n" +
+                "  [ -z \"$d\" ] && continue\n" +
+                "  [ -f \"$d/$base\" ] && found=\"$d/$base\" && break\n" +
+                "done\n" +
+                "echo \"$found\"\n";
+            return ["bash", "-c", script];
         }
         stdout: StdioCollector {
             onStreamFinished: {
