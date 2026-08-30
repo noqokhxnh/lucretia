@@ -347,26 +347,56 @@ Item {
         return selected.join(",");
     }
 
+    readonly property var transitions: ["grow", "wave", "wipe", "center", "outer", "left", "right", "top", "bottom", "fade", "random"]
+
     function setWallpaperOnMonitors(targetFile, transition) {
         let outputs = window.getMonitorOutputs();
         if (outputs === "none") return;
 
         let isVid = targetFile.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/) !== null;
+        let trans = transition || window.transitions[Math.floor(Math.random() * window.transitions.length)] || "random";
+        let stateDir = Caching.getCacheDir("wallpaper");
+        let histFile = stateDir + "/history.txt";
+        let slash = targetFile.lastIndexOf("/");
+        let origName = slash !== -1 ? targetFile.substring(slash + 1) : targetFile;
 
-        if (outputs === "all") {
-            Quickshell.execDetached(["quickshell", "-p", Caching.mainQml, "ipc", "call", "wallpaper", "setWallpaper", "all", targetFile, transition]);
-        } else {
-            let monArr = outputs.split(",");
-            for (let i = 0; i < monArr.length; i++) {
-                Quickshell.execDetached(["quickshell", "-p", Caching.mainQml, "ipc", "call", "wallpaper", "setWallpaper", monArr[i], targetFile, transition]);
-            }
-        }
-
+        let script = "";
         if (isVid) {
-            Quickshell.execDetached(["bash", "-c", "pkill -f mpvpaper 2>/dev/null || true; mpvpaper -o 'no-audio loop' '*' '" + targetFile + "' >/dev/null 2>&1 &"]);
+            script = `
+                mkdir -p '${stateDir}'
+                echo '${targetFile}' > '${stateDir}/current_video.path'
+                echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
+                pkill -x mpvpaper 2>/dev/null || true
+                if [ '${outputs}' = 'all' ]; then
+                    mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' '*' '${targetFile}' >/dev/null 2>&1 &
+                else
+                    IFS=',' read -ra MON_ARR <<< '${outputs}'
+                    for mon in "\${MON_ARR[@]}"; do
+                        mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' "\$mon" '${targetFile}' >/dev/null 2>&1 &
+                    done
+                fi
+                ( HIST='${histFile}'; if [ -f "$HIST" ]; then grep -v -F -x '${origName}' "$HIST" > "$HIST.tmp" 2>/dev/null || true; printf '%s\n' '${origName}' | cat - "$HIST.tmp" > "$HIST" 2>/dev/null; rm -f "$HIST.tmp"; else printf '%s\n' '${origName}' > "$HIST"; fi )
+            `;
         } else {
-            Quickshell.execDetached(["bash", "-c", "pkill -f mpvpaper 2>/dev/null || true; awww img '" + targetFile + "' --transition-type wipe --transition-duration 1 >/dev/null 2>&1 || true"]);
+            script = `
+                mkdir -p '${stateDir}'
+                rm -f '${stateDir}/current_video.path' 2>/dev/null || true
+                echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
+                cp -f '${targetFile}' '${stateDir}/current_wallpaper.png' 2>/dev/null || true
+                pkill -x mpvpaper 2>/dev/null || true
+                pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.3)
+                if [ '${outputs}' = 'all' ]; then
+                    awww img '${targetFile}' --transition-type '${trans}' --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >/dev/null 2>&1 &
+                else
+                    IFS=',' read -ra MON_ARR <<< '${outputs}'
+                    for mon in "\${MON_ARR[@]}"; do
+                        awww img -o "\$mon" '${targetFile}' --transition-type '${trans}' --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >/dev/null 2>&1 &
+                    done
+                fi
+                ( HIST='${histFile}'; if [ -f "$HIST" ]; then grep -v -F -x '${origName}' "$HIST" > "$HIST.tmp" 2>/dev/null || true; printf '%s\n' '${origName}' | cat - "$HIST.tmp" > "$HIST" 2>/dev/null; rm -f "$HIST.tmp"; else printf '%s\n' '${origName}' > "$HIST"; fi )
+            `;
         }
+        Quickshell.execDetached(["bash", "-c", script]);
     }
 
     function applyWallpaper(safeFileName, isVideo) {
@@ -381,8 +411,7 @@ Item {
         window.targetWallName = safeFileName;
         let realFileName = window.getOriginalFileName(safeFileName);
 
-        const transitionTypes = ["fade"];
-        const randomTransition = transitionTypes[Math.floor(Math.random() * transitionTypes.length)];
+        const randomTransition = window.transitions[Math.floor(Math.random() * window.transitions.length)] || "random";
 
         wallpaperHistoryReader.running = false;
         wallpaperHistoryReader.running = true;

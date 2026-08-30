@@ -92,8 +92,6 @@ ShellRoot {
                     }
                 }
 
-                WallpaperEngine {}
-
                 Loader {
                     active: true
                     sourceComponent: Floating {}
