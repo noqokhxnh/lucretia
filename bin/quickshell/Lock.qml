@@ -13,7 +13,7 @@ import "../"
 ShellRoot {
     id: root
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
     MatugenColors { id: _theme }
     readonly property color base: _theme.base

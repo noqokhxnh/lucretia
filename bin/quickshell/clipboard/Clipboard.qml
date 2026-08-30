@@ -41,12 +41,6 @@ PanelWindow {
     }
 
     property bool isVisible: ClipboardController.isVisible
-    onIsVisibleChanged: {
-        if (isVisible) {
-            clipboardWindow.refreshClips();
-            grabInputFocus();
-        }
-    }
     property int configRevision: 0
 
     Connections {

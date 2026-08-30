@@ -12,14 +12,8 @@ Item {
     id: window
     focus: true
 
-    // --- Responsive Scaling Logic ---
-    Scaler {
-        id: scaler
-        currentWidth: Screen.width
-    }
-    
     function s(val) { 
-        return scaler.s(val); 
+        return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; 
     }
 
     // -------------------------------------------------------------------------

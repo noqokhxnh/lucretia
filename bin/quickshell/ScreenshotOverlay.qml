@@ -22,7 +22,7 @@ PanelWindow {
     width: screen ? screen.width : 1920
     height: screen ? screen.height : 1080
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
     Scaler { id: scaler; currentWidth: width }
     function s(val) { return scaler.s(val); }

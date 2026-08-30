@@ -6,7 +6,7 @@ import Quickshell.Io
 Item {
     id: config
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
     // =========================================================================
     // Core Paths & Environment

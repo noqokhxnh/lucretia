@@ -16,7 +16,11 @@ QtObject {
     readonly property string cacheDir: Quickshell.env("QS_CACHE_DIR") ? Quickshell.env("QS_CACHE_DIR") : (home + "/.cache/serpantinum")
     readonly property string stateDir: Quickshell.env("QS_STATE_DIR") ? Quickshell.env("QS_STATE_DIR") : (home + "/.local/state/serpantinum")
     readonly property string runDir: Quickshell.env("QS_RUN_DIR") ? Quickshell.env("QS_RUN_DIR") : ((xdgRuntimeDir !== "" ? xdgRuntimeDir : "/tmp") + "/serpantinum")
-    readonly property string logDir: Quickshell.env("QS_LOG_DIR") ? Quickshell.env("QS_LOG_DIR") : (runDir + "/logs")
+    readonly property string configDir: home + "/.config/niri/bin/quickshell"
+
+    function getConfigDir(widgetName) {
+        return qsDir;
+    }
 
     function getCacheDir(widgetName) {
         if (!widgetName || widgetName === "serpantinum" || cacheDir.endsWith("/" + widgetName)) {

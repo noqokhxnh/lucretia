@@ -15,8 +15,7 @@ Item {
     property real layoutHeight: 700
     
     MatugenColors { id: theme }
-    Scaler { id: scaler; currentWidth: root.width }
-    function s(val) { return scaler.s(val); }
+    function s(val) { return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; }
 
     ListModel { id: servicesModel }
     ListModel { id: filteredModel }

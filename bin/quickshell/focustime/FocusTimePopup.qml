@@ -12,16 +12,10 @@ import "../components" as Components
 Item {
     id: window
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
-    // --- Responsive Scaling Logic ---
-    Scaler {
-        id: scaler
-        currentWidth: Screen.width
-    }
-    
     function s(val) { 
-        return scaler.s(val); 
+        return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; 
     }
 
    // -------------------------------------------------------------------------

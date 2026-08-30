@@ -8,7 +8,7 @@ import "../" // Resolves the SysData singleton from the parent directory
 Item {
     id: root
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
     // By NOT declaring these as local properties, we allow QML to naturally 
     // inherit them from the parent Loader in Floating.qml

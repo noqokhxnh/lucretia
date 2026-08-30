@@ -9,17 +9,10 @@ Item {
     id: window
     focus: true
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
-    // --- Responsive Scaling Logic ---
-    Scaler {
-        id: scaler
-        currentWidth: Screen.width
-    }
-    
-    // Helper function scoped to the root Item
     function s(val) { 
-        return scaler.s(val); 
+        return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; 
     }
 
     // Custom File Logger
