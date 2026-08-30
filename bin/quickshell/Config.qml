@@ -199,7 +199,7 @@ Item {
 
     function applyControlCenterSettings() {
         saveAppSettings();
-        sh("niri msg action reload-config");
+        sh("niri msg action reload-config; bash \"$HOME/.config/niri/bin/swayidle.sh\" >/dev/null 2>&1 &");
     }
 
     function saveWeatherConfig() {

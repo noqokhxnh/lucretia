@@ -19,7 +19,14 @@ input {
     touchpad {
         tap
         natural-scroll
+        dwt
+        drag true
+        drag-lock
+        accel-profile "adaptive"
+        accel-speed 0.25
         click-method "clickfinger"
+        tap-button-map "left-right-middle"
+        scroll-method "two-finger"
     }
     mouse {
         accel-speed 0.0

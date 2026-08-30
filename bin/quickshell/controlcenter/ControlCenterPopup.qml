@@ -1001,13 +1001,15 @@ Item {
 
                         Repeater {
                             model: [
-                                { label: "Lock Screen", value: Config.idleLockTimeout, color: mocha.mauve, prop: "idleLockTimeout", def: 10 },
-                                { label: "Screen Off", value: Config.idleScreenOffTimeout, color: mocha.blue, prop: "idleScreenOffTimeout", def: 5 },
-                                { label: "Sleep", value: Config.idleSleepTimeout, color: mocha.green, prop: "idleSleepTimeout", def: 60 }
+                                { label: "Lock Screen", color: mocha.mauve, prop: "idleLockTimeout", def: 10 },
+                                { label: "Screen Off", color: mocha.blue, prop: "idleScreenOffTimeout", def: 5 },
+                                { label: "Sleep", color: mocha.green, prop: "idleSleepTimeout", def: 60 }
                             ]
                             delegate: RowLayout {
                                 Layout.fillWidth: true
                                 spacing: s(8)
+
+                                property int curVal: (Config[modelData.prop] !== undefined) ? Config[modelData.prop] : modelData.def
 
                                 Text {
                                     text: modelData.label
@@ -1019,7 +1021,7 @@ Item {
                                 }
 
                                 Text {
-                                    text: modelData.value === 0 ? "Never" : modelData.value + "m"
+                                    text: curVal === 0 ? "Never" : curVal + "m"
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: s(11)
                                     font.weight: Font.Bold
@@ -1038,8 +1040,11 @@ Item {
                                     hoverColor: Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.6)
                                     textColor: mocha.text
                                     onClicked: {
-                                        let val = Math.max(0, Config[modelData.prop] - 5);
-                                        if (Config[modelData.prop] !== val) { Config[modelData.prop] = val; saveTimer.restart(); }
+                                        let val = Math.max(0, curVal - 5);
+                                        if (Config[modelData.prop] !== val) {
+                                            Config[modelData.prop] = val;
+                                            saveTimer.restart();
+                                        }
                                     }
                                 }
 
@@ -1053,8 +1058,11 @@ Item {
                                     hoverColor: Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.6)
                                     textColor: mocha.text
                                     onClicked: {
-                                        let val = Math.min(180, Config[modelData.prop] + 5);
-                                        if (Config[modelData.prop] !== val) { Config[modelData.prop] = val; saveTimer.restart(); }
+                                        let val = Math.min(180, curVal + 5);
+                                        if (Config[modelData.prop] !== val) {
+                                            Config[modelData.prop] = val;
+                                            saveTimer.restart();
+                                        }
                                     }
                                 }
 
@@ -1068,7 +1076,10 @@ Item {
                                     hoverColor: Qt.rgba(mocha.surface2.r, mocha.surface2.g, mocha.surface2.b, 0.5)
                                     textColor: mocha.subtext0
                                     onClicked: {
-                                        if (Config[modelData.prop] !== modelData.def) { Config[modelData.prop] = modelData.def; saveTimer.restart(); }
+                                        if (Config[modelData.prop] !== modelData.def) {
+                                            Config[modelData.prop] = modelData.def;
+                                            saveTimer.restart();
+                                        }
                                     }
                                 }
                             }
