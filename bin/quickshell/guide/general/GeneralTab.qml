@@ -635,7 +635,7 @@ Item {
 
                                 ClickButton {
                                     implicitHeight: rootObj.s(32)
-                                    buttonText: "Auto-detect"
+                                    buttonText: I18n.t("guide.general.location.autodetect") || "Tự động nhận diện"
                                     buttonIcon: "󰢹"
                                     accentColor: ThemeBackend.surface0
                                     textColor: ThemeBackend.text
@@ -709,7 +709,7 @@ Item {
                                 Input {
                                     id: latInput
                                     Layout.fillWidth: true
-                                    placeholderText: "Latitude"
+                                    placeholderText: I18n.t("guide.general.location.latitude") || "Vĩ độ"
                                     text: Location.latitude !== 0.0 ? Location.latitude.toString() : (Location.locationData.latitude !== undefined ? Location.locationData.latitude.toString() : "")
                                     baseColor: ThemeBackend.surface0
                                     accentColor: ThemeBackend.mauve
@@ -725,7 +725,7 @@ Item {
                                 Input {
                                     id: lonInput
                                     Layout.fillWidth: true
-                                    placeholderText: "Longitude"
+                                    placeholderText: I18n.t("guide.general.location.longitude") || "Kinh độ"
                                     text: Location.longitude !== 0.0 ? Location.longitude.toString() : (Location.locationData.longitude !== undefined ? Location.locationData.longitude.toString() : "")
                                     baseColor: ThemeBackend.surface0
                                     accentColor: ThemeBackend.mauve
@@ -740,7 +740,7 @@ Item {
 
                                 ClickButton {
                                     Layout.preferredHeight: rootObj.s(32)
-                                    buttonText: "Apply"
+                                    buttonText: I18n.t("guide.general.location.apply") || "Áp dụng"
                                     accentColor: ThemeBackend.mauve
                                     textColor: ThemeBackend.crust
                                     cornerRadius: ThemeBackend.borderRadius
@@ -926,7 +926,7 @@ Item {
                     ClickButton {
                         Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                         implicitHeight: rootObj.s(32)
-                        buttonText: "Copy settings"
+                        buttonText: I18n.t("guide.general.copysettings.button") || "Sao chép cài đặt"
                         buttonIcon: "󰆏"
                         accentColor: ThemeBackend.surface0
                         textColor: ThemeBackend.text

@@ -105,15 +105,15 @@
         "title": "Respect app inhibitors",
         "desc": "Honor Wayland idle inhibitor locks from applications"
       },
-      "pipeline_notice": "Order: Dim screen < lock session < display off < suspend. Actions violating this order are excluded.",
+      "pipeline_notice": "Thứ tự: Giảm độ sáng < Khóa phiên < Tắt màn hình < Tạm dừng (Suspend). Các hành động vi phạm thứ tự này sẽ bị loại trừ.",
       "order_violation": "Excluded",
       "actions_header": {
         "title": "Idle timeout objects",
-        "desc": "Configure timeouts, built-in triggers, and custom commands"
+        "desc": "Tùy chỉnh thời gian chờ, các kích hoạt tích hợp và lệnh tùy chỉnh"
       },
       "action_name_placeholder": "Action name",
       "command_placeholder": "Command to execute",
-      "custom_action_default": "Custom idle action",
+      "custom_action_default": "Hành động nghỉ tùy chỉnh",
       "custom_action_fallback": "Idle action",
       "warning_command": {
         "title": "Warning command",
@@ -135,7 +135,7 @@
         "desc": "Time before dimming output"
       },
       "dpms": {
-        "title": "Display off (DPMS)",
+        "title": "Tắt màn hình (DPMS)",
         "desc": "Time before turning screen completely off"
       },
       "lock": {
@@ -152,14 +152,14 @@
     },
     "welcome": {
       "by_author": "by @{author}",
-      "about": "About",
-      "hold_for_tutorial": "Hold for tutorial",
-      "start_tutorial": "Start tutorial"
+      "about": "Thông tin",
+      "hold_for_tutorial": "Nhấn giữ để xem hướng dẫn",
+      "start_tutorial": "Bắt đầu hướng dẫn"
     },
     "tutorial": {
       "section_title": "{section} tutorial",
-      "default_desc": "Click to launch tutorial",
-      "start": "Start"
+      "default_desc": "Nhấn để bắt đầu hướng dẫn",
+      "start": "Bắt đầu"
     },
     "general": {
       "language": {
@@ -167,73 +167,73 @@
         "desc": "Chọn ngôn ngữ hiển thị cho giao diện"
       },
       "uiscale": {
-        "title": "UI scale",
-        "desc": "Set the overall interface scale factor"
+        "title": "Tỷ lệ thu phóng (UI Scale)",
+        "desc": "Đặt tỷ lệ thu phóng tổng thể cho giao diện người dùng"
       },
       "avatar": {
-        "title": "Profile picture",
-        "desc": "Choose profile picture",
-        "select": "Select",
-        "select_image_path": "Select image path..."
+        "title": "Ảnh đại diện người dùng",
+        "desc": "Chọn ảnh đại diện",
+        "select": "Chọn ảnh",
+        "select_image_path": "Chọn đường dẫn hình ảnh..."
       },
       "mutesfx": {
-        "title": "Mute SFX",
-        "desc": "Disable user interface sound effects"
+        "title": "Tắt âm thanh hiệu ứng (Mute SFX)",
+        "desc": "Tắt hiệu ứng âm thanh giao diện người dùng"
       },
       "sfxvolume": {
-        "title": "Change the volume of sfx effects",
-        "desc": "Doesn't affect system audio outputs"
+        "title": "Âm lượng hiệu ứng âm thanh (SFX)",
+        "desc": "Không làm ảnh hưởng đến âm lượng đầu ra của các ứng dụng phát âm thanh"
       },
       "quickactions": {
         "title": "Nút tác vụ nổi (Quick Actions)",
         "desc": "Bật các nút tác vụ nổi nhanh trên màn hình desktop"
       },
       "location": {
-        "title": "Location",
-        "desc": "Configure location for automatic sun schedule and weather",
-        "popup_title": "Location details",
-        "autodetect": "Auto-detect",
-        "latitude": "Latitude",
-        "longitude": "Longitude",
-        "apply": "Apply"
+        "title": "Vị trí địa lý",
+        "desc": "Cấu hình vị trí địa lý để tự động tính chu kỳ mặt trời và thời tiết",
+        "popup_title": "Chi tiết vị trí địa lý",
+        "autodetect": "Tự động nhận diện",
+        "latitude": "Vĩ độ",
+        "longitude": "Kinh độ",
+        "apply": "Áp dụng"
       },
       "weatherinterval": {
-        "title": "Weather polling interval",
-        "desc": "Polling frequency in minutes"
+        "title": "Chu kỳ cập nhật thời tiết",
+        "desc": "Khoảng thời gian tự động lấy dữ liệu thời tiết (phút)"
       },
       "weatherunit": {
-        "title": "Weather unit",
-        "desc": "Temperature scale for weather displays",
-        "celsius": "Celsius",
-        "fahrenheit": "Fahrenheit",
-        "kelvin": "Kelvin"
+        "title": "Đơn vị nhiệt độ",
+        "desc": "Thang đo nhiệt độ hiển thị trên toàn hệ thống",
+        "celsius": "Độ C (°C)",
+        "fahrenheit": "Độ F (°F)",
+        "kelvin": "Độ K (Kelvin)"
       },
       "copysettings": {
-        "title": "Copy settings",
-        "desc": "Copy configuration JSON to clipboard",
-        "button": "Copy settings"
+        "title": "Sao chép cài đặt",
+        "desc": "Sao chép nội dung cấu hình JSON vào bộ nhớ tạm (clipboard)",
+        "button": "Sao chép cài đặt"
       }
     },
     "display": {
       "bluelight": {
-        "title": "Blue light filter",
-        "desc": "Toggle warm screen lighting"
+        "title": "Lọc ánh sáng xanh",
+        "desc": "Bật/tắt chế độ ánh sáng ấm cho màn hình"
       },
       "enable": {
-        "title": "Enable this monitor",
-        "desc": "Turning this off would disable this monitor"
+        "title": "Kích hoạt màn hình này",
+        "desc": "Tắt tùy chọn này sẽ vô hiệu hóa màn hình tương ứng"
       },
       "schedule": {
-        "title": "Automated schedule",
-        "desc": "Adjust color temperature automatically based on sunset and sunrise"
+        "title": "Lịch trình tự động",
+        "desc": "Tự động điều chỉnh nhiệt độ màu theo thời gian mặt trời mọc/lặn"
       },
       "temperature": {
-        "title": "Color temperature",
-        "desc": "Adjust the color temperature strength"
+        "title": "Nhiệt độ màu (Độ ấm)",
+        "desc": "Điều chỉnh cường độ ấm của ánh sáng màn hình"
       },
       "uiscale": {
         "title": "UI scale",
-        "desc": "Set the display scale factor for this monitor"
+        "desc": "Đặt tỷ lệ thu phóng giao diện (UI Scale) cho màn hình này"
       },
       "widgets": {
         "title": "Desktop Widgets",
@@ -243,21 +243,21 @@
     },
     "bar": {
       "modules": {
-        "vis": "Visualizer (Cava)",
-        "actions": "Actions",
-        "workspaces": "Workspaces",
-        "media": "Media",
-        "tray": "Tray",
-        "keyboard": "Keyboard",
-        "network": "Network",
+        "vis": "Phân tích âm thanh (Cava)",
+        "actions": "Tác vụ",
+        "workspaces": "Không gian làm việc",
+        "media": "Trình phát nhạc",
+        "tray": "Khay hệ thống",
+        "keyboard": "Bàn phím",
+        "network": "Mạng Wi-Fi",
         "bluetooth": "Bluetooth",
-        "volume": "Volume",
-        "battery": "Battery",
-        "focus": "Focus",
-        "sysmon": "System monitor",
-        "timedate": "Time/Date",
-        "info": "Recording/Timer",
-        "weather": "Weather"
+        "volume": "Âm lượng",
+        "battery": "Pin",
+        "focus": "Tiêu điểm ứng dụng",
+        "sysmon": "Giám sát hệ thống",
+        "timedate": "Thời gian / Ngày",
+        "info": "Ghi âm / Hẹn giờ",
+        "weather": "Thời tiết"
       },
       "position": {
         "title": "Vị trí thanh Bar",
@@ -268,106 +268,106 @@
         "right": "Bên phải"
       },
       "width": {
-        "title": "Bar width",
-        "desc": "Set the width of the bar as a percentage"
+        "title": "Chiều rộng thanh Bar",
+        "desc": "Đặt độ rộng của thanh bar theo phần trăm (%)"
       },
       "workspaces": {
-        "title": "Choose an amount of workspaces to display",
-        "disc": "Note: this doesn't affect the actual amount of workspaces in the compositor"
+        "title": "Chọn số lượng không gian làm việc hiển thị",
+        "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
       },
       "opacity": {
         "title": "Độ mờ / trong suốt",
         "desc": "Mức độ trong suốt của nền thanh bar"
       },
       "style": {
-        "title": "Bar style",
-        "desc": "Choose between modular, solid or a filled bar look",
-        "modular": "Modular",
-        "solid": "Solid",
-        "fill": "Fill"
+        "title": "Kiểu dáng thanh Bar",
+        "desc": "Chọn giữa kiểu thanh bar phân đoạn (modular), liền khối (solid) hoặc phủ kín",
+        "modular": "Phân đoạn (Modular)",
+        "solid": "Liền khối (Solid)",
+        "fill": "Phủ kín (Fill)"
       },
       "time": {
-        "title": "Time format",
-        "desc": "Format string (e.g. HH:mm:ss or hh:mm AP)"
+        "title": "Định dạng thời gian",
+        "desc": "Chuỗi định dạng (ví dụ: HH:mm:ss hoặc hh:mm AP)"
       },
       "guide_button": {
-        "title": "Guide button",
-        "desc": "Display guide popup trigger in top bar"
+        "title": "Nút Cài đặt",
+        "desc": "Hiển thị nút mở Trung tâm Cài đặt trên thanh bar"
       },
       "autohide": {
-        "title": "Autohide",
-        "desc": "Hide the bar when not hovered"
+        "title": "Tự động ẩn",
+        "desc": "Ẩn thanh bar khi không rê chuột vào"
       },
       "timeout": {
-        "title": "Autohide timeout",
-        "desc": "Delay before the bar hides"
+        "title": "Thời gian chờ tự ẩn",
+        "desc": "Độ trễ trước khi thanh bar tự động ẩn (mili-giây)"
       },
       "config": {
-        "title": "Bar configuration",
-        "desc": "Right-click an item to start grouping, right-click another to add it. Right-click a grouped item to remove it.",
-        "reset": "Reset",
-        "available": "Available",
-        "left": "Left",
-        "center": "Center",
-        "right": "Right"
+        "title": "Bố cục & Vị trí các mô-đun thanh Bar",
+        "desc": "Nhấp chuột phải vào một mục để bắt đầu tạo nhóm, nhấp chuột phải vào mục khác để thêm vào nhóm. Nhấp chuột phải vào mục đã nhóm để bỏ nhóm.",
+        "reset": "Đặt lại",
+        "available": "Mô-đun khả dụng",
+        "left": "Bên trái",
+        "center": "Ở giữa",
+        "right": "Bên phải"
       }
     },
     "theme": {
       "font": "Phông chữ hệ thống",
       "radius": {
-        "title": "Border radius",
-        "desc": "Corner radius for UI elements"
+        "title": "Bo góc viền (Border Radius)",
+        "desc": "Bán kính bo tròn góc cho các cửa sổ và thẻ giao diện"
       },
       "colors": {
-        "title": "Color themes",
-        "desc": "Select a predefined color palette preset or create your own custom theme.",
-        "search": "Search themes..."
+        "title": "Chủ đề màu sắc (Color Themes)",
+        "desc": "Chọn bảng màu có sẵn hoặc tạo chủ đề màu tùy chỉnh của riêng bạn.",
+        "search": "Tìm kiếm chủ đề màu..."
       },
       "delete_theme": "Xóa Theme",
       "wallpaper": {
-        "title": "Wallpaper directory",
-        "desc": "Directory to search for wallpapers",
-        "select_dir": "Select directory...",
-        "select_wallpaper": "Select wallpaper",
-        "no_wallpaper_selected": "No wallpaper selected"
+        "title": "Thư mục hình nền",
+        "desc": "Thư mục tìm kiếm hình nền",
+        "select_dir": "Chọn thư mục...",
+        "select_wallpaper": "Chọn hình nền",
+        "no_wallpaper_selected": "Chưa chọn hình nền nào"
       }
     },
     "file_picker": {
-      "title": "Choose image",
-      "input_placeholder": "Search...",
-      "not_found": "No files found",
-      "no_file_selected": "No file selected",
-      "root": "Root",
+      "title": "Chọn hình ảnh",
+      "input_placeholder": "Tìm kiếm tệp...",
+      "not_found": "Không tìm thấy tệp phù hợp",
+      "no_file_selected": "Chưa có tệp nào được chọn",
+      "root": "Thư mục gốc",
       "places": {
-        "home": "Home",
-        "downloads": "Downloads",
-        "pictures": "Pictures"
+        "home": "Thư mục cá nhân (Home)",
+        "downloads": "Tệp tải về (Downloads)",
+        "pictures": "Hình ảnh (Pictures)"
       }
     },
     "font_picker": {
-      "title": "Select a font",
-      "input_placeholder": "Search...",
-      "not_found": "No items found",
+      "title": "Chọn phông chữ",
+      "input_placeholder": "Tìm kiếm phông chữ...",
+      "not_found": "Không tìm thấy phông chữ phù hợp",
       "places": {
-        "user_fonts": "User fonts",
-        "system_fonts": "System fonts"
+        "user_fonts": "Phông chữ người dùng (~/.local/share/fonts)",
+        "system_fonts": "Phông chữ hệ thống (/usr/share/fonts)"
       }
     },
     "sound_picker": {
-      "title": "Select notification sound",
-      "no_sound_selected": "No sound selected",
+      "title": "Chọn âm thanh thông báo",
+      "no_sound_selected": "Chưa chọn âm thanh",
       "places": {
-        "user_sounds": "User sounds",
-        "system_sounds": "System sounds"
+        "user_sounds": "Âm thanh người dùng (~/.local/share/sounds)",
+        "system_sounds": "Âm thanh hệ thống (/usr/share/sounds)"
       }
     },
     "theme_editor": {
-      "title": "New color theme",
-      "name_placeholder": "Theme name...",
-      "preview": "Preview",
-      "cancel": "Cancel",
-      "save": "Save",
-      "default_name": "Custom theme",
+      "title": "Tạo chủ đề màu mới",
+      "name_placeholder": "Tên chủ đề màu...",
+      "preview": "Xem trước",
+      "cancel": "Hủy bỏ",
+      "save": "Lưu chủ đề",
+      "default_name": "Chủ đề tùy chỉnh",
       "colors": {
         "base": "Base",
         "mantle": "Mantle",
@@ -398,190 +398,190 @@
       }
     },
     "wellbeing": {
-      "desktop": "Desktop",
-      "not_available": "N/A",
-      "am": "AM",
-      "pm": "PM",
+      "desktop": "Màn hình chính",
+      "not_available": "Không có",
+      "am": "SA",
+      "pm": "CH",
       "today": "Hôm nay",
-      "week_overview": "Week overview",
-      "daily_average": "Daily average",
+      "week_overview": "Tổng quan tuần",
+      "daily_average": "Trung bình hàng ngày",
       "no_data": "Chưa có dữ liệu",
-      "same_time": "Same time",
-      "daily_usage": "Daily usage",
-      "peak_hours": "Peak hours",
+      "same_time": "Cùng thời điểm",
+      "daily_usage": "Thời lượng dùng trong ngày",
+      "peak_hours": "Khung giờ cao điểm",
       "time_hm": "{h}h {m}m",
       "time_m": "{m}m",
       "months": {
-        "january": "January",
-        "february": "February",
-        "march": "March",
-        "april": "April",
-        "may": "May",
-        "june": "June",
-        "july": "July",
-        "august": "August",
-        "september": "September",
-        "october": "October",
-        "november": "November",
-        "december": "December"
+        "january": "Tháng Một",
+        "february": "Tháng Hai",
+        "march": "Tháng Ba",
+        "april": "Tháng Tư",
+        "may": "Tháng Năm",
+        "june": "Tháng Sáu",
+        "july": "Tháng Bảy",
+        "august": "Tháng Tám",
+        "september": "Tháng Chín",
+        "october": "Tháng Mười",
+        "november": "Tháng Mười Một",
+        "december": "Tháng Mười Hai"
       },
       "days": {
-        "monday": "Monday",
-        "tuesday": "Tuesday",
-        "wednesday": "Wednesday",
-        "thursday": "Thursday",
-        "friday": "Friday",
-        "saturday": "Saturday",
-        "sunday": "Sunday"
+        "monday": "Thứ Hai",
+        "tuesday": "Thứ Ba",
+        "wednesday": "Thứ Tư",
+        "thursday": "Thứ Năm",
+        "friday": "Thứ Sáu",
+        "saturday": "Thứ Bảy",
+        "sunday": "Chủ Nhật"
       },
       "settings": {
-        "title": "Wellbeing settings",
-        "overall_limit": "Overall daily limit",
-        "off": "Off",
-        "app_limits": "App usage limits",
-        "app_limits_desc": "Set maximum daily allowance per application",
-        "excluded_apps": "Excluded apps",
-        "excluded_apps_desc": "Exclude apps from overall tracking going forward"
+        "title": "Cài đặt sức khỏe kỹ thuật số",
+        "overall_limit": "Giới hạn sử dụng tổng thể hàng ngày",
+        "off": "Tắt",
+        "app_limits": "Giới hạn thời lượng ứng dụng",
+        "app_limits_desc": "Đặt thời gian sử dụng tối đa hàng ngày cho từng ứng dụng",
+        "excluded_apps": "Ứng dụng loại trừ",
+        "excluded_apps_desc": "Không tính các ứng dụng này vào theo dõi tổng thể"
       }
     },
-    "update_available": "Update available"
+    "update_available": "Có bản cập nhật mới"
   },
   "sysnotif": {
     "battery": {
       "app_name": "System",
-      "full_title": "Battery full",
-      "full_body": "Battery is fully charged (100%).",
-      "low_title": "Battery low",
-      "low_body": "Battery level is at {pct}%. Please connect your charger.",
-      "critical_title": "Battery critical",
-      "critical_body": "Battery level is at {pct}%. Connect your charger immediately."
+      "full_title": "Pin đã đầy",
+      "full_body": "Pin đã được sạc đầy (100%).",
+      "low_title": "Pin yếu",
+      "low_body": "Mức pin hiện tại là {pct}%. Vui lòng cắm sạc.",
+      "critical_title": "Pin cực kỳ yếu",
+      "critical_body": "Mức pin chỉ còn {pct}%. Hãy cắm sạc ngay lập tức."
     }
   },
   "updater": {
     "notification": {
       "app_name": "Update",
-      "action_open_guide": "Open guide",
-      "update_available_title": "Update available: v{remote}",
-      "update_available_body": "Current version: v{local}. Click to view changelog and update."
+      "action_open_guide": "Mở Trung tâm Cài đặt",
+      "update_available_title": "Có bản cập nhật mới: v{remote}",
+      "update_available_body": "Phiên bản hiện tại: v{local}. Nhấn để xem lịch sử thay đổi và cập nhật."
     }
   },
   "polkit": {
     "title": "Yêu cầu xác thực quyền quản trị",
-    "default_message": "An application is requesting administrative rights.",
-    "default_description": "Authentication is needed to run this action as superuser.",
+    "default_message": "Một ứng dụng đang yêu cầu quyền quản trị viên (root).",
+    "default_description": "Cần xác thực để thực hiện hành động này dưới quyền quản trị.",
     "password_placeholder": "Mật khẩu người dùng",
-    "error_failed": "Authentication failed. Please try again."
+    "error_failed": "Xác thực không thành công. Vui lòng thử lại."
   },
   "applauncher": {
-    "search": "Search",
+    "search": "Tìm kiếm",
     "placeholder": "Tìm kiếm ứng dụng hoặc gõ lệnh > ..."
   },
   "calendar": {
-    "loading": "Loading...",
-    "loading_schedule": "Loading schedule...",
+    "loading": "Đang tải...",
+    "loading_schedule": "Đang tải lịch trình...",
     "no_events": "Không có sự kiện nào",
-    "open_web": "Open web",
+    "open_web": "Mở trang web",
     "weather": "Thời tiết",
     "days": {
-      "mo": "Mo",
-      "tu": "Tu",
-      "we": "We",
-      "th": "Th",
-      "fr": "Fr",
-      "sa": "Sa",
-      "su": "Su"
+      "mo": "T2",
+      "tu": "T3",
+      "we": "T4",
+      "th": "T5",
+      "fr": "T6",
+      "sa": "T7",
+      "su": "CN"
     }
   },
   "clipboard": {
-    "search": "Search",
+    "search": "Tìm kiếm trong clipboard...",
     "title": "Lịch sử Clipboard",
     "clear": "Xóa toàn bộ",
     "empty": "Lịch sử clipboard trống",
-    "recent": "Recent",
-    "pinned": "Pinned"
+    "recent": "Gần đây",
+    "pinned": "Đã ghim"
   },
   "lock": {
     "status": {
-      "locked": "Locked",
-      "access_denied": "Access denied",
-      "authenticating": "Authenticating...",
-      "enter_pin": "Enter PIN"
+      "locked": "Đã khóa",
+      "access_denied": "Từ chối truy cập",
+      "authenticating": "Đang xác thực...",
+      "enter_pin": "Nhập mã PIN"
     },
     "power": {
-      "suspend": "Suspend",
-      "reboot": "Reboot",
-      "power_off": "Power off"
+      "suspend": "Tạm dừng (Sleep)",
+      "reboot": "Khởi động lại",
+      "power_off": "Tắt máy"
     },
-    "default_user": "User",
-    "unknown": "Unknown"
+    "default_user": "Người dùng",
+    "unknown": "Không xác định"
   },
   "music": {
-    "nothing_playing": "Nothing is playing",
-    "loading": "Loading...",
-    "by_artist": "By {artist}",
+    "nothing_playing": "Không có nội dung đang phát",
+    "loading": "Đang tải...",
+    "by_artist": "Bởi {artist}",
     "unknown_artist": "Nghệ sĩ không xác định",
-    "speaker": "Speaker",
-    "via_source": "Via {source}",
+    "speaker": "Loa",
+    "via_source": "Qua {source}",
     "offline": "Offline",
     "equalizer": "Bộ chỉnh âm (Equalizer)",
     "eq": {
-      "apply": "Apply",
-      "saved": "Saved"
+      "apply": "Áp dụng",
+      "saved": "Đã lưu"
     },
     "presets": {
-      "flat": "Flat",
-      "bass": "Bass",
-      "treble": "Treble",
-      "vocal": "Vocal",
-      "pop": "Pop",
-      "rock": "Rock",
-      "jazz": "Jazz",
-      "classic": "Classic",
-      "custom": "Custom"
+      "flat": "Mặc định (Flat)",
+      "bass": "Tăng âm trầm (Bass)",
+      "treble": "Tăng âm bổng (Treble)",
+      "vocal": "Giọng hát (Vocal)",
+      "pop": "Nhạc Pop",
+      "rock": "Nhạc Rock",
+      "jazz": "Nhạc Jazz",
+      "classic": "Cổ điển (Classic)",
+      "custom": "Tùy chỉnh"
     }
   },
   "network": {
     "tabs": {
-      "ethernet": "Ethernet",
-      "wifi": "Wi-Fi",
+      "ethernet": "Mạng dây (Ethernet)",
+      "wifi": "Mạng không dây (Wi-Fi)",
       "bluetooth": "Bluetooth"
     },
     "status": {
-      "no_ip": "No IP",
-      "unknown": "Unknown",
-      "calculating": "Calculating...",
-      "open": "Open",
-      "current_device": "Current device",
-      "powering_on": "Powering on...",
-      "powering_off": "Powering off...",
-      "disconnected": "Disconnected",
-      "disconnecting": "Disconnecting...",
-      "hold": "Hold...",
-      "connected": "Connected"
+      "no_ip": "Chưa có IP",
+      "unknown": "Không rõ",
+      "calculating": "Đang tính toán...",
+      "open": "Mạng mở (Không bảo mật)",
+      "current_device": "Thiết bị hiện tại",
+      "powering_on": "Đang bật...",
+      "powering_off": "Đang tắt...",
+      "disconnected": "Đã ngắt kết nối",
+      "disconnecting": "Đang ngắt kết nối...",
+      "hold": "Vui lòng đợi...",
+      "connected": "Đã kết nối"
     },
     "actions": {
-      "unpair": "Unpair",
-      "scan": "Scan"
+      "unpair": "Hủy ghép đôi",
+      "scan": "Quét tìm kiếm"
     }
   },
   "notifications": {
     "center": {
-      "reserved": "Reserved for future updates"
+      "reserved": "Dành cho các bản cập nhật tiếp theo"
     },
     "types": {
       "default": {
-        "fallback_summary": "Notification",
-        "system": "System",
-        "action": "Action"
+        "fallback_summary": "Thông báo",
+        "system": "Hệ thống",
+        "action": "Hành động"
       },
       "weather": {
-        "fallback_summary": "Weather report",
-        "fallback_body": "No breakdown data provided."
+        "fallback_summary": "Báo cáo thời tiết",
+        "fallback_body": "Không có dữ liệu chi tiết."
       },
       "screenshot": {
-        "badge": "Screenshot",
-        "fallback_summary": "Captured screen",
-        "click_to_open": "Click to open the screenshot folder"
+        "badge": "Ảnh chụp màn hình",
+        "fallback_summary": "Đã chụp màn hình",
+        "click_to_open": "Nhấn để mở thư mục ảnh chụp màn hình"
       }
     }
   },
@@ -589,216 +589,216 @@
     "systemusage": {
       "cpu": "CPU",
       "ram": "RAM",
-      "temp": "Temp",
-      "disk": "Disk",
-      "net": "Net"
+      "temp": "Nhiệt độ",
+      "disk": "Ổ đĩa",
+      "net": "Mạng"
     },
     "timer": "Đồng hồ bấm giờ"
   },
   "screenshot": {
-    "video_mode": "Click record (portal handles area selection)",
-    "select_region": "Select region to capture",
-    "no_microphones": "No microphones (install pulseaudio)",
-    "qr_timeout": "Scan timed out or failed.",
-    "qr_not_found": "No QR code found.",
+    "video_mode": "Nhấn ghi hình (cổng portal sẽ xử lý việc chọn vùng)",
+    "select_region": "Chọn vùng cần chụp",
+    "no_microphones": "Không tìm thấy microphone",
+    "qr_timeout": "Hết thời gian chờ hoặc quét mã QR thất bại.",
+    "qr_not_found": "Không tìm thấy mã QR hợp lệ.",
     "notifications": {
-      "screenshot_app_name": "Screenshot",
-      "recorder_app_name": "Screen recorder",
-      "system_app_name": "Screenshot system",
-      "missing_deps_title": "Missing dependencies",
-      "missing_deps_body": "Cannot start. Please install:\n{cmds}",
-      "open_folder": "Open folder",
-      "recording_saved_title": "Recording saved",
-      "recording_saved_body": "File: {file}\nFolder: {folder}",
-      "recording_error_title": "Error",
-      "recording_error_body": "Failed to save the video file.",
-      "recording_started_title": "Recording started",
-      "recording_started_body": "Press your screenshot shortcut again to stop.",
-      "screenshot_saved_title": "Screenshot saved",
-      "screenshot_saved_body": "File: {file}\nFolder: {folder}"
+      "screenshot_app_name": "Ảnh chụp màn hình",
+      "recorder_app_name": "Trình quay màn hình",
+      "system_app_name": "Hệ thống chụp ảnh",
+      "missing_deps_title": "Thiếu gói phần mềm phụ thuộc",
+      "missing_deps_body": "Không thể khởi động. Vui lòng cài đặt:\n{cmds}",
+      "open_folder": "Mở thư mục",
+      "recording_saved_title": "Đã lưu video quay màn hình",
+      "recording_saved_body": "Tệp: {file}\nThư mục: {folder}",
+      "recording_error_title": "Lỗi ghi hình",
+      "recording_error_body": "Không thể lưu tệp video quay màn hình.",
+      "recording_started_title": "Đã bắt đầu quay màn hình",
+      "recording_started_body": "Nhấn phím tắt chụp màn hình một lần nữa để kết thúc quay.",
+      "screenshot_saved_title": "Đã lưu ảnh chụp màn hình",
+      "screenshot_saved_body": "Tệp: {file}\nThư mục: {folder}"
     }
   },
   "start": {
     "title": "Serpantinum",
-    "made_by": "Made by @{author}",
+    "made_by": "Được tạo bởi @{author}",
     "welcome": "Chào mừng đến với Serpantinum",
-    "tagline": "A desktop shell built for",
-    "you": "You",
-    "start_preview": "Start preview"
+    "tagline": "Giao diện desktop shell dành riêng cho",
+    "you": "Bạn",
+    "start_preview": "Bắt đầu trải nghiệm"
   },
   "syspanel": {
     "user": {
-      "default_name": "User",
+      "default_name": "Người dùng",
       "default_os": "Linux",
-      "logout": "Logout"
+      "logout": "Đăng xuất"
     },
     "notifications": {
-      "title": "Notifications",
-      "clear": "Clear",
-      "silent": "Silent",
-      "mute": "Mute",
-      "empty": "You're all caught up."
+      "title": "Thông báo",
+      "clear": "Xóa tất cả",
+      "silent": "Im lặng",
+      "mute": "Tắt tiếng",
+      "empty": "Bạn đã xem hết mọi thông báo."
     },
     "profiles": {
-      "performance": "Performance",
-      "balanced": "Balanced",
-      "power_saver": "Power saver"
+      "performance": "Hiệu năng cao (Performance)",
+      "balanced": "Cân bằng (Balanced)",
+      "power_saver": "Tiết kiệm pin (Power Saver)"
     },
     "battery": "Thời lượng pin",
     "actions": {
-      "system_name": "System",
-      "hibernate_error_title": "Hibernation unavailable",
-      "hibernate_error_body": "Hibernation is unavailable on this system. Please check your swap configuration."
+      "system_name": "Hệ thống",
+      "hibernate_error_title": "Chế độ ngủ đông không khả dụng",
+      "hibernate_error_body": "Hệ thống hiện chưa cấu hình vùng nhớ SWAP cho ngủ đông."
     }
   },
   "volumepopup": {
-    "no_device": "No device",
+    "no_device": "Không có thiết bị âm thanh",
     "mute": "Tắt tiếng",
-    "master_output_volume": "Master output volume",
-    "no_active_streams": "No active streams",
-    "active_default": "Active default",
+    "master_output_volume": "Âm lượng đầu ra chính",
+    "no_active_streams": "Không có ứng dụng nào đang phát âm thanh",
+    "active_default": "Mặc định đang hoạt động",
     "tabs": {
-      "outputs": "Outputs",
-      "inputs": "Inputs",
-      "streams": "Streams"
+      "outputs": "Thiết bị phát",
+      "inputs": "Thiết bị thu",
+      "streams": "Ứng dụng"
     }
   },
   "wallpaper": {
     "notifications": {
-      "downloading": "Downloading wallpaper...",
-      "type_to_search": "Type something to search...",
-      "search_paused": "Search paused",
-      "searching_ddg": "Searching for wallpapers...",
-      "generating_thumbnails": "Generating thumbnails...",
-      "no_wallpapers_found": "No wallpapers found",
-      "videos": "Videos",
-      "history": "Recently applied"
+      "downloading": "Đang tải hình nền...",
+      "type_to_search": "Nhập nội dung để tìm kiếm...",
+      "search_paused": "Đã tạm dừng tìm kiếm",
+      "searching_ddg": "Đang tìm kiếm hình nền...",
+      "generating_thumbnails": "Đang tạo ảnh thu nhỏ...",
+      "no_wallpapers_found": "Không tìm thấy hình nền",
+      "videos": "Video",
+      "history": "Đã dùng gần đây"
     },
     "filters": {
-      "all": "All",
-      "vid": "Vid",
-      "search": "Search",
-      "red": "Red",
-      "orange": "Orange",
-      "yellow": "Yellow",
-      "green": "Green",
-      "blue": "Blue",
-      "purple": "Purple",
-      "pink": "Pink",
-      "monochrome": "Monochrome"
+      "all": "Tất cả",
+      "vid": "Video",
+      "search": "Tìm kiếm",
+      "red": "Đỏ",
+      "orange": "Cam",
+      "yellow": "Vàng",
+      "green": "Xanh lá",
+      "blue": "Xanh dương",
+      "purple": "Tím",
+      "pink": "Hồng",
+      "monochrome": "Đơn sắc"
     }
   },
   "weather": {
     "desc": {
-      "sunny": "Sunny",
-      "clear": "Clear",
-      "cloudy": "Cloudy",
-      "mist": "Mist",
-      "rainy": "Rainy",
-      "snow": "Snow",
-      "storm": "Storm",
-      "unknown": "Unknown",
-      "offline": "Offline"
+      "sunny": "Trời nắng",
+      "clear": "Trời quang",
+      "cloudy": "Nhiều mây",
+      "mist": "Sương mù",
+      "rainy": "Có mưa",
+      "snow": "Có tuyết",
+      "storm": "Có bão giông",
+      "unknown": "Không rõ",
+      "offline": "Ngoại tuyến"
     },
     "days": {
-      "mon": "Mon",
-      "tue": "Tue",
-      "wed": "Wed",
-      "thu": "Thu",
-      "fri": "Fri",
-      "sat": "Sat",
-      "sun": "Sun",
-      "monday": "Monday",
-      "tuesday": "Tuesday",
-      "wednesday": "Wednesday",
-      "thursday": "Thursday",
-      "friday": "Friday",
-      "saturday": "Saturday",
-      "sunday": "Sunday"
+      "mon": "Th 2",
+      "tue": "Th 3",
+      "wed": "Th 4",
+      "thu": "Th 5",
+      "fri": "Th 6",
+      "sat": "Th 7",
+      "sun": "CN",
+      "monday": "Thứ Hai",
+      "tuesday": "Thứ Ba",
+      "wednesday": "Thứ Tư",
+      "thursday": "Thứ Năm",
+      "friday": "Thứ Sáu",
+      "saturday": "Thứ Bảy",
+      "sunday": "Chủ Nhật"
     },
     "months": {
-      "jan": "Jan",
-      "feb": "Feb",
-      "mar": "Mar",
-      "apr": "Apr",
-      "may": "May",
-      "jun": "Jun",
-      "jul": "Jul",
-      "aug": "Aug",
-      "sep": "Sep",
-      "oct": "Oct",
-      "nov": "Nov",
-      "dec": "Dec"
+      "jan": "Thg 1",
+      "feb": "Thg 2",
+      "mar": "Thg 3",
+      "apr": "Thg 4",
+      "may": "Thg 5",
+      "jun": "Thg 6",
+      "jul": "Thg 7",
+      "aug": "Thg 8",
+      "sep": "Thg 9",
+      "oct": "Thg 10",
+      "nov": "Thg 11",
+      "dec": "Thg 12"
     }
   },
   "widgets": {
     "wallpaper": {
-      "name": "Wallpaper picker",
-      "desc": "Browse and set desktop wallpaper"
+      "name": "Trình chọn hình nền",
+      "desc": "Duyệt và cài đặt hình nền desktop"
     },
     "network": {
-      "name": "Network settings",
-      "desc": "Manage WiFi, Ethernet, and network connections"
+      "name": "Cài đặt mạng",
+      "desc": "Quản lý kết nối Wi-Fi, Ethernet và mạng"
     },
     "volume": {
-      "name": "Volume & audio",
-      "desc": "Manage sound devices and volume levels"
+      "name": "Âm lượng & Âm thanh",
+      "desc": "Quản lý thiết bị âm thanh và mức âm lượng"
     },
     "guide": {
-      "name": "Settings",
-      "desc": "Serpantinum settings"
+      "name": "Cài đặt hệ thống",
+      "desc": "Cài đặt hệ thống Serpantinum"
     },
     "calendar": {
-      "name": "Calendar & clock",
-      "desc": "View date, time, and schedule"
+      "name": "Lịch & Đồng hồ",
+      "desc": "Xem ngày giờ và lịch trình"
     },
     "music": "Trình phát nhạc",
     "notifications": {
-      "name": "Notification center",
-      "desc": "View recent notifications and history"
+      "name": "Trung tâm thông báo",
+      "desc": "Xem các thông báo và lịch sử gần đây"
     },
     "system": {
-      "name": "System controls",
-      "desc": "Performance monitor, power, and quick settings"
+      "name": "Điều khiển hệ thống",
+      "desc": "Theo dõi hiệu năng, nguồn điện và cài đặt nhanh"
     },
     "redactor": {
-      "no_widgets_active": "No widgets active",
-      "click_to_add": "Click a widget icon in the bottom toolbar to add it",
-      "done": "Done"
+      "no_widgets_active": "Không có widget nào đang hoạt động",
+      "click_to_add": "Nhấn vào biểu tượng widget ở thanh công cụ dưới cùng để thêm",
+      "done": "Hoàn tất"
     },
     "types": {
-      "clock": "Clock",
-      "music": "Music",
-      "weather": "Weather",
-      "image": "Image"
+      "clock": "Đồng hồ",
+      "music": "Nhạc",
+      "weather": "Thời tiết",
+      "image": "Hình ảnh"
     },
     "variants": {
-      "digital": "Digital",
-      "analog": "Analog",
-      "full": "Full",
-      "minimal": "Minimal",
-      "round": "Round",
-      "compact": "Compact",
-      "rect": "Rect",
-      "rounded": "Rounded"
+      "digital": "Kỹ thuật số",
+      "analog": "Kim đồng hồ",
+      "full": "Đầy đủ",
+      "minimal": "Tối giản",
+      "round": "Tròn",
+      "compact": "Nhỏ gọn",
+      "rect": "Chữ nhật",
+      "rounded": "Bo góc"
     }
   },
   "cli": {
-    "usage": "Usage: serpantinum [command] [options...]",
-    "description": "A desktop shell for Wayland compositors.",
-    "commands": "Commands:",
-    "script_commands": "Script commands:",
-    "launch_desc": "Launch standalone components (start, widgetredactor)",
-    "msg_desc": "Dispatch commands or workspace switches to the UI manager",
-    "ipc_desc": "Forward IPC calls directly to the shell",
-    "kill_desc": "Cleanly stop the running daemon",
-    "options": "Options:",
-    "verbose_desc": "Enable verbose logging output",
-    "version_desc": "Display version information and exit",
-    "help_desc": "Show this help message and exit",
-    "examples": "Examples:",
-    "daemon_stopped": "Serpantinum daemon stopped.",
-    "starting_daemon": "Daemon not running. Starting serpantinumd in the background...",
+    "usage": "Cách dùng: serpantinum [lệnh] [tùy chọn...]",
+    "description": "Giao diện desktop shell dành cho Wayland.",
+    "commands": "Các lệnh:",
+    "script_commands": "Các lệnh script:",
+    "launch_desc": "Khởi chạy các thành phần độc lập (start, widgetredactor)",
+    "msg_desc": "Gửi lệnh hoặc chuyển đổi không gian làm việc tới trình quản lý UI",
+    "ipc_desc": "Chuyển tiếp trực tiếp cuộc gọi IPC tới shell",
+    "kill_desc": "Dừng tiến trình daemon đang chạy",
+    "options": "Tùy chọn:",
+    "verbose_desc": "Bật ghi nhật ký chi tiết",
+    "version_desc": "Hiển thị thông tin phiên bản và thoát",
+    "help_desc": "Hiển thị trợ giúp và thoát",
+    "examples": "Ví dụ:",
+    "daemon_stopped": "Đã dừng daemon Serpantinum.",
+    "starting_daemon": "Daemon chưa chạy. Đang khởi động serpantinumd trong nền...",
     "error_missing_qml": "Error: missing target to launch.",
     "launch_usage": "Usage: serpantinum launch <start|widgetredactor> [args...]",
     "error_qml_not_found": "Error: could not resolve {NAME}.qml in {DIR}",
@@ -808,56 +808,56 @@
     "launch_help": {
       "usage": "Usage: serpantinum launch <start|widgetredactor> [arguments...]",
       "description": "Launch standalone components directly in runner mode.",
-      "available_targets": "Available targets:",
-      "target_start": "Launch the start setup interface",
-      "target_widgetredactor": "Launch the desktop widget editor interface"
+      "available_targets": "Các mục tiêu khả dụng:",
+      "target_start": "Khởi chạy giao diện thiết lập ban đầu",
+      "target_widgetredactor": "Khởi chạy trình chỉnh sửa widget desktop"
     },
     "msg_help": {
       "usage": "Usage: serpantinum msg <command|workspace> [arguments...]",
       "description": "Send layout, workspace, and window management messages directly.",
-      "available_commands": "Available messages:",
-      "cmd_workspace": "Switch to workspace <num> (append 'move' to send active window)",
-      "cmd_open": "Open a managed UI panel (network, guide, wallpaper, applauncher)",
-      "cmd_toggle": "Toggle a managed UI panel",
-      "cmd_close": "Close any active shell overlay"
+      "available_commands": "Các thông điệp khả dụng:",
+      "cmd_workspace": "Chuyển đến không gian làm việc <số> (thêm 'move' để di chuyển cửa sổ hiện tại)",
+      "cmd_open": "Mở bảng điều khiển giao diện (network, guide, wallpaper, applauncher)",
+      "cmd_toggle": "Bật/tắt bảng điều khiển giao diện",
+      "cmd_close": "Đóng mọi lớp phủ giao diện đang hoạt động"
     },
     "ipc_help": {
       "usage": "Usage: serpantinum ipc call <target> <method> [arguments...]",
-      "description": "Send an IPC call directly to the running quickshell instance."
+      "description": "Gửi trực tiếp cuộc gọi IPC tới tiến trình quickshell đang chạy."
     },
     "scripts": {
-      "exit": "Terminate graphical session and exit compositor",
-      "lock": "Activate the lockscreen interface",
-      "volume": "Control default audio sink/source volume and mute states",
-      "reload": "Force reload quickshell desktop elements",
-      "weather": "Fetch and manage weather forecast data and caches",
-      "location": "Retrieve and update geographic coordinates",
-      "screenshot": "Capture screen images, record video, or parse QR codes",
-      "brightness": "Adjust backlight display brightness",
-      "current_focus": "Monitor and log active window focus changes",
-      "monitors_detect": "Query active display outputs and refresh rates",
-      "location_manual": "Set geographic coordinates and timezone manually",
-      "blue_light_filter": "Adjust color temperature and automatic day/night schedule"
+      "exit": "Đóng phiên đồ họa và thoát compositor",
+      "lock": "Kích hoạt màn hình khóa",
+      "volume": "Điều khiển âm lượng và trạng thái tắt tiếng của thiết bị âm thanh mặc định",
+      "reload": "Buộc nạp lại các thành phần desktop quickshell",
+      "weather": "Tải và quản lý dữ liệu dự báo thời tiết",
+      "location": "Truy vấn và cập nhật tọa độ địa lý",
+      "screenshot": "Chụp ảnh màn hình, quay video hoặc quét mã QR",
+      "brightness": "Điều chỉnh độ sáng đèn nền màn hình",
+      "current_focus": "Theo dõi và ghi nhật ký thay đổi tiêu điểm cửa sổ",
+      "monitors_detect": "Truy vấn các đầu ra màn hình và tần số quét đang hoạt động",
+      "location_manual": "Đặt tọa độ địa lý và múi giờ thủ công",
+      "blue_light_filter": "Điều chỉnh nhiệt độ màu và lịch biểu ngày/đêm tự động"
     }
   },
   "daemon": {
-    "already_running": "Daemon is already running. Exiting...",
-    "shutting_down": "Shutting down serpantinum daemon...",
-    "launching": "Launching serpantinum daemon...",
+    "already_running": "Daemon đã đang chạy. Đang thoát...",
+    "shutting_down": "Đang tắt daemon serpantinum...",
+    "launching": "Đang khởi chạy daemon serpantinum...",
     "cli": {
       "usage": "Usage: serpantinumd <command> [options...]",
       "description": "Background service daemon for Serpantinum desktop shell.",
       "commands": "Commands:",
-      "cmd_start": "Start the daemon service and launch background workers",
-      "cmd_stop": "Stop the running daemon service",
-      "cmd_status": "Check running status of the daemon service",
+      "cmd_start": "Khởi động dịch vụ daemon và các worker chạy ngầm",
+      "cmd_stop": "Dừng dịch vụ daemon đang chạy",
+      "cmd_status": "Kiểm tra trạng thái hoạt động của dịch vụ daemon",
       "options": "Options:",
-      "opt_verbose": "Enable verbose output logging",
-      "opt_version": "Show version information and exit",
-      "opt_help": "Show this help message and exit",
+      "opt_verbose": "Bật ghi nhật ký chi tiết",
+      "opt_version": "Hiển thị thông tin phiên bản và thoát",
+      "opt_help": "Hiển thị thông báo trợ giúp và thoát",
       "stopped": "Serpantinum daemon stopped.",
-      "status_running": "Serpantinum daemon is running (PID: {PID}).",
-      "status_stopped": "Serpantinum daemon is not running.",
+      "status_running": "Daemon Serpantinum đang chạy (PID: {PID}).",
+      "status_stopped": "Daemon Serpantinum hiện không chạy.",
       "unknown_arg": "Unknown argument: {ARG}"
     }
   },
