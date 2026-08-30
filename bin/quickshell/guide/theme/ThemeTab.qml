@@ -996,7 +996,7 @@ Item {
                         textColor: ThemeBackend.base
                         contentAlignment: Qt.AlignHCenter
                         onClicked: {
-                            Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "toggle", "wallpaper"]);
+                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "wallpaper"]);
                         }
                     }
 

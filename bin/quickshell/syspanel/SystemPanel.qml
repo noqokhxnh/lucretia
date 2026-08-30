@@ -286,7 +286,7 @@ Item {
         }
         ScriptAction {
             script: {
-                Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "close"]);
+                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
             }
         }
     }
@@ -777,7 +777,7 @@ Item {
 
                             onRightClicked: {
                                 closeSequence.start();
-                                Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "toggle", "guide", "display"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "guide", "display"]);
                             }
                         }
 
@@ -810,7 +810,7 @@ Item {
 
                             onRightClicked: {
                                 closeSequence.start();
-                                Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "toggle", "guide", "idle"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "guide", "idle"]);
                             }
                         }
 
@@ -824,7 +824,7 @@ Item {
                             }
                             onRightClicked: {
                                 closeSequence.start();
-                                Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "toggle", "network", "wifi"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "network", "wifi"]);
                             }
                         }
 
@@ -840,7 +840,7 @@ Item {
                             }
                             onRightClicked: {
                                 closeSequence.start();
-                                Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/qs_manager.sh", "toggle", "network", "bt"]);
+                                Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "network", "bt"]);
                             }
                         }
 
