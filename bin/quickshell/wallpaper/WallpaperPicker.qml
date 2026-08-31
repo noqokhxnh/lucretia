@@ -387,6 +387,9 @@ Item {
             if (outputs === "all" || outputs.split(",").indexOf(sn) !== -1) {
                 writeScreenFiles += "printf '%s' '" + targetFile + "' > '" + stateDir + "/current_" + sn + "'\n";
                 writeScreenFiles += "printf '%s' '" + origName + "' > '" + stateDir + "/current_" + sn + "_name'\n";
+                if (!isVid) {
+                    writeScreenFiles += "cp -f '" + targetFile + "' '" + stateDir + "/current_wallpaper_" + sn + ".png' 2>/dev/null || true\n";
+                }
             }
         }
 
@@ -396,6 +399,10 @@ Item {
                 echo '${targetFile}' > '${stateDir}/current_video.path'
                 echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
                 ${writeScreenFiles}
+                ffmpeg -y -hide_banner -loglevel error -ss 00:00:01 -i '${targetFile}' -frames:v 1 -q:v 2 '${stateDir}/current_wallpaper.png' 2>/dev/null || ffmpeg -y -hide_banner -loglevel error -i '${targetFile}' -frames:v 1 -q:v 2 '${stateDir}/current_wallpaper.png' 2>/dev/null || true
+                for sn in $(cat /sys/class/drm/*/status 2>/dev/null | grep -l '^connected' | sed 's|.*/card[0-9]*-||; s|/status||'); do
+                    cp -f '${stateDir}/current_wallpaper.png' "${stateDir}/current_wallpaper_\${sn}.png" 2>/dev/null || true
+                done
                 pkill -x mpvpaper 2>/dev/null || true
                 if [ '${outputs}' = 'all' ]; then
                     mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' '*' '${targetFile}' >/dev/null 2>&1 &
