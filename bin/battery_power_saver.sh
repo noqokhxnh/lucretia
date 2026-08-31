@@ -23,9 +23,7 @@ trap cleanup INT TERM EXIT
 # Config and state files
 SETTINGS_FILE="$HOME/.config/niri/settings.json"
 PREV_AUTO_POWER_FILE="/tmp/battery_saver_prev_auto_power_mode"
-PREV_BRIGHTNESS_FILE="/tmp/battery_saver_prev_brightness"
-PREV_KBD_FILE="/tmp/battery_saver_prev_kbd"
-PREV_BT_FILE="/tmp/battery_saver_prev_bt"          # "on" nếu saver đã tắt BT
+
 CRIT_LEVEL_FILE="/tmp/battery_crit_level"          # "warn"|"suspend"|"shutdown" — latch cảnh báo
 SUSPEND_LATCH_FILE="/tmp/battery_suspend_latch"    # capacity lúc suspend gần nhất
 
@@ -132,39 +130,8 @@ apply_power_saving() {
         fi
     fi
 
-    # 5. Save screen brightness and lower to 30% if currently higher
-    if which brightnessctl >/dev/null 2>&1; then
-        local cur_brightness=$(brightnessctl -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}')
-        if [ -n "$cur_brightness" ]; then
-            if [ ! -f "$PREV_BRIGHTNESS_FILE" ]; then
-                echo "$cur_brightness" > "$PREV_BRIGHTNESS_FILE"
-            fi
-            if [ "$cur_brightness" -gt 30 ]; then
-                brightnessctl set 30% 2>/dev/null || true
-            fi
-        fi
-
-        # Find and turn off keyboard backlight
-        local kbd_dev=$(brightnessctl -l 2>/dev/null | grep -oE "Device '[^']*(kbd|keyboard)[^']*'" | head -n1 | cut -d"'" -f2)
-        if [ -n "$kbd_dev" ]; then
-            if [ ! -f "$PREV_KBD_FILE" ]; then
-                local cur_kbd=$(brightnessctl --device="$kbd_dev" -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}')
-                echo "$cur_kbd" > "$PREV_KBD_FILE"
-            fi
-            brightnessctl --device="$kbd_dev" set 0 2>/dev/null || true
-        fi
-    fi
-
-    # 6. Apply hardware and peripheral power savings
+    # 5. Apply hardware and peripheral power savings
     apply_hardware_powersave
-
-    # 6b. Bluetooth power save — tắt radio BT khi dùng pin (chỉ ở biên AC, không đấu lại user)
-    if [ "$BT_SAVE" = "true" ] && [ ! -f "$PREV_BT_FILE" ]; then
-        if bluetoothctl show 2>/dev/null | grep -q "Powered: yes"; then
-            echo "on" > "$PREV_BT_FILE"
-            bluetoothctl power off 2>/dev/null || true
-        fi
-    fi
 
     # 7. Reload swayidle with battery-aware idle timers (3m screen off, 5m lock, 15m suspend)
     if [ -f "$HOME/.config/niri/bin/swayidle.sh" ]; then
@@ -209,34 +176,7 @@ apply_performance() {
         fi
     fi
 
-    # 5. Restore screen brightness and keyboard backlight
-    if which brightnessctl >/dev/null 2>&1; then
-        if [ -f "$PREV_BRIGHTNESS_FILE" ]; then
-            local prev_bright=$(cat "$PREV_BRIGHTNESS_FILE" 2>/dev/null)
-            if [ -n "$prev_bright" ]; then
-                brightnessctl set "${prev_bright}%" 2>/dev/null || true
-            fi
-            rm -f "$PREV_BRIGHTNESS_FILE"
-        fi
 
-        # Restore keyboard backlight
-        local kbd_dev=$(brightnessctl -l 2>/dev/null | grep -oE "Device '[^']*(kbd|keyboard)[^']*'" | head -n1 | cut -d"'" -f2)
-        if [ -n "$kbd_dev" ]; then
-            if [ -f "$PREV_KBD_FILE" ]; then
-                local prev_kbd=$(cat "$PREV_KBD_FILE" 2>/dev/null)
-                if [ -n "$prev_kbd" ]; then
-                    brightnessctl --device="$kbd_dev" set "${prev_kbd}%" 2>/dev/null || true
-                fi
-                rm -f "$PREV_KBD_FILE"
-            fi
-        fi
-    fi
-
-    # 5b. Restore Bluetooth (chỉ nếu saver đã tự tắt)
-    if [ -f "$PREV_BT_FILE" ] && [ "$(cat "$PREV_BT_FILE")" = "on" ]; then
-        bluetoothctl power on 2>/dev/null || true
-        rm -f "$PREV_BT_FILE"
-    fi
 
     # 6. Reload swayidle with standard AC idle timers
     if [ -f "$HOME/.config/niri/bin/swayidle.sh" ]; then
@@ -301,14 +241,7 @@ while true; do
         fi
     fi
 
-    # Read Bluetooth power-save setting
-    BT_SAVE="true"
-    if [ -f "$SETTINGS_FILE" ]; then
-        BT_SAVE=$(jq -r '.bluetoothPowerSave // true' "$SETTINGS_FILE" 2>/dev/null)
-        if [ "$BT_SAVE" != "true" ] && [ "$BT_SAVE" != "false" ]; then
-            BT_SAVE="true"
-        fi
-    fi
+
 
     # Read critical-battery protection setting + thresholds (default 15/5/2)
     CRIT_PROTECT="true"
