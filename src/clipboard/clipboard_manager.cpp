@@ -143,11 +143,13 @@ void ClipboardManager::deleteItem(const QString& id) {
     }
     
     if (!line_to_delete.empty()) {
-        QProcess proc;
-        proc.start("cliphist", {"delete"});
-        proc.write((line_to_delete + "\n").c_str());
-        proc.closeWriteChannel();
-        proc.waitForFinished();
+        auto* proc = new QProcess(this);
+        connect(proc, &QProcess::started, proc, [proc, line_to_delete]() {
+            proc->write((line_to_delete + "\n").c_str());
+            proc->closeWriteChannel();
+        });
+        connect(proc, &QProcess::finished, proc, &QObject::deleteLater);
+        proc->start("cliphist", {"delete"});
     }
 }
 

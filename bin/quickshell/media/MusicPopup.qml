@@ -209,6 +209,20 @@ Item {
         }
     }
 
+    function getPlayerArtUrl(p) {
+        if (!p) return "";
+        if (p.trackArtUrl && p.trackArtUrl !== "") return p.trackArtUrl;
+        if (p.metadata) {
+            let m = p.metadata;
+            if (m["mpris:artUrl"] && typeof m["mpris:artUrl"] === "string" && m["mpris:artUrl"] !== "") return m["mpris:artUrl"];
+            if (m["artUrl"] && typeof m["artUrl"] === "string" && m["artUrl"] !== "") return m["artUrl"];
+            if (m["xesam:url"] && typeof m["xesam:url"] === "string" && (m["xesam:url"].startsWith("http") || m["xesam:url"].startsWith("file://"))) {
+                return m["xesam:url"];
+            }
+        }
+        return "";
+    }
+
     property string localArtUrl: ""
     property string localBlur: ""
     property string localGrad: ""
@@ -221,7 +235,7 @@ Item {
         command: [
             "bash",
             Caching.qsDir + "/media/art_fetch.sh",
-            root.targetPlayer ? (root.targetPlayer.trackArtUrl || "") : "",
+            root.getPlayerArtUrl(root.targetPlayer),
             root.targetPlayer ? (root.targetPlayer.trackTitle || "") : "",
             root.targetPlayer ? (root.targetPlayer.trackArtist || "") : ""
         ]
@@ -597,7 +611,7 @@ Item {
                 Item {
                     id: blurCrossfader
                     anchors.fill: parent
-                    property string blurUrl: root.activeBlur ? "file://" + root.activeBlur : ""
+                    property string blurUrl: root.activeBlur ? (root.activeBlur.startsWith("file://") || root.activeBlur.startsWith("http") ? root.activeBlur : "file://" + root.activeBlur) : ""
                     property bool showingA: true
 
                     Image {

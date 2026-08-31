@@ -5,35 +5,62 @@
 #include <set>
 #include <filesystem>
 #include <thread>
+#include <chrono>
 #include <cstdio>
+#include <cctype>
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <algorithm>
+#include <sys/wait.h>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
 namespace fs = std::filesystem;
 
-std::vector<std::string> exec_command(const std::string& cmd) {
+int parse_int(const std::string& s, int fallback) {
+    try {
+        return std::stoi(s);
+    } catch (...) {
+        return fallback;
+    }
+}
+
+std::vector<std::string> exec_command(const std::string& cmd, int* exit_code = nullptr) {
     std::vector<std::string> lines;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd.c_str(), "r"), pclose);
-    if (!pipe) {
-        return lines;
-    }
-    char buffer[2048];
-    std::string current_line;
-    while (fgets(buffer, sizeof(buffer), pipe.get()) != nullptr) {
-        current_line += buffer;
-        if (current_line.back() == '\n') {
-            current_line.pop_back();
-            lines.push_back(current_line);
-            current_line.clear();
+    int status = -1;
+    FILE* f = popen(cmd.c_str(), "r");
+    if (f) {
+        char buffer[2048];
+        std::string current_line;
+        while (fgets(buffer, sizeof(buffer), f) != nullptr) {
+            current_line += buffer;
+            if (current_line.back() == '\n') {
+                current_line.pop_back();
+                lines.push_back(current_line);
+                current_line.clear();
+            }
         }
+        if (!current_line.empty()) {
+            lines.push_back(current_line);
+        }
+        status = pclose(f);
     }
-    if (!current_line.empty()) {
-        lines.push_back(current_line);
+    if (exit_code) {
+        *exit_code = (status < 0) ? -1 : WEXITSTATUS(status);
     }
     return lines;
+}
+
+bool is_valid_png(const std::string& path) {
+    if (!fs::exists(path)) return false;
+    std::error_code ec;
+    auto sz = fs::file_size(path, ec);
+    if (ec || sz == 0) return false;
+    std::ifstream f(path, std::ios::binary);
+    char magic[4];
+    f.read(magic, 4);
+    return f.gcount() == 4 && magic[0] == '\x89' && magic[1] == 'P' && magic[2] == 'N' && magic[3] == 'G';
 }
 
 void cleanup_cache(const std::vector<std::string>& all_lines, const std::string& cache_dir) {
@@ -48,14 +75,20 @@ void cleanup_cache(const std::vector<std::string>& all_lines, const std::string&
         }
     }
 
+    // Only delete files older than an hour so we never race with a
+    // concurrent cliphist decode writing a fresh thumbnail.
+    auto cutoff = fs::file_time_type::clock::now() - std::chrono::hours(1);
     try {
         if (fs::exists(cache_dir)) {
             for (const auto& entry : fs::directory_iterator(cache_dir)) {
                 if (entry.path().extension() == ".png") {
                     std::string iid = entry.path().stem().string();
-                    if (valid_ids.find(iid) == valid_ids.end()) {
-                        fs::remove(entry.path());
-                    }
+                    if (valid_ids.find(iid) != valid_ids.end()) continue;
+                    try {
+                        if (fs::last_write_time(entry.path()) < cutoff) {
+                            fs::remove(entry.path());
+                        }
+                    } catch (...) {}
                 }
             }
         }
@@ -102,15 +135,15 @@ int main(int argc, char* argv[]) {
         std::string arg1 = argv[1];
         if (arg1 == "toggle-pin") {
             action = "toggle-pin";
-        } else if (isdigit(arg1[0])) {
-            offset = std::stoi(arg1);
+        } else if (std::isdigit(static_cast<unsigned char>(arg1[0]))) {
+            offset = parse_int(arg1, 0);
         } else {
             action = arg1;
         }
     }
 
     if (action == "fetch") {
-        if (argc > 2) limit = std::stoi(argv[2]);
+        if (argc > 2) limit = parse_int(argv[2], limit);
         if (argc > 3) cache_dir = argv[3];
     } else if (action == "toggle-pin" || action == "delete") {
         if (argc > 3) cache_dir = argv[3];
@@ -171,18 +204,29 @@ int main(int argc, char* argv[]) {
     }
 
     // Default fetch action
-    std::vector<std::string> all_lines = exec_command("cliphist list");
+    std::vector<std::string> all_lines;
+    int cliphist_exit = -1;
+    for (int attempt = 0; attempt < 3; ++attempt) {
+        all_lines = exec_command("cliphist list", &cliphist_exit);
+        if (cliphist_exit == 0) break;
+        if (attempt < 2) std::this_thread::sleep_for(std::chrono::milliseconds(60));
+    }
+    if (cliphist_exit != 0) {
+        // Transient failure (e.g. sqlite lock contention). Print nothing and
+        // exit non-zero so the QML side can retry.
+        return 1;
+    }
     if (all_lines.empty()) {
         std::cout << "[]" << std::endl;
         return 0;
     }
 
     std::set<std::string> pinned_ids = load_pinned(cache_dir);
-    
+
     // Separate pinned and unpinned
     std::vector<std::string> sorted_lines;
     std::vector<std::string> unpinned_lines;
-    
+
     for (const auto& line : all_lines) {
         size_t tab_pos = line.find('\t');
         if (tab_pos == std::string::npos) continue;
@@ -193,13 +237,14 @@ int main(int argc, char* argv[]) {
             unpinned_lines.push_back(line);
         }
     }
-    
+
     // Combine: pinned first, then unpinned
     sorted_lines.insert(sorted_lines.end(), unpinned_lines.begin(), unpinned_lines.end());
 
-    // Launch cleanup thread if offset is 0
+    // Run cleanup synchronously before decoding so it never races with our
+    // own thumbnail writes (age gate in cleanup_cache protects concurrent runs).
     if (offset == 0) {
-        std::thread(cleanup_cache, all_lines, cache_dir).detach();
+        cleanup_cache(all_lines, cache_dir);
     }
 
     std::vector<json> items;
@@ -217,14 +262,19 @@ int main(int argc, char* argv[]) {
         if (content.find("[[ binary data") != std::string::npos) {
             item_type = "image";
             std::string img_path = (fs::path(cache_dir) / (iid + ".png")).string();
-            if (!fs::exists(img_path)) {
-                std::string decode_cmd = "cliphist decode " + iid + " > \"" + img_path + "\"";
-                std::system(decode_cmd.c_str());
+            if (!is_valid_png(img_path)) {
+                std::remove(img_path.c_str());
+                std::string tmp_path = img_path + ".tmp";
+                std::string decode_cmd = "cliphist decode " + iid + " > \"" + tmp_path + "\" && mv \"" + tmp_path + "\" \"" + img_path + "\"";
+                if (std::system(decode_cmd.c_str()) != 0) {
+                    std::remove(tmp_path.c_str());
+                }
             }
             display_content = img_path;
         }
 
         items.push_back({
+            {"clipId", iid},
             {"id", iid},
             {"content", display_content},
             {"type", item_type},

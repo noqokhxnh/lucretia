@@ -33,11 +33,6 @@ PanelWindow {
         right: true
     }
 
-    Keys.onEscapePressed: function(event) {
-        closeLauncher();
-        event.accepted = true;
-    }
-
     function s(val) {
         return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val;
     }
@@ -68,10 +63,6 @@ PanelWindow {
     Connections {
         target: (typeof DesktopEntries !== "undefined" && DesktopEntries.applications) ? DesktopEntries.applications : null
         function onValuesChanged() {
-            launcherWindow.loadApps();
-            launcherWindow.executeFilter(searchInput.text);
-        }
-        function onCountChanged() {
             launcherWindow.loadApps();
             launcherWindow.executeFilter(searchInput.text);
         }

@@ -20,6 +20,7 @@
 #include <QFile>
 #include <QCryptographicHash>
 #include <QMap>
+#include <QRegularExpression>
 
 struct MusicState {
     QString title = "Not Playing";

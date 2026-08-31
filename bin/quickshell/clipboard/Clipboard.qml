@@ -23,7 +23,7 @@ PanelWindow {
     color: "transparent"
 
     mask: Region {
-        item: clipboardWindow.isVisible ? clipboardWindow : ((container.animProgress > 0.001) ? maskBoundary : null)
+        item: clipboardWindow.isVisible ? maskFull : ((container.animProgress > 0.001) ? maskBoundary : null)
     }
 
     anchors {
@@ -31,11 +31,6 @@ PanelWindow {
         bottom: true
         left: true
         right: true
-    }
-
-    Keys.onEscapePressed: function(event) {
-        closeClipboard();
-        event.accepted = true;
     }
 
     function s(val) {
@@ -89,6 +84,7 @@ PanelWindow {
     property int clipOffset: 0
     property bool hasMoreClips: true
     property bool fetchPending: false
+    property int fetchFailures: 0
 
     property string expandedClipId: ""
     property string expandedClipFullText: ""
@@ -149,6 +145,7 @@ PanelWindow {
         clipboardWindow.expandedClipFullText = "";
         clipboardWindow.expandedClipId = id ? id.toString() : "";
         if (clipboardWindow.expandedClipId !== "") {
+            fullTextFetcher.running = false;
             fullTextFetcher.command = ["cliphist", "decode", clipboardWindow.expandedClipId];
             fullTextFetcher.running = true;
         }
@@ -178,7 +175,7 @@ PanelWindow {
             let item = targetItems[i];
             if (i < clipBoxModel.count) {
                 let cur = clipBoxModel.get(i);
-                if (cur.id !== item.id || cur.pinned !== item.pinned || cur.content !== item.content || cur.type !== item.type || cur.sectionCategory !== item.sectionCategory) {
+                if (cur.clipId !== item.clipId || cur.pinned !== item.pinned || cur.content !== item.content || cur.type !== item.type || cur.sectionCategory !== item.sectionCategory) {
                     clipBoxModel.set(i, item);
                 }
             } else {
@@ -223,8 +220,10 @@ PanelWindow {
             }
 
             if (matches) {
+                let idStr = (item.clipId !== undefined && item.clipId !== null) ? item.clipId.toString() : (item.id !== undefined ? item.id.toString() : "");
                 filtered.push({
-                    id: item.id,
+                    clipId: idStr,
+                    id: idStr,
                     pinned: Boolean(item.pinned),
                     content: item.content || "",
                     type: item.type || "text",
@@ -279,10 +278,14 @@ PanelWindow {
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
+                // Stale stream from a run we killed while starting a newer fetch
+                if (clipFetcherProc.running) return;
+
                 if (clipboardWindow.fetchPending) {
                     clipboardWindow.fetchPending = false;
                     clipboardWindow.clipOffset = 0;
                     clipboardWindow.hasMoreClips = true;
+                    clipboardWindow.fetchFailures = 0;
                     clipboardWindow.fetchNextClipPage();
                     return;
                 }
@@ -291,6 +294,7 @@ PanelWindow {
                     let txt = this.text.trim();
                     if (txt.length > 0) {
                         let items = JSON.parse(txt);
+                        clipboardWindow.fetchFailures = 0;
                         if (items.length < clipboardWindow.clipPageSize) {
                             clipboardWindow.hasMoreClips = false;
                         }
@@ -300,26 +304,41 @@ PanelWindow {
                         } else {
                             let existingIds = {};
                             for (let i = 0; i < clipboardWindow.allFetchedClips.length; i++) {
-                                existingIds[clipboardWindow.allFetchedClips[i].id] = true;
+                                let cid = (clipboardWindow.allFetchedClips[i].clipId || clipboardWindow.allFetchedClips[i].id).toString();
+                                existingIds[cid] = true;
                             }
                             for (let i = 0; i < items.length; i++) {
-                                if (!existingIds[items[i].id]) {
+                                let cid = (items[i].clipId || items[i].id).toString();
+                                if (!existingIds[cid]) {
                                     clipboardWindow.allFetchedClips.push(items[i]);
-                                    existingIds[items[i].id] = true;
+                                    existingIds[cid] = true;
                                 }
                             }
                         }
                         clipboardWindow.clipOffset = clipboardWindow.allFetchedClips.length;
                         clipboardWindow.executeClipFilter(searchInput.text);
                     } else {
-                        clipboardWindow.hasMoreClips = false;
-                        if (clipboardWindow.clipOffset === 0) {
-                            clipboardWindow.allFetchedClips = [];
-                            clipboardWindow.executeClipFilter(searchInput.text);
+                        // Empty output: fetcher failed or was killed mid-run.
+                        // Retry a few times so transient cliphist/sqlite
+                        // failures don't permanently kill pagination.
+                        clipboardWindow.fetchFailures++;
+                        if (clipboardWindow.fetchFailures <= 3) {
+                            Qt.callLater(() => clipboardWindow.fetchNextClipPage());
+                        } else {
+                            clipboardWindow.hasMoreClips = false;
+                            clipboardWindow.fetchFailures = 0;
                         }
                     }
                 } catch(e) {
-                    clipboardWindow.hasMoreClips = false;
+                    // Truncated JSON from a crashed fetcher: retry instead of
+                    // permanently disabling pagination.
+                    clipboardWindow.fetchFailures++;
+                    if (clipboardWindow.fetchFailures <= 3) {
+                        Qt.callLater(() => clipboardWindow.fetchNextClipPage());
+                    } else {
+                        clipboardWindow.hasMoreClips = false;
+                        clipboardWindow.fetchFailures = 0;
+                    }
                 }
             }
         }
@@ -330,9 +349,35 @@ PanelWindow {
         running: false
     }
 
+    Timer {
+        id: fetchWatchdog
+        interval: 8000
+        repeat: false
+        onTriggered: {
+            if (clipFetcherProc.running) {
+                clipFetcherProc.running = false;
+                clipboardWindow.fetchPending = false;
+                clipboardWindow.fetchFailures = 0;
+                Qt.callLater(() => clipboardWindow.fetchNextClipPage());
+            }
+        }
+    }
+
+    Timer {
+        id: actionWatchdog
+        interval: 8000
+        repeat: false
+        onTriggered: {
+            if (clipActionProc.running) {
+                clipActionProc.running = false;
+            }
+        }
+    }
+
     function refreshClips() {
         clipboardWindow.clipOffset = 0;
         clipboardWindow.hasMoreClips = true;
+        clipboardWindow.fetchFailures = 0;
         if (clipFetcherProc.running) {
             clipboardWindow.fetchPending = true;
             return;
@@ -342,13 +387,23 @@ PanelWindow {
 
     function fetchNextClipPage() {
         if (clipFetcherProc.running || !clipboardWindow.hasMoreClips) return;
+        fetchWatchdog.restart();
         let qsDir = (typeof Caching !== "undefined" && Caching.qsDir) ? Caching.qsDir : "";
         let cacheDir = (typeof Caching !== "undefined" && Caching.getCacheDir) ? Caching.getCacheDir("clipboard") : "";
+        clipFetcherProc.running = false;
         clipFetcherProc.command = [qsDir + "/clipboard/clip_fetcher", clipboardWindow.clipOffset.toString(), clipboardWindow.clipPageSize.toString(), cacheDir];
         clipFetcherProc.running = true;
     }
 
+    function runAction(command) {
+        clipActionProc.running = false;
+        clipActionProc.command = command;
+        actionWatchdog.restart();
+        Qt.callLater(() => { clipActionProc.running = true; });
+    }
+
     function copyClip(id, isPinned) {
+        if (!id || id === "") return;
         if (typeof Sounds !== "undefined") Sounds.playSfx("system/quick_click.wav");
         if (isPinned) {
             Quickshell.execDetached(["bash", "-c", "cliphist decode " + id + " | wl-copy && (sleep 0.15; NEW_ID=$(cliphist list | head -n 1 | awk '{print $1}'); " + Caching.qsDir + "/clipboard/clip_fetcher toggle-pin $NEW_ID " + Caching.getCacheDir("clipboard") + ") &"]);
@@ -359,10 +414,11 @@ PanelWindow {
     }
 
     function pinClip(id, index) {
-        clipActionProc.command = [Caching.qsDir + "/clipboard/clip_fetcher", "toggle-pin", id.toString(), Caching.getCacheDir("clipboard")];
-        clipActionProc.running = true;
+        if (!id || id === "") return;
+        runAction([Caching.qsDir + "/clipboard/clip_fetcher", "toggle-pin", id.toString(), Caching.getCacheDir("clipboard")]);
         for (let i = 0; i < clipboardWindow.allFetchedClips.length; i++) {
-            if (clipboardWindow.allFetchedClips[i].id.toString() === id.toString()) {
+            let cid = (clipboardWindow.allFetchedClips[i].clipId || clipboardWindow.allFetchedClips[i].id).toString();
+            if (cid === id.toString()) {
                 clipboardWindow.allFetchedClips[i].pinned = !clipboardWindow.allFetchedClips[i].pinned;
                 break;
             }
@@ -371,17 +427,16 @@ PanelWindow {
     }
 
     function deleteClip(id, index) {
-        clipActionProc.command = [Caching.qsDir + "/clipboard/clip_fetcher", "delete", id.toString(), Caching.getCacheDir("clipboard")];
-        clipActionProc.running = true;
-        clipboardWindow.allFetchedClips = clipboardWindow.allFetchedClips.filter(item => item.id.toString() !== id.toString());
+        if (!id || id === "") return;
+        runAction([Caching.qsDir + "/clipboard/clip_fetcher", "delete", id.toString(), Caching.getCacheDir("clipboard")]);
+        clipboardWindow.allFetchedClips = clipboardWindow.allFetchedClips.filter(item => (item.clipId || item.id).toString() !== id.toString());
         clipBoxModel.remove(index);
     }
 
     function clearAllClips() {
         clipboardWindow.allFetchedClips = [];
         clipBoxModel.clear();
-        clipActionProc.command = ["bash", "-c", "cliphist wipe"];
-        clipActionProc.running = true;
+        runAction(["bash", "-c", "cliphist wipe"]);
     }
 
     Timer {
@@ -432,7 +487,7 @@ PanelWindow {
         if (index < 0 || index >= clipBoxModel.count) return;
         let item = clipBoxModel.get(index);
         if (!item) return;
-        copyClip(item.id, item.pinned);
+        copyClip(item.clipId || item.id, item.pinned);
     }
 
     Timer {
@@ -494,9 +549,33 @@ PanelWindow {
         refreshClips();
     }
 
+    function handleWheelScroll(wheel) {
+        if (clipList) {
+            let dy = 0;
+            if (wheel.angleDelta && wheel.angleDelta.y !== 0) {
+                dy = wheel.angleDelta.y > 0 ? 80 : -80;
+            } else if (wheel.pixelDelta && wheel.pixelDelta.y !== 0) {
+                dy = wheel.pixelDelta.y;
+            }
+            if (dy !== 0) {
+                let maxContentY = Math.max(0, clipList.contentHeight - clipList.height);
+                clipList.contentY = Math.max(0, Math.min(maxContentY, clipList.contentY - dy));
+            }
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         onClicked: closeClipboard()
+        onWheel: (wheel) => {
+            handleWheelScroll(wheel);
+            wheel.accepted = true;
+        }
+    }
+
+    Item {
+        id: maskFull
+        anchors.fill: parent
     }
 
     Item {
@@ -742,6 +821,10 @@ PanelWindow {
 
             MouseArea {
                 anchors.fill: parent
+                onWheel: (wheel) => {
+                    handleWheelScroll(wheel);
+                    wheel.accepted = true;
+                }
             }
 
             Rectangle {
@@ -864,6 +947,19 @@ PanelWindow {
                             }
                             event.accepted = true;
                         }
+                        Keys.onPressed: function(event) {
+                            if (event.key === Qt.Key_PageDown) {
+                                clipboardWindow.isKeyboardNav = true;
+                                keyboardNavTimer.restart();
+                                clipList.currentIndex = Math.min(clipBoxModel.count - 1, clipList.currentIndex + 5);
+                                event.accepted = true;
+                            } else if (event.key === Qt.Key_PageUp) {
+                                clipboardWindow.isKeyboardNav = true;
+                                keyboardNavTimer.restart();
+                                clipList.currentIndex = Math.max(0, clipList.currentIndex - 5);
+                                event.accepted = true;
+                            }
+                        }
                         Keys.onTabPressed: function(event) {
                             clipboardWindow.toggleExpandCurrent();
                             event.accepted = true;
@@ -880,7 +976,7 @@ PanelWindow {
                             if (clipList.currentIndex >= 0 && clipList.currentIndex < clipBoxModel.count) {
                                 let item = clipBoxModel.get(clipList.currentIndex);
                                 if (item) {
-                                    deleteClip(item.id, clipList.currentIndex);
+                                    deleteClip(item.clipId || item.id, clipList.currentIndex);
                                 }
                             }
                             event.accepted = true;
@@ -934,7 +1030,7 @@ PanelWindow {
                         spacing: clipboardWindow.s(4)
                         currentIndex: 0
                         boundsBehavior: Flickable.StopAtBounds
-                        interactive: !clipboardWindow.isClearingClips && (contentHeight > height)
+                        interactive: !clipboardWindow.isClearingClips
 
                         Keys.onEscapePressed: function(event) {
                             closeClipboard();
@@ -1024,7 +1120,7 @@ PanelWindow {
                                 }
                             }
 
-                            property string clipIdString: (typeof model !== "undefined" && model && model.id !== undefined) ? model.id.toString() : (clipBoxModel.get(index) ? clipBoxModel.get(index).id.toString() : "")
+                            property string clipIdString: (typeof model !== "undefined" && model) ? ((model.clipId || model.id || "").toString()) : (clipBoxModel.get(index) ? (clipBoxModel.get(index).clipId || clipBoxModel.get(index).id || "").toString() : "")
                             property real dragX: 0
                             property bool isDismissing: false
 
@@ -1051,7 +1147,7 @@ PanelWindow {
                                 id: textMeasure
                                 visible: false
                                 width: Math.max(10, clipboardWindow.baseLauncherWidth - clipboardWindow.s(100))
-                                text: (model && model.content) ? model.content : ""
+                                text: (typeof model !== "undefined" && model && model.content) ? model.content : ""
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: clipboardWindow.s(12)
                                 wrapMode: Text.Wrap
@@ -1059,17 +1155,17 @@ PanelWindow {
 
                             function toggleExpand() {
                                 if (!clipDelegateCard.canExpand) return;
-                                if (!itemExpanded && model.type !== "image") {
+                                if (!itemExpanded && (typeof model !== "undefined" && model && model.type !== "image")) {
                                     clipboardWindow.fetchFullText(clipDelegateWrapper.clipIdString);
                                 }
                                 itemExpanded = !itemExpanded;
-                                itemExpandProgress = Qt.binding(() => itemExpanded ? 1.0 : 0.0);
+                                itemExpandProgress = itemExpanded ? 1.0 : 0.0;
                             }
 
                             onItemExpandedChanged: {
                                 if (itemExpanded) {
                                     clipList.currentIndex = index;
-                                    if (model.type !== "image" && clipboardWindow.expandedClipId !== clipIdString) {
+                                    if ((typeof model !== "undefined" && model && model.type !== "image") && clipboardWindow.expandedClipId !== clipIdString) {
                                         clipboardWindow.fetchFullText(clipIdString);
                                     }
                                     clipList.positionViewAtIndex(index, ListView.Contain);
@@ -1098,27 +1194,12 @@ PanelWindow {
                             }
 
                             Rectangle {
-                                id: cardMask
-                                width: clipDelegateCard.width
-                                height: clipDelegateCard.height
-                                radius: clipDelegateCard.radius
-                                visible: false
-                                layer.enabled: clipDelegateCard.isImage
-                            }
-
-                            Rectangle {
                                 id: clipDelegateCard
                                 anchors.left: parent.left
                                 anchors.right: parent.right
                                 anchors.top: parent.top
 
-                                layer.enabled: clipDelegateCard.isImage
-                                layer.effect: MultiEffect {
-                                    maskEnabled: true
-                                    maskSource: cardMask
-                                }
-
-                                readonly property bool isImage: model.type === "image"
+                                readonly property bool isImage: (typeof model !== "undefined" && model && model.type === "image")
                                 readonly property bool canExpand: {
                                     if (isImage) return true;
                                     if (textMeasure.lineCount > 2) return true;
@@ -1146,7 +1227,7 @@ PanelWindow {
                                 Image {
                                     id: clipCardCropImg
                                     anchors.fill: parent
-                                    source: (clipDelegateCard.isImage && model.content) ? (model.content.startsWith("file://") ? model.content : "file://" + model.content) : ""
+                                    source: (clipDelegateCard.isImage && typeof model !== "undefined" && model && model.content) ? (model.content.startsWith("file://") ? model.content : "file://" + model.content) : ""
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
                                     cache: true
@@ -1160,7 +1241,7 @@ PanelWindow {
                                     id: clipCardFitImg
                                     anchors.fill: parent
                                     anchors.margins: clipboardWindow.s(6) * clipDelegateWrapper.itemExpandProgress
-                                    source: (clipDelegateCard.isImage && model.content) ? (model.content.startsWith("file://") ? model.content : "file://" + model.content) : ""
+                                    source: (clipDelegateCard.isImage && typeof model !== "undefined" && model && model.content) ? (model.content.startsWith("file://") ? model.content : "file://" + model.content) : ""
                                     fillMode: Image.PreserveAspectFit
                                     asynchronous: true
                                     cache: true
@@ -1202,7 +1283,11 @@ PanelWindow {
                                     property real startRootX: 0
                                     property real startRootY: 0
                                     property bool draggingH: false
-                                    property bool draggingV: false
+
+                                    onWheel: (wheel) => {
+                                        handleWheelScroll(wheel);
+                                        wheel.accepted = true;
+                                    }
 
                                     onPressed: (mouse) => {
                                         clipList.currentIndex = index;
@@ -1210,9 +1295,8 @@ PanelWindow {
                                         startRootX = pt.x;
                                         startRootY = pt.y;
                                         draggingH = false;
-                                        draggingV = false;
                                         clipResetAnim.stop();
-                                        if (model.type !== "image" && clipDelegateCard.canExpand) {
+                                        if (typeof model !== "undefined" && model && model.type !== "image" && clipDelegateCard.canExpand) {
                                             clipboardWindow.fetchFullText(clipDelegateWrapper.clipIdString);
                                         }
                                     }
@@ -1223,27 +1307,15 @@ PanelWindow {
                                         let dx = pt.x - startRootX;
                                         let dy = pt.y - startRootY;
 
-                                        if (!draggingH && !draggingV) {
-                                            if (Math.abs(dx) > clipboardWindow.s(6) && Math.abs(dx) > Math.abs(dy)) {
+                                        if (!draggingH) {
+                                            if (Math.abs(dx) > clipboardWindow.s(12) && Math.abs(dx) > Math.abs(dy) * 1.5) {
                                                 draggingH = true;
                                                 clipCardMa.preventStealing = true;
-                                            } else if (clipDelegateCard.canExpand && Math.abs(dy) > clipboardWindow.s(6) && Math.abs(dy) >= Math.abs(dx)) {
-                                                draggingV = true;
-                                                clipCardMa.preventStealing = true;
-                                                if (model.type !== "image" && clipboardWindow.expandedClipId !== clipDelegateWrapper.clipIdString) {
-                                                    clipboardWindow.fetchFullText(clipDelegateWrapper.clipIdString);
-                                                }
                                             }
                                         }
 
                                         if (draggingH) {
                                             clipDelegateWrapper.dragX = dx;
-                                        } else if (draggingV && clipDelegateCard.canExpand) {
-                                            let dragDist = clipboardWindow.s(120);
-                                            let targetProg = clipDelegateWrapper.itemExpanded
-                                                ? Math.max(0.0, Math.min(1.0, 1.0 + (dy / dragDist)))
-                                                : Math.max(0.0, Math.min(1.0, dy / dragDist));
-                                            clipDelegateWrapper.itemExpandProgress = targetProg;
                                         }
                                     }
 
@@ -1261,14 +1333,6 @@ PanelWindow {
                                                 clipResetAnim.start();
                                             }
                                             draggingH = false;
-                                        } else if (draggingV && clipDelegateCard.canExpand) {
-                                            if (!clipDelegateWrapper.itemExpanded && clipDelegateWrapper.itemExpandProgress > 0.35) {
-                                                clipDelegateWrapper.itemExpanded = true;
-                                            } else if (clipDelegateWrapper.itemExpanded && clipDelegateWrapper.itemExpandProgress < 0.65) {
-                                                clipDelegateWrapper.itemExpanded = false;
-                                            }
-                                            clipDelegateWrapper.itemExpandProgress = Qt.binding(() => clipDelegateWrapper.itemExpanded ? 1.0 : 0.0);
-                                            draggingV = false;
                                         } else {
                                             let ptE = mapToItem(clipItemExpandIcon, mouse.x, mouse.y);
                                             let inE = clipItemExpandIcon.visible && ptE.x >= 0 && ptE.y >= 0 && ptE.x <= clipItemExpandIcon.width && ptE.y <= clipItemExpandIcon.height;
@@ -1276,7 +1340,7 @@ PanelWindow {
                                                 if (mouse.button === Qt.RightButton) {
                                                     clipboardWindow.pinClip(clipDelegateWrapper.clipIdString, index);
                                                 } else {
-                                                    clipboardWindow.copyClip(clipDelegateWrapper.clipIdString, model.pinned);
+                                                    clipboardWindow.copyClip(clipDelegateWrapper.clipIdString, (typeof model !== "undefined" && model) ? Boolean(model.pinned) : false);
                                                 }
                                             }
                                         }
@@ -1288,10 +1352,6 @@ PanelWindow {
                                             clipResetAnim.from = clipDelegateWrapper.dragX;
                                             clipResetAnim.start();
                                             draggingH = false;
-                                        }
-                                        if (draggingV && clipDelegateCard.canExpand) {
-                                            clipDelegateWrapper.itemExpandProgress = Qt.binding(() => clipDelegateWrapper.itemExpanded ? 1.0 : 0.0);
-                                            draggingV = false;
                                         }
                                     }
                                 }
@@ -1317,13 +1377,13 @@ PanelWindow {
                                         id: clipThumbImg
                                         anchors.fill: parent
                                         anchors.margins: clipboardWindow.s(2)
-                                        source: (!clipDelegateCard.isImage && model.type === "image" && model.content) ? (model.content.startsWith("file://") ? model.content : "file://" + model.content) : ""
+                                        source: (!clipDelegateCard.isImage && typeof model !== "undefined" && model && model.type === "image" && model.content) ? (model.content.startsWith("file://") ? model.content : "file://" + model.content) : ""
                                         fillMode: Image.PreserveAspectCrop
                                         asynchronous: true
                                         cache: true
                                         smooth: true
                                         mipmap: true
-                                        visible: model.type === "image" && status === Image.Ready
+                                        visible: (typeof model !== "undefined" && model && model.type === "image") && status === Image.Ready
                                     }
 
                                     Text {
@@ -1331,8 +1391,8 @@ PanelWindow {
                                         font.family: "Iosevka Nerd Font"
                                         font.pixelSize: clipboardWindow.s(14)
                                         color: (!clipDelegateCard.isImage && clipDelegateWrapper.isSelected) ? ThemeBackend.crust : ThemeBackend.subtext0
-                                        text: model.type === "image" ? "󰋩" : "󰈙"
-                                        visible: model.type !== "image" || (!model.content || clipThumbImg.status !== Image.Ready)
+                                        text: (typeof model !== "undefined" && model && model.type === "image") ? "󰋩" : "󰈙"
+                                        visible: (typeof model === "undefined" || !model || model.type !== "image") || (!model.content || clipThumbImg.status !== Image.Ready)
 
                                         Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
                                     }
@@ -1376,7 +1436,7 @@ PanelWindow {
                                         id: clipSummaryText
                                         anchors.fill: parent
                                         anchors.verticalCenter: parent.verticalCenter
-                                        text: model.content || ""
+                                        text: (typeof model !== "undefined" && model && model.content) ? model.content : ""
                                         font.family: ThemeBackend.fontFamily
                                         font.pixelSize: clipboardWindow.s(12)
                                         font.weight: clipDelegateWrapper.isSelected ? Font.Bold : Font.Normal
@@ -1423,12 +1483,20 @@ PanelWindow {
                                             height: Math.max(clipFlickable.height, clipPreviewText.implicitHeight)
                                             cursorShape: Qt.PointingHandCursor
                                             acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                            onWheel: (wheel) => {
+                                                if (clipFlickable.contentHeight > clipFlickable.height) {
+                                                    wheel.accepted = false;
+                                                } else {
+                                                    handleWheelScroll(wheel);
+                                                    wheel.accepted = true;
+                                                }
+                                            }
                                             onClicked: (mouse) => {
                                                 clipList.currentIndex = index;
                                                 if (mouse.button === Qt.RightButton) {
                                                     clipboardWindow.pinClip(clipDelegateWrapper.clipIdString, index);
                                                 } else {
-                                                    clipboardWindow.copyClip(clipDelegateWrapper.clipIdString, model.pinned);
+                                                    clipboardWindow.copyClip(clipDelegateWrapper.clipIdString, (typeof model !== "undefined" && model) ? Boolean(model.pinned) : false);
                                                 }
                                             }
                                         }
@@ -1436,7 +1504,7 @@ PanelWindow {
                                         Text {
                                             id: clipPreviewText
                                             width: clipFlickable.width
-                                            text: clipDelegateWrapper.itemExpandProgress > 0.01 ? ((clipboardWindow.expandedClipId === clipDelegateWrapper.clipIdString && clipboardWindow.expandedClipFullText !== "") ? clipboardWindow.expandedClipFullText : ((model && model.content) ? model.content : "")) : ""
+                                            text: clipDelegateWrapper.itemExpandProgress > 0.01 ? ((clipboardWindow.expandedClipId === clipDelegateWrapper.clipIdString && clipboardWindow.expandedClipFullText !== "") ? clipboardWindow.expandedClipFullText : ((typeof model !== "undefined" && model && model.content) ? model.content : "")) : ""
                                             font.family: ThemeBackend.fontFamily
                                             font.pixelSize: clipboardWindow.s(12)
                                             font.weight: Font.Normal

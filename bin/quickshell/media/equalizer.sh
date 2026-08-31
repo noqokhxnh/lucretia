@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 
-source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/caching.sh"
-qs_ensure_cache "music"
+source "$(dirname "${BASH_SOURCE[0]}")/../scripts/caching.sh" 2>/dev/null || source "$(dirname "${BASH_SOURCE[0]}")/../../caching.sh" 2>/dev/null || source "$(dirname "${BASH_SOURCE[0]}")/../../bin/caching.sh" 2>/dev/null
+
+if [ -n "$(type -t qs_ensure_cache)" ]; then
+    qs_ensure_cache "music"
+fi
+
+if [ -z "$QS_RUN_MUSIC" ]; then
+    export QS_RUN_MUSIC="${XDG_RUNTIME_DIR:-/tmp}/lucretia/music"
+fi
 
 STATE_FILE="$QS_RUN_MUSIC/eq_state.json"
 PRESET_DIR="$HOME/.config/easyeffects/output"

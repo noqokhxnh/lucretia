@@ -26,10 +26,10 @@ Singleton {
         if (activePlayer.trackArtUrl && activePlayer.trackArtUrl !== "") return activePlayer.trackArtUrl;
         if (activePlayer.metadata) {
             let m = activePlayer.metadata;
-            if (m["mpris:artUrl"]) return m["mpris:artUrl"];
-            if (m["artUrl"]) return m["artUrl"];
+            if (m["mpris:artUrl"] && typeof m["mpris:artUrl"] === "string" && m["mpris:artUrl"] !== "") return m["mpris:artUrl"];
+            if (m["artUrl"] && typeof m["artUrl"] === "string" && m["artUrl"] !== "") return m["artUrl"];
             if (m["xesam:url"] && typeof m["xesam:url"] === "string" && (m["xesam:url"].startsWith("http") || m["xesam:url"].startsWith("file://"))) {
-                if (m["xesam:url"].match(/\.(jpg|jpeg|png|webp)$/i)) return m["xesam:url"];
+                return m["xesam:url"];
             }
         }
         return "";

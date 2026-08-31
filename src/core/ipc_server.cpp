@@ -82,10 +82,17 @@ public:
     void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
         auto* cbMgr = server->getClipboardManager();
         if (action == "fetch") {
+            // popen("cliphist list") can block on sqlite contention; run it
+            // off the event loop so the daemon never freezes.
             int offset = req.contains("offset") ? req["offset"].toInt() : 0;
             int limit = req.contains("limit") ? req["limit"].toInt() : 24;
             QString cacheDir = req["cache_dir"].toString();
-            server->sendResponse(client, reqId, cbMgr->fetchClipboard(offset, limit, cacheDir));
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, cbMgr, offset, limit, cacheDir]() {
+                QJsonArray arr = cbMgr->fetchClipboard(offset, limit, cacheDir);
+                QMetaObject::invokeMethod(server, [server, client, reqId, arr]() {
+                    server->sendResponse(client, reqId, arr);
+                });
+            }));
         } else if (action == "toggle-pin") {
             cbMgr->togglePin(req["item_id"].toString(), req["cache_dir"].toString());
             server->sendResponse(client, reqId, "ok");
@@ -93,7 +100,13 @@ public:
             cbMgr->deleteItem(req["item_id"].toString());
             server->sendResponse(client, reqId, "ok");
         } else if (action == "decode") {
-            server->sendResponse(client, reqId, cbMgr->decodeItem(req["item_id"].toString()));
+            QString itemId = req["item_id"].toString();
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, cbMgr, itemId]() {
+                QString res = cbMgr->decodeItem(itemId);
+                QMetaObject::invokeMethod(server, [server, client, reqId, res]() {
+                    server->sendResponse(client, reqId, res);
+                });
+            }));
         }
     }
 };
