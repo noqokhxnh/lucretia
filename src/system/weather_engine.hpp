@@ -38,6 +38,7 @@ private:
     int m_intervalMinutes = 15;
 
     bool m_isFetching = false;
+    int m_fetchFailures = 0;
     QJsonObject m_currentData;
 
     QString getWeatherIcon(int code, bool isDay) const;
