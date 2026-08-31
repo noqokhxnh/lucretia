@@ -157,7 +157,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "notes": { 
-            w: 800, h: 560, comp: "notes/NotesPopup.qml", 
+            w: 900, h: 640, comp: "notes/NotesPopup.qml", 
             pos: { 
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
@@ -166,7 +166,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "focustime": { 
-            w: 640, h: 520, comp: "focustime/FocusTimePopup.qml", 
+            w: 860, h: 700, comp: "focustime/FocusTimePopup.qml", 
             pos: { 
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
@@ -184,7 +184,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "services": { 
-            w: 680, h: 540, comp: "services/ServicesOverlay.qml", 
+            w: 900, h: 700, comp: "services/ServicesOverlay.qml", 
             pos: { 
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
@@ -193,7 +193,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "monitors": { 
-            w: 600, h: 480, comp: "monitors/MonitorPopup.qml", 
+            w: 880, h: 580, comp: "monitors/MonitorPopup.qml", 
             pos: { 
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 

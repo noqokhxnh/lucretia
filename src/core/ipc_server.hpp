@@ -73,12 +73,14 @@ public:
     QString handleScreenshotScanQr(const QString& inputPath);
     void handleWallpaperExtractColors(const QString& thumbsDir, const QString& markerDir);
 
+public slots:
+    void broadcastSysData();
+    void broadcastMusicData();
+
 private slots:
     void onNewConnection();
     void onClientDisconnected(QLocalSocket* client);
     void onClientReadyRead(QLocalSocket* client);
-    void broadcastSysData();
-    void broadcastMusicData();
 
 private:
     QLocalServer* server;

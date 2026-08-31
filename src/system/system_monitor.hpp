@@ -31,4 +31,5 @@ private:
     NetStats get_net_stats();
     void get_mem_stats(int &percent, double &used_gb);
     int get_temp();
+    void get_disk_stats(int &percent, double &used_gb, double &total_gb);
 };

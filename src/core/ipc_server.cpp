@@ -39,6 +39,7 @@ public:
         if (action == "subscribe") {
             server->addSysSubscriber(client);
             server->sendResponse(client, reqId, "subscribed");
+            server->broadcastSysData();
         } else if (action == "unsubscribe") {
             server->removeSysSubscriber(client);
             server->sendResponse(client, reqId, "unsubscribed");
@@ -430,6 +431,7 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
 void DaemonServer::registerHandlers() {
     auto sysH = std::make_shared<SysDataHandler>();
     handlers["sysdata"] = sysH;
+    handlers["sys"] = sysH;
 
     auto musicH = std::make_shared<MusicHandler>();
     handlers["music"] = musicH;

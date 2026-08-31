@@ -18,7 +18,10 @@ Item {
         ramGb: 0.0,
         temp: 0,
         netRx: 0,
-        netTx: 0
+        netTx: 0,
+        diskPercent: 0,
+        diskGb: 0.0,
+        diskTotalGb: 0.0
     })
 
     property var musicState: ({
