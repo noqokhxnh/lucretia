@@ -21,7 +21,9 @@
         "uptime": "Thời gian hoạt động",
         "default_os": "Linux"
       },
-      "github_repo": "noqokhxnh/lucretia"
+      "github_repo": "noqokhxnh/lucretia",
+      "check_updates": "Kiểm tra cập nhật",
+      "update_now": "Cập nhật ngay"
     },
     "tabs": {
       "welcome": "Chào mừng",

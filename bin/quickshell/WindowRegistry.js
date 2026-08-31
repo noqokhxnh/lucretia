@@ -220,7 +220,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "updater": { 
-            w: 500, h: 450, comp: "updater/UpdaterPopup.qml", 
+            w: 650, h: 550, comp: "updater/UpdaterPopup.qml", 
             pos: { 
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 

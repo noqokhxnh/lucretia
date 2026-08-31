@@ -21,7 +21,9 @@
         "uptime": "Uptime",
         "default_os": "Linux"
       },
-      "github_repo": "noqokhxnh/lucretia"
+      "github_repo": "noqokhxnh/lucretia",
+      "check_updates": "Check for updates",
+      "update_now": "Update now"
     },
     "tabs": {
       "welcome": "Welcome",

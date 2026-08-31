@@ -12,8 +12,8 @@ Item {
     focus: true
 
     // WAYLAND ANTI-DEADLOCK: Guarantee the initial frame is never 0x0.
-    implicitWidth: mainCard.width || 600
-    implicitHeight: mainCard.height || 550
+    implicitWidth: window.s(650)
+    implicitHeight: window.s(550)
 
     property bool _init: false
     property string updaterBin: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/updater/updater_backend"
@@ -177,18 +177,12 @@ Item {
     // =========================================================================
     Rectangle {
         id: mainCard
-        width: window.s(650)
-        height: window.s(550)
-        anchors.centerIn: parent 
-        
+        anchors.fill: parent
         radius: window.s(16)
         color: window.base
         border.color: window.surface1
         border.width: 1
         clip: true
-
-        Behavior on width { enabled: window._init; NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
-        Behavior on height { enabled: window._init; NumberAnimation { duration: 600; easing.type: Easing.OutExpo } }
 
         OrbitBackground {
             color1: window.mauve
