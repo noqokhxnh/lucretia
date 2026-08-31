@@ -17,6 +17,7 @@ PanelWindow {
 
     WlrLayershell.namespace: "qs-clipboard"
     WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: clipboardWindow.isVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     focusable: clipboardWindow.isVisible
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
@@ -30,6 +31,11 @@ PanelWindow {
         bottom: true
         left: true
         right: true
+    }
+
+    Keys.onEscapePressed: function(event) {
+        closeClipboard();
+        event.accepted = true;
     }
 
     function s(val) {
@@ -734,6 +740,10 @@ PanelWindow {
             border.color: "transparent"
             clip: true
 
+            MouseArea {
+                anchors.fill: parent
+            }
+
             Rectangle {
                 visible: clipboardWindow.attachEdge === "top" && container.dynamicCornerRadius > 0.5
                 x: 0
@@ -925,6 +935,11 @@ PanelWindow {
                         currentIndex: 0
                         boundsBehavior: Flickable.StopAtBounds
                         interactive: !clipboardWindow.isClearingClips && (contentHeight > height)
+
+                        Keys.onEscapePressed: function(event) {
+                            closeClipboard();
+                            event.accepted = true;
+                        }
 
                         highlightFollowsCurrentItem: false
 

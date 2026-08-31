@@ -17,6 +17,7 @@ PanelWindow {
 
     WlrLayershell.namespace: "qs-applauncher"
     WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.keyboardFocus: launcherWindow.isVisible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
     focusable: launcherWindow.isVisible
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
@@ -30,6 +31,11 @@ PanelWindow {
         bottom: true
         left: true
         right: true
+    }
+
+    Keys.onEscapePressed: function(event) {
+        closeLauncher();
+        event.accepted = true;
     }
 
     function s(val) {
@@ -1117,6 +1123,10 @@ PanelWindow {
             border.width: 0
             border.color: "transparent"
             clip: true
+
+            MouseArea {
+                anchors.fill: parent
+            }
 
             Rectangle {
                 visible: launcherWindow.attachEdge === "top" && container.dynamicCornerRadius > 0.5
