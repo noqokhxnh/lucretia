@@ -104,8 +104,8 @@ Item {
                     font.weight: Font.Bold
                     font.pixelSize: root.textFontSize
                     color: root.textColor
-                    elide: Text.ElideRight
-                    Layout.maximumWidth: Math.ceil(root.maxTextWidth > 0 ? Math.min(root.maxTextWidth, root.availableTextWidth) : root.availableTextWidth) + 2
+                    elide: (root.maxTextWidth > 0 || root.maxWidth > 0) ? Text.ElideRight : Text.ElideNone
+                    Layout.maximumWidth: (root.maxTextWidth > 0) ? root.maxTextWidth : ((root.maxWidth > 0) ? root.availableTextWidth : undefined)
                 }
 
                 Text {
@@ -116,8 +116,8 @@ Item {
                     font.pixelSize: Math.max(10, root.textFontSize - 6)
                     color: root.textColor
                     opacity: 0.75
-                    elide: Text.ElideRight
-                    Layout.maximumWidth: Math.ceil(root.maxTextWidth > 0 ? Math.min(root.maxTextWidth, root.availableTextWidth) : root.availableTextWidth) + 2
+                    elide: (root.maxTextWidth > 0 || root.maxWidth > 0) ? Text.ElideRight : Text.ElideNone
+                    Layout.maximumWidth: (root.maxTextWidth > 0) ? root.maxTextWidth : ((root.maxWidth > 0) ? root.availableTextWidth : undefined)
                 }
             }
         }

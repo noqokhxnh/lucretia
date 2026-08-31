@@ -223,7 +223,7 @@ Item {
                             fillDuration: 1200
 
                             onTriggered: {
-                                let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/serpantinum/master/install/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/ilyamiro/serpantinum/master/install/install.sh)\"'; fi";
+                                let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/master/install/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/master/install/install.sh)\"'; fi";
                                 Quickshell.execDetached(["bash", "-c", cmd]);
                                 Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
                             }
@@ -282,7 +282,7 @@ Item {
                                             font.family: ThemeBackend.fontFamily
                                             font.pixelSize: rootObj.s(12)
                                             color: ThemeBackend.text
-                                            Layout.preferredWidth: rootObj.s(105)
+                                            Layout.preferredWidth: rootObj.s(145)
                                             elide: Text.ElideRight
                                         }
 
@@ -357,7 +357,7 @@ Item {
                                             font.family: ThemeBackend.fontFamily
                                             font.pixelSize: rootObj.s(12)
                                             color: ThemeBackend.text
-                                            Layout.preferredWidth: rootObj.s(105)
+                                            Layout.preferredWidth: rootObj.s(145)
                                             elide: Text.ElideRight
                                         }
 
@@ -403,7 +403,7 @@ Item {
                     accentColor: ThemeBackend.surface0
                     textColor: ThemeBackend.text
 
-                    onTriggered: Quickshell.execDetached(["xdg-open", "https://github.com/ilyamiro/serpantinum"])
+                    onTriggered: Quickshell.execDetached(["xdg-open", "https://github.com/noqokhxnh/lucretia"])
                 }
             }
         }

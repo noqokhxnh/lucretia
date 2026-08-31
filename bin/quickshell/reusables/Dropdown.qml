@@ -8,7 +8,16 @@ import "../singletons"
 
 Item {
     id: root
-    implicitWidth: 160
+
+    Text {
+        id: measureDisplay
+        visible: false
+        text: root.currentValue !== "" ? root.currentValue : root.placeholderText
+        font.family: root.useOptionAsFontFamily && root.currentValue !== "" ? root.currentValue : root.fontFamily
+        font.pixelSize: root.fontPixelSize
+    }
+
+    implicitWidth: Math.max(160, Math.ceil(measureDisplay.implicitWidth + (root.horizontalPadding * 2) + root.iconSize + 24))
     implicitHeight: 32
 
     property var options: []

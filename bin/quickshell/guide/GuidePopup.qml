@@ -261,7 +261,7 @@ Item {
                 anchors.left: parent.left
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
-                width: root.s(260)
+                width: root.s(270)
                 
                 topLeftRadius: ThemeBackend.clampedBorderRadius
                 bottomLeftRadius: ThemeBackend.clampedBorderRadius

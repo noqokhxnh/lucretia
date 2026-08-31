@@ -7,9 +7,9 @@
       "version_by": "v{version} • bởi {author}",
       "hardware": {
         "device_name": "Tên thiết bị",
-        "processor": "Bộ vi xử lý (CPU)",
-        "graphics": "Card đồ họa (GPU)",
-        "memory": "Bộ nhớ (RAM)",
+        "processor": "CPU",
+        "graphics": "GPU",
+        "memory": "RAM",
         "disk_capacity": "Dung lượng ổ đĩa",
         "integrated_graphics": "Đồ họa tích hợp"
       },
@@ -21,7 +21,7 @@
         "uptime": "Thời gian hoạt động",
         "default_os": "Linux"
       },
-      "github_repo": "ilyamiro/serpantinum"
+      "github_repo": "noqokhxnh/lucretia"
     },
     "tabs": {
       "welcome": "Chào mừng",
@@ -66,7 +66,7 @@
     },
     "notifications": {
       "dnd": {
-        "title": "Không làm phiền (DND)",
+        "title": "DND",
         "desc": "Tắt âm thanh và popups thông báo ngoại trừ cảnh báo quan trọng"
       },
       "position": {
@@ -94,7 +94,7 @@
         "desc": "Kích hoạt tính năng quản lý nguồn điện và tự động khóa màn hình"
       },
       "manual_inhibit": {
-        "title": "Chống ngủ (Keep Awake)",
+        "title": "Keep Awake",
         "desc": "Thủ công ngăn hệ thống rơi vào trạng thái nghỉ/ngủ"
       },
       "mpris_inhibit": {
@@ -135,7 +135,7 @@
         "desc": "Time before dimming output"
       },
       "dpms": {
-        "title": "Tắt màn hình (DPMS)",
+        "title": "Tắt màn hình",
         "desc": "Time before turning screen completely off"
       },
       "lock": {
@@ -167,7 +167,7 @@
         "desc": "Chọn ngôn ngữ hiển thị cho giao diện"
       },
       "uiscale": {
-        "title": "Tỷ lệ thu phóng (UI Scale)",
+        "title": "Tỷ lệ thu phóng",
         "desc": "Đặt tỷ lệ thu phóng tổng thể cho giao diện người dùng"
       },
       "avatar": {
@@ -177,15 +177,15 @@
         "select_image_path": "Chọn đường dẫn hình ảnh..."
       },
       "mutesfx": {
-        "title": "Tắt âm thanh hiệu ứng (Mute SFX)",
+        "title": "Tắt âm thanh hiệu ứng",
         "desc": "Tắt hiệu ứng âm thanh giao diện người dùng"
       },
       "sfxvolume": {
-        "title": "Âm lượng hiệu ứng âm thanh (SFX)",
+        "title": "Âm lượng hiệu ứng âm thanh",
         "desc": "Không làm ảnh hưởng đến âm lượng đầu ra của các ứng dụng phát âm thanh"
       },
       "quickactions": {
-        "title": "Nút tác vụ nổi (Quick Actions)",
+        "title": "Nút tác vụ nổi",
         "desc": "Bật các nút tác vụ nổi nhanh trên màn hình desktop"
       },
       "location": {
@@ -281,10 +281,10 @@
       },
       "style": {
         "title": "Kiểu dáng thanh Bar",
-        "desc": "Chọn giữa kiểu thanh bar phân đoạn (modular), liền khối (solid) hoặc phủ kín",
-        "modular": "Phân đoạn (Modular)",
-        "solid": "Liền khối (Solid)",
-        "fill": "Phủ kín (Fill)"
+        "desc": "Chọn giữa kiểu thanh bar phân đoạn, liền khối hoặc phủ kín",
+        "modular": "Phân đoạn",
+        "solid": "Liền khối",
+        "fill": "Phủ kín"
       },
       "time": {
         "title": "Định dạng thời gian",
@@ -529,21 +529,21 @@
       "saved": "Đã lưu"
     },
     "presets": {
-      "flat": "Mặc định (Flat)",
-      "bass": "Tăng âm trầm (Bass)",
-      "treble": "Tăng âm bổng (Treble)",
-      "vocal": "Giọng hát (Vocal)",
+      "flat": "Mặc định",
+      "bass": "Tăng âm trầm",
+      "treble": "Tăng âm bổng",
+      "vocal": "Giọng hát",
       "pop": "Nhạc Pop",
       "rock": "Nhạc Rock",
       "jazz": "Nhạc Jazz",
-      "classic": "Cổ điển (Classic)",
+      "classic": "Cổ điển",
       "custom": "Tùy chỉnh"
     }
   },
   "network": {
     "tabs": {
-      "ethernet": "Mạng dây (Ethernet)",
-      "wifi": "Mạng không dây (Wi-Fi)",
+      "ethernet": "Mạng dây",
+      "wifi": "Mạng không dây",
       "bluetooth": "Bluetooth"
     },
     "status": {
@@ -596,7 +596,7 @@
     "timer": "Đồng hồ bấm giờ"
   },
   "screenshot": {
-    "video_mode": "Nhấn ghi hình (cổng portal sẽ xử lý việc chọn vùng)",
+    "video_mode": "Nhấn ghi hình",
     "select_region": "Chọn vùng cần chụp",
     "no_microphones": "Không tìm thấy microphone",
     "qr_timeout": "Hết thời gian chờ hoặc quét mã QR thất bại.",
@@ -640,9 +640,9 @@
       "empty": "Bạn đã xem hết mọi thông báo."
     },
     "profiles": {
-      "performance": "Hiệu năng cao (Performance)",
-      "balanced": "Cân bằng (Balanced)",
-      "power_saver": "Tiết kiệm pin (Power Saver)"
+      "performance": "Hiệu năng cao",
+      "balanced": "Cân bằng",
+      "power_saver": "Tiết kiệm pin"
     },
     "battery": "Thời lượng pin",
     "actions": {

@@ -174,7 +174,7 @@ binds {
     
     // --- Lock and Media Controls ---
     XF86PowerOff { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
-    Super+comma { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
+    Super+Comma { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
     Super+Space { spawn "playerctl" "play-pause"; }
     XF86AudioPause { spawn "playerctl" "play-pause"; }
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
