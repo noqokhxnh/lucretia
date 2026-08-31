@@ -20,10 +20,14 @@
 #include "apps/app_indexer.hpp"
 #include "services/service_manager.hpp"
 #include "media/media_processor.hpp"
+#include "media/audio_spectrum.hpp"
 #include "clipboard/clipboard_manager.hpp"
 
 #include "system/file_watcher.hpp"
 #include "system/dbus_watcher.hpp"
+#include "system/weather_engine.hpp"
+#include "system/theme_manager.hpp"
+#include "widgets/widget_manager.hpp"
 
 class DaemonServer;
 
@@ -48,7 +52,11 @@ public:
     AppIndexer* getAppIndexer() const { return appIndexer; }
     ServiceManager* getServiceManager() const { return serviceManager; }
     MediaProcessor* getMediaProcessor() const { return mediaProcessor; }
+    AudioSpectrumService* getAudioSpectrum() const { return audioSpectrum; }
     ClipboardManager* getClipboardManager() const { return clipboardManager; }
+    WeatherEngine* getWeatherEngine() const { return weatherEngine; }
+    ThemeManager* getThemeManager() const { return themeManager; }
+    WidgetManager* getWidgetManager() const { return widgetManager; }
     QNetworkAccessManager* getNetManager() const { return netManager; }
 
     void addSysSubscriber(QLocalSocket* client) { if (!sysSubscribers.contains(client)) sysSubscribers.append(client); }
@@ -65,12 +73,14 @@ public:
     QString handleScreenshotScanQr(const QString& inputPath);
     void handleWallpaperExtractColors(const QString& thumbsDir, const QString& markerDir);
 
+public slots:
+    void broadcastSysData();
+    void broadcastMusicData();
+
 private slots:
     void onNewConnection();
     void onClientDisconnected(QLocalSocket* client);
     void onClientReadyRead(QLocalSocket* client);
-    void broadcastSysData();
-    void broadcastMusicData();
 
 private:
     QLocalServer* server;
@@ -84,9 +94,13 @@ private:
     AppIndexer* appIndexer;
     ServiceManager* serviceManager;
     MediaProcessor* mediaProcessor;
+    AudioSpectrumService* audioSpectrum;
     ClipboardManager* clipboardManager;
     FileWatcherService* fileWatcher;
     DBusWatcherService* dbusWatcher;
+    WeatherEngine* weatherEngine;
+    ThemeManager* themeManager;
+    WidgetManager* widgetManager;
     QNetworkAccessManager* netManager;
 
     std::unordered_map<std::string, std::shared_ptr<ICommandHandler>> handlers;

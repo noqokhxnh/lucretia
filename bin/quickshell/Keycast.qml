@@ -33,13 +33,8 @@ Variants {
             }
 
             // --- Responsive Scaling ---
-            Scaler {
-                id: scaler
-                currentWidth: window.screen.width
-            }
-
             function s(val) { 
-                return scaler.s(val); 
+                return Scaler.s(val); 
             }
 
             // Dynamic sizing based on row items
@@ -53,12 +48,10 @@ Variants {
             property int nextId: 0
             property int maxBubbles: 3
 
-            Caching { id: paths }
-
             // State file poller
             Process {
                 id: statePoller
-                command: ["bash", "-c", "cat " + paths.getRunDir("keycast") + "/enabled 2>/dev/null || echo '0'"]
+                command: ["bash", "-c", "cat " + Caching.getRunDir("keycast") + "/enabled 2>/dev/null || echo '0'"]
                 running: true
                 stdout: StdioCollector {
                     onStreamFinished: {
@@ -77,7 +70,7 @@ Variants {
             // State file watcher
             Process {
                 id: stateWatcher
-                command: ["bash", "-c", "mkdir -p " + paths.getRunDir("keycast") + " && touch " + paths.getRunDir("keycast") + "/enabled && exec inotifywait -qq -e modify,close_write " + paths.getRunDir("keycast") + "/enabled"]
+                command: ["bash", "-c", "mkdir -p " + Caching.getRunDir("keycast") + " && touch " + Caching.getRunDir("keycast") + "/enabled && exec inotifywait -qq -e modify,close_write " + Caching.getRunDir("keycast") + "/enabled"]
                 running: true
                 onExited: {
                     statePoller.running = false;
@@ -90,7 +83,7 @@ Variants {
             // --- Compiled C++ Sniffer Process ---
             Process {
                 id: keycastBackend
-                command: [paths.home + "/.config/niri/bin/keycast_backend"]
+                command: [Caching.home + "/.config/niri/bin/keycast_backend"]
                 running: window.isEnabled
                 
                 stdout: SplitParser {

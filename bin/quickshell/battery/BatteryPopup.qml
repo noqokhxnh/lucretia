@@ -10,7 +10,7 @@ import "../components" as Components
 Item {
     id: window
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
     // --- RECEIVE THE DBUS LIST FROM MAIN.QML ---
     property var notifModel
@@ -51,16 +51,8 @@ Item {
         }
     }
 
-    // --- Responsive Scaling Logic ---
-    Scaler {
-        id: scaler
-        // Uses the physical screen width so the popup scales synchronously with the TopBar
-        currentWidth: Screen.width
-    }
-    
-    // Helper function scoped to the root Item for easy access in deeply nested elements and Canvases
     function s(val) { 
-        return scaler.s(val); 
+        return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; 
     }
 
     // -------------------------------------------------------------------------

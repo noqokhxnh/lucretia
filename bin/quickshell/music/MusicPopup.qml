@@ -12,16 +12,8 @@ import "../components" as Components
 Item {
     id: root
 
-    // --- Responsive Scaling Logic ---
-    Scaler {
-        id: scaler
-        // Uses the physical screen width so the popup scales synchronously
-        currentWidth: Screen.width
-    }
-    
-    // Helper function scoped to the root Item for easy access
     function s(val) { 
-        return scaler.s(val); 
+        return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; 
     }
 
     // Theme Colors

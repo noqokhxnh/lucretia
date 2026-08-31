@@ -39,6 +39,7 @@ public:
         if (action == "subscribe") {
             server->addSysSubscriber(client);
             server->sendResponse(client, reqId, "subscribed");
+            server->broadcastSysData();
         } else if (action == "unsubscribe") {
             server->removeSysSubscriber(client);
             server->sendResponse(client, reqId, "unsubscribed");
@@ -81,10 +82,17 @@ public:
     void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
         auto* cbMgr = server->getClipboardManager();
         if (action == "fetch") {
+            // popen("cliphist list") can block on sqlite contention; run it
+            // off the event loop so the daemon never freezes.
             int offset = req.contains("offset") ? req["offset"].toInt() : 0;
             int limit = req.contains("limit") ? req["limit"].toInt() : 24;
             QString cacheDir = req["cache_dir"].toString();
-            server->sendResponse(client, reqId, cbMgr->fetchClipboard(offset, limit, cacheDir));
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, cbMgr, offset, limit, cacheDir]() {
+                QJsonArray arr = cbMgr->fetchClipboard(offset, limit, cacheDir);
+                QMetaObject::invokeMethod(server, [server, client, reqId, arr]() {
+                    server->sendResponse(client, reqId, arr);
+                });
+            }));
         } else if (action == "toggle-pin") {
             cbMgr->togglePin(req["item_id"].toString(), req["cache_dir"].toString());
             server->sendResponse(client, reqId, "ok");
@@ -92,7 +100,13 @@ public:
             cbMgr->deleteItem(req["item_id"].toString());
             server->sendResponse(client, reqId, "ok");
         } else if (action == "decode") {
-            server->sendResponse(client, reqId, cbMgr->decodeItem(req["item_id"].toString()));
+            QString itemId = req["item_id"].toString();
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, cbMgr, itemId]() {
+                QString res = cbMgr->decodeItem(itemId);
+                QMetaObject::invokeMethod(server, [server, client, reqId, res]() {
+                    server->sendResponse(client, reqId, res);
+                });
+            }));
         }
     }
 };
@@ -220,6 +234,111 @@ public:
     }
 };
 
+class WeatherHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* weatherEngine = server->getWeatherEngine();
+        if (!weatherEngine) {
+            server->sendResponse(client, reqId, QJsonObject(), "error");
+            return;
+        }
+
+        if (action == "get" || action == "fetch") {
+            server->sendResponse(client, reqId, weatherEngine->getWeatherData());
+        } else if (action == "refresh") {
+            weatherEngine->refresh(true);
+            server->sendResponse(client, reqId, weatherEngine->getWeatherData());
+        } else if (action == "set_location") {
+            double lat = req["lat"].toDouble(21.0285);
+            double lon = req["lon"].toDouble(105.8542);
+            QString city = req["city"].toString();
+            weatherEngine->setLocation(lat, lon, city);
+            server->sendResponse(client, reqId, "ok");
+        } else if (action == "set_unit") {
+            QString unit = req["unit"].toString("metric");
+            weatherEngine->setUnit(unit);
+            server->sendResponse(client, reqId, "ok");
+        }
+    }
+};
+
+class ThemeHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* tm = server->getThemeManager();
+        if (!tm) {
+            server->sendResponse(client, reqId, QJsonObject(), "error");
+            return;
+        }
+
+        if (action == "list" || action == "list_themes") {
+            server->sendResponse(client, reqId, tm->listThemes());
+        } else if (action == "get") {
+            QString name = req["name"].toString();
+            server->sendResponse(client, reqId, tm->getTheme(name));
+        } else if (action == "save" || action == "save_custom") {
+            QString name = req["name"].toString();
+            QJsonObject colors = req["colors"].toObject();
+            bool ok = tm->saveCustomTheme(name, colors);
+            server->sendResponse(client, reqId, ok ? "ok" : "error");
+        } else if (action == "apply") {
+            QString name = req["name"].toString();
+            bool ok = tm->applyTheme(name);
+            server->sendResponse(client, reqId, ok ? "ok" : "error");
+        } else if (action == "fonts" || action == "list_fonts") {
+            QJsonArray fontArr;
+            for (const QString& f : tm->listFonts()) {
+                fontArr.append(f);
+            }
+            server->sendResponse(client, reqId, fontArr);
+        }
+    }
+};
+
+class SpectrumHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* spec = server->getAudioSpectrum();
+        if (!spec) {
+            server->sendResponse(client, reqId, "error");
+            return;
+        }
+
+        if (action == "subscribe") {
+            spec->addSubscriber();
+            server->sendResponse(client, reqId, "subscribed");
+        } else if (action == "unsubscribe") {
+            spec->removeSubscriber();
+            server->sendResponse(client, reqId, "unsubscribed");
+        } else if (action == "set_bars") {
+            int bars = req["bars"].toInt(32);
+            spec->setBarCount(bars);
+            server->sendResponse(client, reqId, "ok");
+        }
+    }
+};
+
+class WidgetHandler : public ICommandHandler {
+public:
+    void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
+        auto* wm = server->getWidgetManager();
+        if (!wm) {
+            server->sendResponse(client, reqId, QJsonArray(), "error");
+            return;
+        }
+
+        if (action == "load" || action == "get_layout") {
+            QString monitor = req["monitor"].toString("default");
+            server->sendResponse(client, reqId, wm->loadLayout(monitor));
+        } else if (action == "save" || action == "save_layout") {
+            QString monitor = req["monitor"].toString("default");
+            QJsonArray layout = req["layout"].toArray();
+            bool ok = wm->saveLayout(monitor, layout);
+            server->sendResponse(client, reqId, ok ? "ok" : "error");
+        }
+    }
+};
+
 // -----------------------------------------------------------------------------
 // DAEMON SERVER IMPLEMENTATION
 // -----------------------------------------------------------------------------
@@ -230,10 +349,42 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     appIndexer = new AppIndexer(this);
     serviceManager = new ServiceManager(this);
     mediaProcessor = new MediaProcessor(this);
+    audioSpectrum = new AudioSpectrumService(this);
     clipboardManager = new ClipboardManager(this);
     fileWatcher = new FileWatcherService(this);
     dbusWatcher = new DBusWatcherService(this);
     netManager = new QNetworkAccessManager(this);
+    weatherEngine = new WeatherEngine(netManager, this);
+    themeManager = new ThemeManager(this);
+    widgetManager = new WidgetManager(this);
+
+    connect(audioSpectrum, &AudioSpectrumService::spectrumUpdated, this, [this](const QJsonArray& levels) {
+        QJsonObject eventObj;
+        eventObj["event"] = "spectrum";
+        eventObj["data"] = levels;
+        QJsonDocument doc(eventObj);
+        QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
+        for (QLocalSocket* client : clients) {
+            if (client && client->state() == QLocalSocket::ConnectedState) {
+                client->write(payload);
+                client->flush();
+            }
+        }
+    });
+
+    connect(weatherEngine, &WeatherEngine::weatherUpdated, this, [this](const QJsonObject& data) {
+        QJsonObject eventObj;
+        eventObj["event"] = "weather";
+        eventObj["data"] = data;
+        QJsonDocument doc(eventObj);
+        QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
+        for (QLocalSocket* client : clients) {
+            if (client && client->state() == QLocalSocket::ConnectedState) {
+                client->write(payload);
+                client->flush();
+            }
+        }
+    });
 
     connect(fileWatcher, &FileWatcherService::fileChanged, this, [this](const QString& eventType, const QString& path) {
         QJsonObject eventObj;
@@ -293,6 +444,7 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
 void DaemonServer::registerHandlers() {
     auto sysH = std::make_shared<SysDataHandler>();
     handlers["sysdata"] = sysH;
+    handlers["sys"] = sysH;
 
     auto musicH = std::make_shared<MusicHandler>();
     handlers["music"] = musicH;
@@ -319,6 +471,20 @@ void DaemonServer::registerHandlers() {
 
     auto wpH = std::make_shared<WallpaperHandler>();
     handlers["wallpaper"] = wpH;
+
+    auto weatherH = std::make_shared<WeatherHandler>();
+    handlers["weather"] = weatherH;
+
+    auto themeH = std::make_shared<ThemeHandler>();
+    handlers["theme"] = themeH;
+    handlers["fonts"] = themeH;
+
+    auto specH = std::make_shared<SpectrumHandler>();
+    handlers["spectrum"] = specH;
+
+    auto widgetH = std::make_shared<WidgetHandler>();
+    handlers["widgets"] = widgetH;
+    handlers["widget"] = widgetH;
 }
 
 void DaemonServer::onNewConnection() {

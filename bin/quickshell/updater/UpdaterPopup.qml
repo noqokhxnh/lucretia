@@ -18,16 +18,8 @@ Item {
     property bool _init: false
     property string updaterBin: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/updater/updater_backend"
 
-    // --- Responsive Scaling Logic ---
-    Scaler {
-        id: scaler
-        currentWidth: Screen.width
-    }
-    
     function s(val) { 
-        // Failsafe: If Screen.width isn't ready on tick 1, return the raw value
-        let res = scaler.s(val);
-        return res > 0 ? res : val; 
+        return (typeof Scaler !== "undefined" && Scaler.s) ? Scaler.s(val) : val; 
     }
 
     // -------------------------------------------------------------------------

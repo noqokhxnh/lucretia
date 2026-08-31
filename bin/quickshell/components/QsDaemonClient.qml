@@ -18,7 +18,10 @@ Item {
         ramGb: 0.0,
         temp: 0,
         netRx: 0,
-        netTx: 0
+        netTx: 0,
+        diskPercent: 0,
+        diskGb: 0.0,
+        diskTotalGb: 0.0
     })
 
     property var musicState: ({
@@ -41,11 +44,35 @@ Item {
         artUrl: ""
     })
 
+    property var weatherData: ({
+        temp: 0,
+        temp_formatted: "--°",
+        feels_like: 0,
+        feels_like_formatted: "--°",
+        humidity: 0,
+        wind: 0,
+        wind_formatted: "0 km/h",
+        icon: "󰖐",
+        description: "Loading...",
+        hex: "#89b4fa",
+        unit_sym: "°C",
+        city: "",
+        forecast: [],
+        hourly: []
+    })
+
+    property var spectrumLevels: []
+
     property bool isConnected: daemonSocket.connected
+
+    // Last time a message arrived from the daemon (liveness watchdog)
+    property int _lastMsgTime: 0
 
     // --- Real-time Event Signals ---
     signal sysDataReceived(var data)
     signal musicStateReceived(var data)
+    signal weatherReceived(var data)
+    signal spectrumReceived(var levels)
     signal eqStateReceived(var data)
     signal focusStatsReceived(var data)
     signal clipboardReceived(var data)
@@ -76,8 +103,9 @@ Item {
                 if (!msg) return;
 
                 try {
+                    root._lastMsgTime = Date.now();
                     let parsed = JSON.parse(msg);
-                    
+
                     // Case 1: Subscription Broadcast / Event Push
                     if (parsed.event !== undefined) {
                         let eventType = parsed.event;
@@ -113,6 +141,12 @@ Item {
                             root.toolsReceived(payload);
                         } else if (eventType === "photobooth") {
                             root.photoboothReceived(payload);
+                        } else if (eventType === "weather") {
+                            root.weatherData = payload;
+                            root.weatherReceived(payload);
+                        } else if (eventType === "spectrum") {
+                            root.spectrumLevels = payload;
+                            root.spectrumReceived(payload);
                         } else if (eventType === "screenshot") {
                             root.screenshotReceived(payload);
                         }
@@ -142,9 +176,17 @@ Item {
         onConnectedChanged: {
             if (connected) {
                 console.log("[QsDaemonClient] Connected to C++ qs_daemon!");
+                root._lastMsgTime = Date.now();
                 // Send initial handshake / subscriptions
                 sendRequest("sysdata", "subscribe", {}, null);
                 sendRequest("music", "subscribe", {}, null);
+                // Weather is delivered via broadcasts, but fetch once on every
+                // (re)connect so a fresh connection never sits on stale data.
+                sendRequest("weather", "get", {}, (res) => {
+                    if (res && typeof res === "object" && res.temp !== undefined) {
+                        root.weatherData = res;
+                    }
+                });
             } else {
                 console.log("[QsDaemonClient] Disconnected from qs_daemon. Retrying...");
             }
@@ -179,6 +221,25 @@ Item {
         }
     }
 
+    // Sysdata broadcasts arrive every 10s, so a healthy connection can go
+    // quiet for longer than that. Only force a reconnect if we hear nothing
+    // well past the slowest broadcast interval.
+    Timer {
+        id: livenessTimer
+        interval: 10000
+        repeat: true
+        running: daemonSocket.connected
+        onTriggered: {
+            if (daemonSocket.connected && (Date.now() - root._lastMsgTime > 25000)) {
+                console.warn("[QsDaemonClient] No daemon traffic, forcing reconnect");
+                daemonSocket.connected = false;
+                Qt.callLater(() => {
+                    daemonSocket.connected = true;
+                });
+            }
+        }
+    }
+
     // --- Core API: Send Asynchronous Request to Daemon ---
     function sendRequest(target, action, argsObj, callback) {
         let reqIdStr = (root.nextRequestId++).toString();
@@ -205,5 +266,41 @@ Item {
             }
         }
         return reqIdStr;
+    }
+
+    function fetchWeather(callback) {
+        return sendRequest("weather", "get", {}, callback);
+    }
+
+    function refreshWeather(callback) {
+        return sendRequest("weather", "refresh", {}, callback);
+    }
+
+    function setWeatherLocation(lat, lon, city, callback) {
+        return sendRequest("weather", "set_location", { lat: lat, lon: lon, city: city }, callback);
+    }
+
+    function setWeatherUnit(unit, callback) {
+        return sendRequest("weather", "set_unit", { unit: unit }, callback);
+    }
+
+    function subscribeSpectrum(callback) {
+        return sendRequest("spectrum", "subscribe", {}, callback);
+    }
+
+    function unsubscribeSpectrum(callback) {
+        return sendRequest("spectrum", "unsubscribe", {}, callback);
+    }
+
+    function setSpectrumBars(bars, callback) {
+        return sendRequest("spectrum", "set_bars", { bars: bars }, callback);
+    }
+
+    function loadWidgetLayout(monitor, callback) {
+        return sendRequest("widgets", "load", { monitor: monitor || "default" }, callback);
+    }
+
+    function saveWidgetLayout(monitor, layout, callback) {
+        return sendRequest("widgets", "save", { monitor: monitor || "default", layout: layout }, callback);
     }
 }

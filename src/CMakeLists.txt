@@ -23,10 +23,14 @@ set(DAEMON_SOURCES
     system/system_monitor.cpp
     system/file_watcher.cpp
     system/dbus_watcher.cpp
+    system/weather_engine.cpp
+    system/theme_manager.cpp
     music/music_manager.cpp
     focus/focus_tracker.cpp
     apps/app_indexer.cpp
     media/media_processor.cpp
+    media/audio_spectrum.cpp
+    widgets/widget_manager.cpp
     services/service_manager.cpp
     clipboard/clipboard_manager.cpp
 )
@@ -36,10 +40,14 @@ set(DAEMON_HEADERS
     system/system_monitor.hpp
     system/file_watcher.hpp
     system/dbus_watcher.hpp
+    system/weather_engine.hpp
+    system/theme_manager.hpp
     music/music_manager.hpp
     focus/focus_tracker.hpp
     apps/app_indexer.hpp
     media/media_processor.hpp
+    media/audio_spectrum.hpp
+    widgets/widget_manager.hpp
     services/service_manager.hpp
     clipboard/clipboard_manager.hpp
 )

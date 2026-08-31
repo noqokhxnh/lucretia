@@ -3,7 +3,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import "watchers" as Watchers
-// import "overview" as OverviewModule (removed)
+import "."
 
 ShellRoot {
     Connections {
@@ -16,9 +16,7 @@ ShellRoot {
         }
     }
 
-    Caching {
-        id: paths
-    }
+
 
     property int restartCount: 0
     property real lastRestartTime: 0
@@ -75,11 +73,29 @@ ShellRoot {
         sourceComponent: Component {
             Item {
                 Watchers.AutoPowerManager {}
+                ScreenshotOverlay {}
                 Main {}
-                TopBar {}
-                Floating {}
+                Bar {}
+                Lock {}
+                Launcher {}
+                Clipboard {}
+                Polkit {}
+                PopoutManager {}
                 Keycast {}
-                // OverviewModule.Overview {} (removed)
+
+                Variants {
+                    model: Quickshell.screens
+                    delegate: WidgetLoader {
+                        required property var modelData
+                        screen: modelData
+                        monitorName: modelData.name
+                    }
+                }
+
+                Loader {
+                    active: true
+                    sourceComponent: Floating {}
+                }
             }
         }
     }

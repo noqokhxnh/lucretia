@@ -1,4 +1,6 @@
 #include "system_monitor.hpp"
+#include <sys/statvfs.h>
+#include <cmath>
 
 SysDataService::SysDataService(QObject* parent) : QObject(parent) {
     lastCpu = get_cpu_stats();
@@ -36,6 +38,12 @@ QJsonObject SysDataService::getMetrics() {
     // Temp
     int temp = get_temp();
 
+    // Disk
+    int disk_pct = 0;
+    double disk_gb = 0.0;
+    double disk_total_gb = 0.0;
+    get_disk_stats(disk_pct, disk_gb, disk_total_gb);
+
     lastCpu = currentCpu;
     lastNet = currentNet;
 
@@ -46,6 +54,9 @@ QJsonObject SysDataService::getMetrics() {
     obj["temp"] = temp;
     obj["netRx"] = rx_rate;
     obj["netTx"] = tx_rate;
+    obj["diskPercent"] = disk_pct;
+    obj["diskGb"] = disk_gb;
+    obj["diskTotalGb"] = disk_total_gb;
     return obj;
 }
 
@@ -132,4 +143,25 @@ int SysDataService::get_temp() {
         closedir(dir);
     }
     return 0;
+}
+
+void SysDataService::get_disk_stats(int &percent, double &used_gb, double &total_gb) {
+    struct statvfs stat;
+    if (statvfs("/", &stat) == 0) {
+        unsigned long long total_bytes = (unsigned long long)stat.f_blocks * stat.f_frsize;
+        unsigned long long free_bytes = (unsigned long long)stat.f_bfree * stat.f_frsize;
+        unsigned long long avail_bytes = (unsigned long long)stat.f_bavail * stat.f_frsize;
+        unsigned long long used_bytes = (total_bytes >= free_bytes) ? (total_bytes - free_bytes) : 0;
+        
+        if (total_bytes > 0) {
+            unsigned long long usable_total = used_bytes + avail_bytes;
+            if (usable_total > 0) {
+                percent = static_cast<int>(std::round(100.0 * used_bytes / usable_total));
+            } else {
+                percent = static_cast<int>(std::round(100.0 * used_bytes / total_bytes));
+            }
+            used_gb = static_cast<double>(used_bytes) / (1024.0 * 1024.0 * 1024.0);
+            total_gb = static_cast<double>(total_bytes) / (1024.0 * 1024.0 * 1024.0);
+        }
+    }
 }

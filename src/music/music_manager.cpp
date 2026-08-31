@@ -372,6 +372,16 @@ MusicState MusicService::fetchDataInternal() {
             if (data.percent < 0) data.percent = 0;
 
             QString rawArtUrl = metadata.value("mpris:artUrl").toString();
+            if (rawArtUrl.isEmpty()) rawArtUrl = metadata.value("artUrl").toString();
+            if (rawArtUrl.isEmpty()) rawArtUrl = metadata.value("xesam:url").toString();
+
+            static QRegularExpression ytRegex(R"((youtube\.com/watch\?.*v=|youtu\.be/|youtube\.com/embed/|youtube\.com/v/|music\.youtube\.com/watch\?.*v=)([a-zA-Z0-9_-]{11}))");
+            QRegularExpressionMatch ytMatch = ytRegex.match(rawArtUrl);
+            if (ytMatch.hasMatch()) {
+                QString ytId = ytMatch.captured(2);
+                rawArtUrl = "https://i.ytimg.com/vi/" + ytId + "/hqdefault.jpg";
+            }
+
             if (!rawArtUrl.isEmpty()) {
                 QString hash = QCryptographicHash::hash(rawArtUrl.toUtf8(), QCryptographicHash::Md5).toHex();
                 QString cachedArt = coversDir + "/" + hash + "_art.jpg";
@@ -413,7 +423,10 @@ MusicState MusicService::fetchDataInternal() {
                     } else {
                         QString path = rawArtUrl;
                         if (path.startsWith("file://")) path = path.mid(7);
-                        if (QFile::exists(path)) { if (QFile::copy(path, cachedArt)) downloaded = true; }
+                        if (QFile::exists(path)) {
+                            if (QFile::exists(cachedArt)) QFile::remove(cachedArt);
+                            if (QFile::copy(path, cachedArt)) downloaded = true;
+                        }
                     }
                     if (downloaded) processImage(cachedArt, cachedBlur, cachedGrad, cachedText, &data);
                 }

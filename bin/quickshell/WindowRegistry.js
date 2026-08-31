@@ -1,144 +1,325 @@
 .pragma library
 
 function getScale(mw, mh, userScale) {
-    if (arguments.length === 2) {
-        userScale = mh;
-        mh = mw * (1080.0 / 1920.0);
-    }
-
-    if (mw <= 0 || mh <= 0) return 1.0;
-    
-    let rw = mw / 1920.0;
-    let rh = mh / 1080.0;
-    let r = Math.min(rw, rh);
-    
-    let baseScale = 1.0;
-    
-    if (r <= 1.0) {
-        baseScale = Math.max(0.35, Math.pow(r, 0.85));
-    } else {
-        baseScale = Math.pow(r, 0.5);
-    }
-    
-    return baseScale * (userScale !== undefined ? userScale : 1.0);
+    return (userScale !== undefined && userScale !== null) ? userScale : 1.0;
 }
 
 function s(val, scale) {
     return Math.round(val * scale);
 }
 
-function getLayout(name, mx, my, mw, mh, userScale) {
-    let scale = getScale(mw, mh, userScale);
-
-    let rawLayouts = {
-        // --- Top Right Popups ---
-        "battery":           { baseW: 801,  baseH: 760,  pos: "top-right", comp: "battery/BatteryPopup.qml" },
-        "network":           { baseW: 900,  baseH: 700,  pos: "top-right", comp: "network/NetworkPopup.qml" },
-        "volume":            { baseW: 450,  baseH: 700,  pos: "top-right", comp: "volume/VolumePopup.qml" },
-        "controlcenter":     { baseW: 420,  baseH: 580,  pos: "center",    comp: "controlcenter/ControlCenterPopup.qml" },
-        
-        // --- Central Standard Tools ---
-        "applauncher":       { baseW: 800,  baseH: 700,  pos: "center",    comp: "applauncher/appLauncher.qml" },
-        "clipboard":         { baseW: 800,  baseH: 700,  pos: "center",    comp: "clipboard/ClipboardManager.qml" },
-        "monitors":          { baseW: 800,  baseH: 650,  pos: "center",    comp: "monitors/MonitorPopup.qml" },
-        "stewart":           { baseW: 800,  baseH: 650,  pos: "center",    comp: "stewart/stewart.qml" },
-        "notes":             { baseW: 900,  baseH: 700,  pos: "center",    comp: "notes/NotesPopup.qml" },
-        "photobooth":        { baseW: 850,  baseH: 750,  pos: "center",    comp: "photobooth/PhotoBooth.qml" },
-        "screenshotgallery": { baseW: 900,  baseH: 700,  pos: "center",    comp: "screenshot/ScreenshotGallery.qml" },
-
-        // --- Central Large Tools ---
-        "focustime":         { baseW: 900,  baseH: 700,  pos: "center",    comp: "focustime/FocusTimePopup.qml" },
-        "services":          { baseW: 1150, baseH: 800,  pos: "center",    comp: "services/ServicesOverlay.qml" },
-
-        // --- Extralarge / Custom Centered ---
-        "guide":             { baseW: 1200, baseH: 750,  pos: "center",    comp: "guide/GuidePopup.qml" },
-        "dashboard":         { baseW: 1200, baseH: 800,  pos: "center",    comp: "Dashboard.qml" },
-        "calendar":          { baseW: 1450, baseH: 750,  pos: "top-center", comp: "calendar/CalendarPopup.qml" },
-        "updater":           { baseW: 950,  baseH: 850,  pos: "center",    comp: "updater/UpdaterPopup.qml" },
-        "wallpaper":         { baseW: 1920, baseH: 650,  pos: "wallpaper", comp: "wallpaper/WallpaperPicker.qml" },
-        
-        // --- Top Left Edge ---
-        "music":             { baseW: 700,  baseH: 650,  pos: "top-left",  comp: "music/MusicPopup.qml" },
-
-        "movies":            { baseW: 1370, baseH: 850,  pos: "bottom-center", comp: "movies/MovieWidget.qml" },
-        
-        // --- Screen Spanning Panels ---
-        "settings":          { baseW: 450,  baseH: 1080, pos: "left-span", comp: "settings/SettingsPopup.qml" },
-        
-        // --- Utility ---
-        "hidden":            { baseW: 1,    baseH: 1,    pos: "hidden",    comp: "" } 
-    };
-
-    if (!rawLayouts[name]) return null;
-
-    let item = rawLayouts[name];
-    if (item.pos === "hidden") {
-        return { w: 1, h: 1, rx: -5000 - mx, ry: -5000 - my, x: -5000, y: -5000, comp: "" };
+function getWidgetLauncherEntries(i18n) {
+    function tr(key, fallback) {
+        if (i18n && typeof i18n.t === "function") {
+            let res = i18n.t(key);
+            if (res && res !== key) return res;
+        }
+        return fallback;
     }
 
-    // Dynamic relative bounds calculations
-    let maxW = Math.floor(mw * 0.95);
-    let maxH = Math.floor(mh * 0.90);
-    
-    let w = Math.min(s(item.baseW, scale), maxW);
-    let h = Math.min(s(item.baseH, scale), maxH);
-    
+    return [
+        {
+            id: "wallpaper",
+            name: tr("widgets.wallpaper.name", "Wallpaper Picker"),
+            description: tr("widgets.wallpaper.desc", "Browse and set desktop wallpaper"),
+            icon: "preferences-desktop-wallpaper",
+            fontIcon: "󰸉"
+        },
+        {
+            id: "network",
+            name: tr("widgets.network.name", "Network Settings"),
+            description: tr("widgets.network.desc", "Manage WiFi, Ethernet, and network connections"),
+            icon: "network-wireless",
+            fontIcon: "󰤨"
+        },
+        {
+            id: "volume",
+            name: tr("widgets.volume.name", "Volume & Audio"),
+            description: tr("widgets.volume.desc", "Manage sound devices and volume levels"),
+            icon: "audio-volume-high",
+            fontIcon: "󰕾"
+        },
+        {
+            id: "guide",
+            name: tr("widgets.guide.name", "Settings"),
+            description: tr("widgets.guide.desc", "Lucretia settings"),
+            icon: "help-browser",
+            fontIcon: "󰋖"
+        },
+        {
+            id: "calendar",
+            name: tr("widgets.calendar.name", "Calendar & Clock"),
+            description: tr("widgets.calendar.desc", "View date, time, and schedule"),
+            icon: "x-office-calendar",
+            fontIcon: "󰸗"
+        },
+        {
+            id: "music",
+            name: tr("widgets.music.name", "Media Player"),
+            description: tr("widgets.music.desc", "Control music and media playback"),
+            icon: "multimedia-audio-player",
+            fontIcon: "󰝚"
+        },
+        {
+            id: "system",
+            name: tr("widgets.system.name", "System Controls"),
+            description: tr("widgets.system.desc", "Performance monitor, power, and quick settings"),
+            icon: "preferences-system",
+            fontIcon: "󰒓"
+        }
+    ];
+}
+
+function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
+    let scale = (userScale !== undefined && userScale !== null) ? userScale : 1.0;
+    if (!barPosition) barPosition = "top";
+
+    let base = {
+        "network": { 
+            w: 720, h: 600, comp: "network/NetworkPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-right", mt: 52, mr: 4 }, 
+                "bottom": { anchor: "bottom-right", mb: 52, mr: 4 }, 
+                "left": { anchor: "bottom-left", ml: 52, mb: 4 }, 
+                "right": { anchor: "bottom-right", mr: 52, mb: 4 } 
+            } 
+        },
+        "volume": { 
+            w: 410, h: 580, comp: "volume/VolumePopup.qml", 
+            pos: { 
+                "top": { anchor: "top-right", mt: 52, mr: 5 }, 
+                "bottom": { anchor: "bottom-right", mb: 52, mr: 5 }, 
+                "left": { anchor: "bottom-left", ml: 52, mb: 5 }, 
+                "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
+            } 
+        },
+        "guide": { 
+            w: 1200, h: 750, comp: "guide/GuidePopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "calendar": { 
+            w: 1360, h: 510, comp: "calendar/CalendarPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-center", mt: 52 }, 
+                "bottom": { anchor: "bottom-center", mb: 52 }, 
+                "left": { anchor: "top-center", mt: 12 }, 
+                "right": { anchor: "top-center", mt: 12 } 
+            } 
+        },
+        "wallpaper": { 
+            w: "fill", h: 650, comp: "wallpaper/WallpaperPicker.qml", 
+            pos: { 
+                "top": { anchor: "center-left" }, 
+                "bottom": { anchor: "center-left" }, 
+                "left": { anchor: "center-left" }, 
+                "right": { anchor: "center-left" } 
+            } 
+        },
+        "music": { 
+            w: 625, h: 565, comp: "media/MusicPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-left", mt: 52, ml: 5 }, 
+                "bottom": { anchor: "bottom-left", mb: 52, ml: 5 }, 
+                "left": { anchor: "top-left", mt: 5, ml: 52 }, 
+                "right": { anchor: "top-right", mt: 5, mr: 52 } 
+            } 
+        },
+        "notifications": { 
+            w: 500, h: "fill", comp: "notifications/NotificationCenter.qml", 
+            pos: { 
+                "top": { anchor: "left" }, 
+                "bottom": { anchor: "left" }, 
+                "left": { anchor: "left" }, 
+                "right": { anchor: "left" } 
+            } 
+        },
+        "applauncher": { 
+            w: 800, h: 700, comp: "applauncher/appLauncher.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "clipboard": { 
+            w: 800, h: 700, comp: "clipboard/ClipboardManager.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "notes": { 
+            w: 900, h: 640, comp: "notes/NotesPopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "focustime": { 
+            w: 860, h: 700, comp: "focustime/FocusTimePopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "photobooth": { 
+            w: 700, h: 620, comp: "photobooth/PhotoBooth.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "services": { 
+            w: 900, h: 700, comp: "services/ServicesOverlay.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "monitors": { 
+            w: 880, h: 580, comp: "monitors/MonitorPopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "battery": { 
+            w: 360, h: 400, comp: "battery/BatteryPopup.qml", 
+            pos: { 
+                "top": { anchor: "top-right", mt: 52, mr: 5 }, 
+                "bottom": { anchor: "bottom-right", mb: 52, mr: 5 }, 
+                "left": { anchor: "bottom-left", ml: 52, mb: 5 }, 
+                "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
+            } 
+        },
+        "settings": { 
+            w: 1200, h: 750, comp: "guide/GuidePopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "updater": { 
+            w: 500, h: 450, comp: "updater/UpdaterPopup.qml", 
+            pos: { 
+                "top": { anchor: "center" }, 
+                "bottom": { anchor: "center" }, 
+                "left": { anchor: "center" }, 
+                "right": { anchor: "center" } 
+            } 
+        },
+        "system": { 
+            w: 500, h: "fill", comp: "syspanel/SystemPanel.qml", 
+            pos: { 
+                "top": { anchor: "right" }, 
+                "bottom": { anchor: "right" }, 
+                "left": { anchor: "right" }, 
+                "right": { anchor: "left" } 
+            } 
+        },
+        "hidden": { 
+            w: 1, h: 1, comp: "", 
+            pos: { 
+                "top": { anchor: "hidden" }, 
+                "bottom": { anchor: "hidden" }, 
+                "left": { anchor: "hidden" }, 
+                "right": { anchor: "hidden" } 
+            } 
+        }
+    };
+
+    if (!base[name]) return null;
+    let t = base[name];
+    let p = t.pos[barPosition] || t.pos["top"];
+
+    let finalW = t.w === "fill" ? mw : s(t.w, scale);
+    let finalH = t.h === "fill" ? mh : s(t.h, scale);
+
     let rx = 0;
     let ry = 0;
 
-    if (item.pos === "top-right") {
-        rx = mw - w - s(10, scale);
-        ry = s(60, scale);
-    } else if (item.pos === "top-left") {
-        rx = s(5, scale);
-        ry = s(60, scale);
-    } else if (item.pos === "top-center") {
-        rx = Math.floor((mw - w) / 2);
-        ry = s(60, scale);
-    } else if (item.pos === "bottom-center") {
-        rx = Math.floor((mw - w) / 2);
-        ry = mh - h;
-    } else if (item.pos === "wallpaper") {
-        // Full-screen window so clicks on empty screen close the picker
-        // (WallpaperPicker keeps its UI band at the same spot via bandTop)
-        w = mw;
-        h = mh;
-        rx = 0;
-        ry = 0;
-    } else if (item.pos === "left-span") {
-        w = Math.min(s(450, scale), Math.floor(mw * 0.4));
-        h = mh;
-        rx = 0;
-        ry = 0;
-    } else { // "center"
-        rx = Math.floor((mw - w) / 2);
-        ry = Math.floor((mh - h) / 2);
+    switch (p.anchor) {
+        case "center":
+            rx = Math.floor((mw / 2) - (finalW / 2));
+            ry = Math.floor((mh / 2) - (finalH / 2));
+            break;
+        case "top-right":
+            rx = mw - finalW - s(p.mr || 0, scale);
+            ry = s(p.mt || 0, scale);
+            break;
+        case "bottom-right":
+            rx = mw - finalW - s(p.mr || 0, scale);
+            ry = mh - finalH - s(p.mb || 0, scale);
+            break;
+        case "top-left":
+            rx = s(p.ml || 0, scale);
+            ry = s(p.mt || 0, scale);
+            break;
+        case "bottom-left":
+            rx = s(p.ml || 0, scale);
+            ry = mh - finalH - s(p.mb || 0, scale);
+            break;
+        case "top-center":
+            rx = Math.floor((mw / 2) - (finalW / 2));
+            ry = s(p.mt || 0, scale);
+            break;
+        case "bottom-center":
+            rx = Math.floor((mw / 2) - (finalW / 2));
+            ry = mh - finalH - s(p.mb || 0, scale);
+            break;
+        case "left":
+            rx = s(p.ml || 0, scale);
+            ry = Math.floor((mh / 2) - (finalH / 2));
+            break;
+        case "right":
+            rx = mw - finalW - s(p.mr || 0, scale);
+            ry = Math.floor((mh / 2) - (finalH / 2));
+            break;
+        case "center-left":
+            rx = s(p.ml || 0, scale);
+            ry = Math.floor((mh / 2) - (finalH / 2));
+            break;
+        case "center-right":
+            rx = mw - finalW - s(p.mr || 0, scale);
+            ry = Math.floor((mh / 2) - (finalH / 2));
+            break;
+        case "fill":
+            rx = 0;
+            ry = 0;
+            break;
+        case "hidden":
+            rx = -5000;
+            ry = -5000;
+            break;
     }
 
-    return {
-        w: w,
-        h: h,
-        rx: rx,
-        ry: ry,
-        x: mx + rx,
-        y: my + ry,
-        comp: item.comp
-    };
+    return { w: finalW, h: finalH, rx: mx + rx, ry: my + ry, comp: t.comp };
 }
 
 function getPopupLayout(mw, mh, userScale) {
-    if (arguments.length === 2) {
-        userScale = mh;
-        mh = mw * (1080.0 / 1920.0);
-    }
-    
-    let scale = getScale(mw, mh, userScale);
+    let scale = (userScale !== undefined && userScale !== null) ? userScale : 1.0;
     return {
-        w: s(350, scale),
-        marginTop: s(60, scale),
-        marginRight: s(20, scale),
-        spacing: s(12, scale),
-        radius: s(14, scale),
-        padding: s(12, scale)
+        w: s(350, scale), marginTop: s(52, scale), marginRight: s(20, scale),
+        spacing: s(12, scale), radius: s(14, scale), padding: s(12, scale)
     };
 }

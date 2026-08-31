@@ -6,7 +6,7 @@ import Quickshell.Io
 Item {
     id: config
 
-    Caching { id: paths }
+    readonly property var paths: Caching
 
     // =========================================================================
     // Core Paths & Environment
@@ -195,11 +195,6 @@ Item {
             sh(`qs -p "${qsScriptsDir}/TopBar.qml" ipc call topbar queueReload`);
             config.initialWorkspaceCount = config.workspaceCount;
         }
-    }
-
-    function applyControlCenterSettings() {
-        saveAppSettings();
-        sh("niri msg action reload-config");
     }
 
     function saveWeatherConfig() {

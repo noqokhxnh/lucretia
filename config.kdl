@@ -19,7 +19,14 @@ input {
     touchpad {
         tap
         natural-scroll
+        dwt
+        drag true
+        drag-lock
+        accel-profile "adaptive"
+        accel-speed 0.25
         click-method "clickfinger"
+        tap-button-map "left-right-middle"
+        scroll-method "two-finger"
     }
     mouse {
         accel-speed 0.0
@@ -147,17 +154,16 @@ binds {
     Super+N { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle notes"; }
     Super+Shift+T { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle focustime"; }
     Super+Shift+V { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle volume"; }
-    Super+Shift+Alt+H { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle guide"; }
-    Super+D { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle dashboard"; }
+    Super+D { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle guide"; }
     Super+Shift+M { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle monitors"; }
-    // --- SwayOSD Controls ---
+    // --- Audio and Brightness Controls ---
     Caps_Lock { spawn "bash" "-c" "sleep 0.1 && swayosd-client --caps-lock"; }
-    XF86MonBrightnessDown { spawn "swayosd-client" "--brightness" "lower"; }
-    XF86MonBrightnessUp { spawn "swayosd-client" "--brightness" "raise"; }
-    XF86AudioMicMute { spawn "swayosd-client" "--input-volume" "mute-toggle"; }
-    XF86AudioMute { spawn "swayosd-client" "--output-volume" "mute-toggle"; }
-    XF86AudioLowerVolume { spawn "swayosd-client" "--output-volume" "lower"; }
-    XF86AudioRaiseVolume { spawn "swayosd-client" "--output-volume" "raise"; }
+    XF86MonBrightnessDown { spawn "brightnessctl" "set" "5%-"; }
+    XF86MonBrightnessUp { spawn "brightnessctl" "set" "5%+"; }
+    XF86AudioMicMute { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+    XF86AudioMute { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+    XF86AudioLowerVolume { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+    XF86AudioRaiseVolume { spawn "wpctl" "set-volume" "-l" "1.5" "@DEFAULT_AUDIO_SINK@" "5%+"; }
     
     // --- Screenshot Controls ---
     Print { spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh"; }
@@ -168,7 +174,7 @@ binds {
     
     // --- Lock and Media Controls ---
     XF86PowerOff { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
-    Super+comma { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
+    Super+Comma { spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh"; }
     Super+Space { spawn "playerctl" "play-pause"; }
     XF86AudioPause { spawn "playerctl" "play-pause"; }
     XF86AudioPlay { spawn "playerctl" "play-pause"; }
@@ -204,13 +210,11 @@ binds {
 spawn-at-startup "/usr/lib/polkit-kde-authentication-agent-1"
 spawn-at-startup "awww-daemon"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/swayidle.sh"
-spawn-at-startup "bash" "-c" "swayosd-server --top-margin 0.9 --style $HOME/.config/swayosd/style.css"
 spawn-at-startup "bash" "-c" "quickshell -p $HOME/.config/niri/bin/quickshell/Shell.qml"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/init.sh"
 spawn-at-startup "playerctld"
 spawn-at-startup "wl-paste" "--type" "text" "--watch" "cliphist" "store"
 spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
-spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/volume_listener.sh"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/update_notifier.sh"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"

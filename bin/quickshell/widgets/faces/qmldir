@@ -1,0 +1,10 @@
+ClockFaceAnalog 1.0 ClockFaceAnalog.qml
+ClockFaceDigital 1.0 ClockFaceDigital.qml
+ImageFaceRect 1.0 ImageFaceRect.qml
+ImageFaceRound 1.0 ImageFaceRound.qml
+ImageFaceRounded 1.0 ImageFaceRounded.qml
+MusicFace 1.0 MusicFace.qml
+MusicFaceRound 1.0 MusicFaceRound.qml
+WeatherFaceCompact 1.0 WeatherFaceCompact.qml
+WeatherFaceFull 1.0 WeatherFaceFull.qml
+WeatherFaceRound 1.0 WeatherFaceRound.qml

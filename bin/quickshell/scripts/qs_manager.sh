@@ -1,0 +1,1 @@
+/home/khxnh/.config/niri/bin/qs_manager.sh
