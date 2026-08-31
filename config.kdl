@@ -218,6 +218,7 @@ spawn-at-startup "wl-paste" "--type" "image" "--watch" "cliphist" "store"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/update_notifier.sh"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
+spawn-at-startup "easyeffects" "--service-mode"
 
 
 
