@@ -5,7 +5,11 @@ if [ -z "$SERPANTINUM_DIR" ]; then
     export SERPANTINUM_DIR="$(dirname "$SCRIPT_DIR")"
 fi
 
-export QS_DIR="$SERPANTINUM_DIR/quickshell"
+if [ -d "$SERPANTINUM_DIR/quickshell" ]; then
+    export QS_DIR="$SERPANTINUM_DIR/quickshell"
+else
+    export QS_DIR="$SERPANTINUM_DIR"
+fi
 export MAIN_QML="$QS_DIR/Shell.qml"
 export IPC_SOCKET="${XDG_RUNTIME_DIR:-/tmp}/serpantinum.sock"
 
