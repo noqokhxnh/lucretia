@@ -10,7 +10,7 @@ Notification {
     id: faceRoot
 
     fullSummary: model ? (model.summary || "Update Available") : "Update Available"
-    fullBody: model && model.body !== "" ? model.body : "A new version of Serpantinum is available."
+    fullBody: model && model.body !== "" ? model.body : "A new version of Lucretia is available."
     accentColor: ThemeBackend.green
     overrideClick: true
 
@@ -52,7 +52,7 @@ Notification {
     headerArea: [
         Text {
             Layout.fillWidth: true
-            text: model ? (model.displayName || model.appName || "Serpantinum Updater") : "Serpantinum Updater"
+            text: model ? (model.displayName || model.appName || "Lucretia Updater") : "Lucretia Updater"
             font.family: ThemeBackend.fontFamily
             font.weight: Font.Bold
             font.pixelSize: s(11)

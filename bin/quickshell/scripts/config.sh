@@ -2,7 +2,7 @@
 
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/caching.sh"
 
-CONFIG_SETTINGS_JSON="${QS_SETTINGS:-$HOME/.config/serpantinum/settings.json}"
+CONFIG_SETTINGS_JSON="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
 
 _config_ensure_settings() {
     local dir

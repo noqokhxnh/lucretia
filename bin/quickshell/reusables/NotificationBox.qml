@@ -64,7 +64,7 @@ Item {
                 }
             }
         }
-        Quickshell.execDetached(["serpantinum", "ipc", "call", "main", "clearNotifications"]);
+        Quickshell.execDetached(["quickshell", "-p", (typeof Caching !== "undefined" ? Caching.mainQml : ""), "ipc", "call", "main", "clearNotifications"]);
     }
 
     Timer {
@@ -221,7 +221,7 @@ Item {
                     size: root.emptyGraphicSize
                     cornerRadius: root.s(0)
                     imageRadius: root.s(0)
-                    source: Caching.serpantinumDir ? ("file://" + Caching.serpantinumDir + "/assets/pushy.gif") : Qt.resolvedUrl("../../assets/pushy.gif")
+                    source: Caching.lucretiaDir ? ("file://" + Caching.lucretiaDir + "/assets/pushy.gif") : Qt.resolvedUrl("../../assets/pushy.gif")
                     isGif: true
                     playing: true
                     fillMode: Image.PreserveAspectFit

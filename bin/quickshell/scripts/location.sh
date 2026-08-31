@@ -41,7 +41,7 @@ save_location() {
 try_ipapi() {
     log_debug "Attempting primary provider: ipapi.co..."
     local resp
-    resp="$(curl -s --max-time 5 -H "User-Agent: serpantinum-location/1.0" "https://ipapi.co/json/" 2>/dev/null)"
+    resp="$(curl -s --max-time 5 -H "User-Agent: lucretia-location/1.0" "https://ipapi.co/json/" 2>/dev/null)"
     if echo "$resp" | jq -e '(.error | not) and .latitude != null and .longitude != null' >/dev/null 2>&1; then
         echo "$resp" | jq -c '{
             ip: (.ip // null),

@@ -6,9 +6,9 @@ import time
 import urllib.request
 
 REPO = "noqokhxnh/lucretia"
-DEFAULT_VER = "2.0.0"
+DEFAULT_VER = "1.4.3"
 
-state_dir = os.path.expanduser("~/.local/state/serpantinum")
+state_dir = os.path.expanduser("~/.local/state/lucretia")
 if "--state-dir" in sys.argv:
     try:
         idx = sys.argv.index("--state-dir")
@@ -48,6 +48,30 @@ if "--delay" in sys.argv:
     sys.exit(0)
 
 def get_local_ver():
+    # 1. Check install.sh for DOTS_VERSION
+    install_sh = os.path.expanduser("~/.config/niri/install.sh")
+    if os.path.isfile(install_sh):
+        try:
+            with open(install_sh, "r") as f:
+                for line in f:
+                    if line.startswith("DOTS_VERSION=") or line.startswith("DOT_VERSION="):
+                        v = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if v:
+                            return v
+        except Exception:
+            pass
+    # 2. Check lucretia-version
+    luc_ver = os.path.expanduser("~/.local/state/lucretia-version")
+    if os.path.isfile(luc_ver):
+        try:
+            with open(luc_ver, "r") as f:
+                for line in f:
+                    if line.startswith("LOCAL_VERSION="):
+                        v = line.split("=", 1)[1].strip().strip('"').strip("'")
+                        if v and v != "Not Installed":
+                            return v
+        except Exception:
+            pass
     if os.path.isfile(state_file):
         try:
             with open(state_file, "r") as f:

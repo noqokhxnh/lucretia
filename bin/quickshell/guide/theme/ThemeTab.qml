@@ -349,7 +349,7 @@ Item {
 
     FileView {
         id: matugenColorsWatcher
-        path: (typeof Caching !== "undefined" && Caching.stateDir ? Caching.stateDir : ((Quickshell.env("HOME") ?? "") + "/.local/state/serpantinum")) + "/qs_matugen_colors.json"
+        path: (typeof Caching !== "undefined" && Caching.stateDir ? Caching.stateDir : ((Quickshell.env("HOME") ?? "") + "/.local/state/lucretia")) + "/qs_matugen_colors.json"
         watchChanges: true
         onFileChanged: reload()
         onLoaded: {
@@ -392,7 +392,7 @@ Item {
     }
 
     function saveCustomTheme(themeObj) {
-        let userPath = Caching.stateDir ? (Caching.stateDir + "/themes") : (Caching.home + "/.local/state/serpantinum/themes");
+        let userPath = Caching.stateDir ? (Caching.stateDir + "/themes") : (Caching.home + "/.local/state/lucretia/themes");
         let sanitizeName = themeObj.name.replace(/[^a-zA-Z0-9_\- ]/g, "").trim();
         if (sanitizeName === "") sanitizeName = "CustomTheme";
         themeObj.name = sanitizeName;
@@ -410,7 +410,7 @@ Item {
     }
 
     function deleteCustomTheme(themeName) {
-        let userPath = Caching.stateDir ? (Caching.stateDir + "/themes") : (Caching.home + "/.local/state/serpantinum/themes");
+        let userPath = Caching.stateDir ? (Caching.stateDir + "/themes") : (Caching.home + "/.local/state/lucretia/themes");
         let sanitizeName = themeName.replace(/[^a-zA-Z0-9_\- ]/g, "").trim();
         let filePath = userPath + "/" + sanitizeName + ".json";
         let escapeBash = function(str) { return String(str).replace(/(["\\$`])/g, '\\$1'); };
@@ -471,7 +471,7 @@ Item {
         Config.setSetting("theme", current);
 
         if (modelData.isMatugen) {
-            let wp = themeTabRoot.currentWallpaperPath || Config.getSetting("wallpaper", "") || (Quickshell.env("HOME") + "/.cache/serpantinum/wallpaper/current_wallpaper.path");
+            let wp = themeTabRoot.currentWallpaperPath || Config.getSetting("wallpaper", "") || (Quickshell.env("HOME") + "/.cache/lucretia/wallpaper/current_wallpaper.path");
             if (typeof Matugen !== "undefined" && typeof Matugen.generate === "function") {
                 Matugen.generate(wp, current.mode, current.schemeType);
             }
@@ -823,7 +823,7 @@ Item {
             return;
         }
 
-        let userFontsPath = Caching.stateDir ? (Caching.stateDir + "/fonts") : (Caching.home + "/.local/state/serpantinum/fonts");
+        let userFontsPath = Caching.stateDir ? (Caching.stateDir + "/fonts") : (Caching.home + "/.local/state/lucretia/fonts");
         let escapeBash = function(str) { return String(str).replace(/(["\\$`])/g, '\\$1'); };
 
         let script = 
@@ -1151,7 +1151,7 @@ Item {
                             accentColor: ThemeBackend.surface0
                             textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
                             onClicked: {
-                                let userFontsPath = Caching.stateDir ? (Caching.stateDir + "/fonts") : (Caching.home + "/.local/state/serpantinum/fonts");
+                                let userFontsPath = Caching.stateDir ? (Caching.stateDir + "/fonts") : (Caching.home + "/.local/state/lucretia/fonts");
                                 let escapeBash = function(str) { return String(str).replace(/(["\\$`])/g, '\\$1'); };
                                 Quickshell.execDetached(["bash", "-c", "mkdir -p \"" + escapeBash(userFontsPath) + "\" && xdg-open \"" + escapeBash(userFontsPath) + "\""]);
                             }

@@ -167,7 +167,7 @@ Rectangle {
                 anchors.fill: parent
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
-                    if (Caching.serpantinumDir) {
+                    if (Caching.lucretiaDir) {
                         Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "music"]);
                     }
                 }

@@ -1576,7 +1576,7 @@ PanelWindow {
         FileView {
             id: layoutFile
             // Daemon (widget_manager.cpp) always writes to ~/.local/state/quickshell/widgets/<monitor>/layout.json
-            // Caching.getStateDir() points to serpantinum state dir — wrong path, so hardcode the daemon path here
+            // Caching.getStateDir() points to lucretia state dir — wrong path, so hardcode the daemon path here
             path: redactorWindow.safeMonitorName
                   ? (Caching.home + "/.local/state/quickshell/widgets/" + redactorWindow.safeMonitorName + "/layout.json")
                   : ""

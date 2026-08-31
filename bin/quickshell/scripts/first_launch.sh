@@ -30,14 +30,20 @@ if [ -n "$WP_DIR" ] && [ -d "$WP_DIR" ]; then
     fi
 fi
 
-START_QML="$(find "$SERPANTINUM_DIR/quickshell" -type f -name "Start.qml" | head -n 1)"
-
-if [ -n "$START_QML" ]; then
-    export SERPANTINUM_TARGET_FILE="$START_QML"
-    export SERPANTINUM_LAUNCH_ARGS=""
-    quickshell -p "$SERPANTINUM_DIR/quickshell/Runner.qml"
+START_QML="$(find "$LUCRETIA_DIR/quickshell" -type f -name "Start.qml" 2>/dev/null | head -n 1)"
+if [ -z "$START_QML" ]; then
+    START_QML="$(find "$LUCRETIA_DIR" -type f -name "Start.qml" 2>/dev/null | head -n 1)"
 fi
 
-if [ -f "$SERPANTINUM_DIR/scripts/qs_manager.sh" ]; then
-    bash "$SERPANTINUM_DIR/scripts/qs_manager.sh" open guide
+if [ -n "$START_QML" ]; then
+    export LUCRETIA_TARGET_FILE="$START_QML"
+    export SERPANTINUM_TARGET_FILE="$START_QML"
+    export LUCRETIA_LAUNCH_ARGS=""
+    quickshell -p "$QS_DIR/Runner.qml"
+fi
+
+if [ -f "$LUCRETIA_DIR/scripts/qs_manager.sh" ]; then
+    bash "$LUCRETIA_DIR/scripts/qs_manager.sh" open guide
+elif [ -f "$LUCRETIA_DIR/bin/qs_manager.sh" ]; then
+    bash "$LUCRETIA_DIR/bin/qs_manager.sh" open guide
 fi

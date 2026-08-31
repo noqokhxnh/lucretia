@@ -12,11 +12,11 @@ Item {
     property string matugenBaseDir: {
         let dir = "";
         if (typeof Caching !== "undefined" && Caching.qsDir) {
-            dir = Caching.serpantinumDir + "/assets/matugen";
-        } else if (typeof Caching !== "undefined" && Caching.serpantinumDir) {
-            dir = Caching.serpantinumDir + "/src/assets/matugen";
+            dir = Caching.lucretiaDir + "/assets/matugen";
+        } else if (typeof Caching !== "undefined" && Caching.lucretiaDir) {
+            dir = Caching.lucretiaDir + "/src/assets/matugen";
         } else {
-            dir = Quickshell.env("HOME") + "/.local/share/serpantinum/src/assets/matugen";
+            dir = Quickshell.env("HOME") + "/.config/niri/bin/quickshell/assets/matugen";
         }
         return dir;
     }
@@ -163,8 +163,10 @@ Item {
         let bashCmd = "IMG=\"" + cleanPath.replace(/"/g, '\\"') + "\"; " +
             "if [ -f \"$IMG\" ] && [[ \"$IMG\" == *.path || \"$IMG\" == *.txt ]]; then IMG=$(cat \"$IMG\" | tr -d '\\r\\n'); fi; " +
             "if [ ! -f \"$IMG\" ]; then " +
-            "  C1=\"$HOME/.cache/serpantinum/wallpaper/current_wallpaper.png\"; " +
-            "  C2=\"$HOME/.cache/serpantinum/wallpaper/current_wallpaper.path\"; " +
+            "  C1=\"$HOME/.cache/lucretia/wallpaper/current_wallpaper.png\"; " +
+            "  C2=\"$HOME/.cache/lucretia/wallpaper/current_wallpaper.path\"; " +
+            "  if [ ! -f \"$C1\" ]; then C1=\"$HOME/.cache/lucretia/wallpaper/current_wallpaper.png\"; fi; " +
+            "  if [ ! -f \"$C2\" ]; then C2=\"$HOME/.cache/lucretia/wallpaper/current_wallpaper.path\"; fi; " +
             "  if [ -f \"$C2\" ]; then IMG=$(cat \"$C2\" | tr -d '\\r\\n'); fi; " +
             "  if [ ! -f \"$IMG\" ] && [ -f \"$C1\" ]; then IMG=\"$C1\"; fi; " +
             "fi; " +
@@ -199,7 +201,7 @@ Item {
         let rawJson = JSON.stringify(colorsObj);
 
         let script =
-            "STATE_DIR=\"$HOME/.local/state/serpantinum\"; " +
+            "STATE_DIR=\"$HOME/.local/state/lucretia\"; " +
             "TMP_MD3=\"/tmp/matugen_synthetic_colors.json\"; " +
             "mkdir -p \"$STATE_DIR\" && " +
             "echo '" + rawJson.replace(/'/g, "'\\''") + "' > \"$STATE_DIR/qs_colors.json\" && " +
@@ -222,7 +224,7 @@ Item {
             let success = (exitCode === 0);
 
             if (success) {
-                let stateDir = (typeof Caching !== "undefined" && Caching.stateDir) ? Caching.stateDir : (Quickshell.env("HOME") + "/.local/state/serpantinum");
+                let stateDir = (typeof Caching !== "undefined" && Caching.stateDir) ? Caching.stateDir : (Quickshell.env("HOME") + "/.local/state/lucretia");
                 if (matugenProcess.reqType === "image") {
                     Quickshell.execDetached(["bash", "-c", "mkdir -p \"" + stateDir + "\" && cp -f \"" + stateDir + "/qs_colors.json\" \"" + stateDir + "/qs_matugen_colors.json\" 2>/dev/null || true"]);
                 }

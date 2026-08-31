@@ -42,7 +42,7 @@ function getWidgetLauncherEntries(i18n) {
         {
             id: "guide",
             name: tr("widgets.guide.name", "Settings"),
-            description: tr("widgets.guide.desc", "Serpantinum settings"),
+            description: tr("widgets.guide.desc", "Lucretia settings"),
             icon: "help-browser",
             fontIcon: "󰋖"
         },

@@ -64,7 +64,7 @@ if [[ "$ACTION" == "widgetredactor" || "$ACTION" == "widgets" || "$TARGET" == "w
     mkdir -p "$QS_RUN_DIR"
     [[ -n "$MONITOR" ]] && echo "$MONITOR" > "$QS_RUN_DIR/redactor_target_monitor"
 
-    QS_WIDGET_MONITOR="$MONITOR" SERPANTINUM_TARGET_FILE="$SCRIPTS_DIR/widgets/WidgetRedactor.qml" quickshell -p "$SCRIPTS_DIR/Runner.qml" >/dev/null 2>&1 &
+    QS_WIDGET_MONITOR="$MONITOR" LUCRETIA_TARGET_FILE="$SCRIPTS_DIR/widgets/WidgetRedactor.qml" SERPANTINUM_TARGET_FILE="$SCRIPTS_DIR/widgets/WidgetRedactor.qml" quickshell -p "$SCRIPTS_DIR/Runner.qml" >/dev/null 2>&1 &
     disown
     exit 0
 fi
@@ -232,7 +232,7 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
         CURRENT_SRC=""
 
         # Detect current wallpaper from saved path, mpvpaper, video path, or awww cache
-        for p in "$HOME/.cache/serpantinum/wallpaper/current_wallpaper.path" \
+        for p in "$HOME/.cache/lucretia/wallpaper/current_wallpaper.path" \
                  "$QS_CACHE_DIR/wallpaper/current_wallpaper.path" \
                  "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path"; do
             if [ -f "$p" ]; then
@@ -245,7 +245,7 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
         done
 
         if [ -z "$CURRENT_SRC" ]; then
-            for p in "$HOME/.cache/serpantinum/wallpaper/current_video.path" \
+            for p in "$HOME/.cache/lucretia/wallpaper/current_video.path" \
                      "$QS_CACHE_DIR/wallpaper/current_video.path" \
                      "$QS_CACHE_WALLPAPER_PICKER/current_video.path"; do
                 if [ -f "$p" ]; then

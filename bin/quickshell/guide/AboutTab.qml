@@ -18,9 +18,20 @@ Item {
     opacity: visible ? 1.0 : 0.0
     property real slideY: visible ? 0 : rootObj.s(10)
 
-    Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
-    transform: Translate { y: slideY }
-    Behavior on opacity { NumberAnimation { duration: 250 } }
+    Behavior on slideY {
+        NumberAnimation {
+            duration: 250
+            easing.type: Easing.OutQuart
+        }
+    }
+    transform: Translate {
+        y: slideY
+    }
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 250
+        }
+    }
 
     property real updateTransitionProgress: Updater.updateAvailable ? 1.0 : 0.0
     Behavior on updateTransitionProgress {
@@ -46,11 +57,13 @@ Item {
     }
 
     onVisibleChanged: {
-        if (visible) activateTab();
+        if (visible)
+            activateTab();
     }
 
     Component.onCompleted: {
-        if (visible) activateTab();
+        if (visible)
+            activateTab();
     }
 
     Flickable {
@@ -109,7 +122,7 @@ Item {
 
                                 Image {
                                     anchors.fill: parent
-                                    source: "file://" + rootObj.appPaths.serpantinumDir + "/assets/logo.svg"
+                                    source: "file://" + rootObj.appPaths.lucretiaDir + "/assets/svg.png"
                                     sourceSize: Qt.size(512, 512)
                                     fillMode: Image.PreserveAspectFit
                                     smooth: true
@@ -155,7 +168,7 @@ Item {
                             Text {
                                 text: I18n.t("guide.about.version_by", {
                                     version: (Updater.localVersion !== "..." ? Updater.localVersion : (rootObj.dotsVersion !== "Loading..." && rootObj.dotsVersion !== I18n.t("guide.about.loading") ? rootObj.dotsVersion : "2.0.0")),
-                                    author: "@ilyamiro"
+                                    author: "@noqokhxnh"
                                 })
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(13)
@@ -174,7 +187,9 @@ Item {
                     implicitHeight: updateCol.implicitHeight
                     visible: opacity > 0.001
                     opacity: aboutTabRoot.updateTransitionProgress
-                    transform: Translate { x: rootObj.s(16) * (1.0 - aboutTabRoot.updateTransitionProgress) }
+                    transform: Translate {
+                        x: rootObj.s(16) * (1.0 - aboutTabRoot.updateTransitionProgress)
+                    }
 
                     ColumnLayout {
                         id: updateCol
@@ -259,11 +274,26 @@ Item {
                             Repeater {
                                 id: hwRepeater
                                 model: [
-                                    { label: I18n.t("guide.about.hardware.device_name"), value: (typeof SystemInfo !== "undefined" && SystemInfo.hostname !== "") ? SystemInfo.hostname : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.hardware.processor"), value: (typeof SystemInfo !== "undefined" && SystemInfo.cpuModel !== "") ? SystemInfo.cpuModel + (SystemInfo.cpuCores > 0 ? " (" + SystemInfo.cpuCores + ")" : "") : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.hardware.graphics"), value: (typeof SystemInfo !== "undefined" && SystemInfo.gpuModel !== "") ? SystemInfo.gpuModel : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.hardware.memory"), value: (typeof SystemInfo !== "undefined" && SystemInfo.totalRamGb > 0) ? SystemInfo.totalRamGb + " GB" : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.hardware.disk_capacity"), value: (typeof SystemInfo !== "undefined" && SystemInfo.diskTotalGb > 0) ? SystemInfo.diskUsedGb + " / " + SystemInfo.diskTotalGb + " GB" : I18n.t("guide.about.unknown") }
+                                    {
+                                        label: I18n.t("guide.about.hardware.device_name"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.hostname !== "") ? SystemInfo.hostname : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.hardware.processor"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.cpuModel !== "") ? SystemInfo.cpuModel + (SystemInfo.cpuCores > 0 ? " (" + SystemInfo.cpuCores + ")" : "") : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.hardware.graphics"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.gpuModel !== "") ? SystemInfo.gpuModel : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.hardware.memory"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.totalRamGb > 0) ? SystemInfo.totalRamGb + " GB" : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.hardware.disk_capacity"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.diskTotalGb > 0) ? SystemInfo.diskUsedGb + " / " + SystemInfo.diskTotalGb + " GB" : I18n.t("guide.about.unknown")
+                                    }
                                 ]
 
                                 ColumnLayout {
@@ -334,11 +364,26 @@ Item {
                             Repeater {
                                 id: sysRepeater
                                 model: [
-                                    { label: I18n.t("guide.about.system.os_name"), value: (typeof SystemInfo !== "undefined" && SystemInfo.osName !== "") ? SystemInfo.osName : I18n.t("guide.about.system.default_os") },
-                                    { label: I18n.t("guide.about.system.kernel_version"), value: (typeof SystemInfo !== "undefined" && SystemInfo.kernelVersion !== "") ? SystemInfo.kernelVersion : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.system.desktop"), value: (typeof SystemInfo !== "undefined" && SystemInfo.desktopEnv !== "") ? SystemInfo.desktopEnv : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.system.shell"), value: (typeof SystemInfo !== "undefined" && SystemInfo.shell !== "") ? SystemInfo.shell : I18n.t("guide.about.unknown") },
-                                    { label: I18n.t("guide.about.system.uptime"), value: (typeof SystemInfo !== "undefined" && SystemInfo.uptime !== "") ? SystemInfo.uptime : I18n.t("guide.about.unknown") }
+                                    {
+                                        label: I18n.t("guide.about.system.os_name"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.osName !== "") ? SystemInfo.osName : I18n.t("guide.about.system.default_os")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.system.kernel_version"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.kernelVersion !== "") ? SystemInfo.kernelVersion : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.system.desktop"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.desktopEnv !== "") ? SystemInfo.desktopEnv : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.system.shell"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.shell !== "") ? SystemInfo.shell : I18n.t("guide.about.unknown")
+                                    },
+                                    {
+                                        label: I18n.t("guide.about.system.uptime"),
+                                        value: (typeof SystemInfo !== "undefined" && SystemInfo.uptime !== "") ? SystemInfo.uptime : I18n.t("guide.about.unknown")
+                                    }
                                 ]
 
                                 ColumnLayout {

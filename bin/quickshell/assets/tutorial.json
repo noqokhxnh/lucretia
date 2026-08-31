@@ -8,7 +8,7 @@
         "title": "Topbar overview",
         "anchor": "top-left",
         "w": "fill", "h": 40, "mt": 4, "ml": 6,
-        "say": "Welcome to Serpantinum! Up here is your topbar, giving you quick access to system status, workspaces, media controls, weather, time, and so on",
+        "say": "Welcome to Lucretia! Up here is your topbar, giving you quick access to system status, workspaces, media controls, weather, time, and so on",
         "sfx": "tutorial/tip.wav"
       },
       {
@@ -24,7 +24,7 @@
         "say": "Pressing this button will open the guide window and allow you to navigate the settings and rewatch different sections of the tutorial",
         "sfx": "tutorial/tip_guide.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open guide"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open guide"]
       },
       {
         "title": "Guide popup",
@@ -38,7 +38,7 @@
         "say": "Pressing this button will open the app launcher that allows you to open any of the apps/programs installed on your system",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open applauncher"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open applauncher"]
       },
       {
         "title": "App launcher",
@@ -52,7 +52,7 @@
         "say": "This bell icon opens your notifications panel, where you can review, clear, and manage anything the system or your apps have sent your way",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open notifications"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open notifications"]
       },
       {
         "title": "Notifications panel",
@@ -66,7 +66,7 @@
         "say": "Whenever a system update is available, this icon appears and gently pulses to catch your eye. Click it to open the updater and install the latest packages",
         "sfx": "tutorial/tip.wav",
         "cooldown": 4,
-        "exec": ["sh", "-c", "serpantinum close notifications && serpantinum ipc call topbar toggleUpdate && sleep 4 && serpantinum ipc call topbar toggleUpdate"]
+        "exec": ["sh", "-c", "lucretia close notifications && lucretia ipc call topbar toggleUpdate && sleep 4 && lucretia ipc call topbar toggleUpdate"]
       },
       {
         "title": "Workspaces",
@@ -81,7 +81,7 @@
         "say": "When something is playing, this module shows the track's artwork, title, and playback time, plus buttons to skip back, play or pause, and skip forward. Click the artwork to open the full media panel",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open music"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open music"]
       },
       {
         "title": "Media panel",
@@ -95,7 +95,7 @@
         "say": "Right in the middle you'll find the time, date, and current weather at a glance. Clicking here opens your calendar",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open calendar"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open calendar"]
       },
       {
         "title": "Calendar panel",
@@ -130,7 +130,7 @@
         "say": "This pill shows whether you're connected over WiFi or ethernet, along with the network name. Click it to open network settings",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open network"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open network"]
       },
       {
         "title": "Network panel",
@@ -151,7 +151,7 @@
         "say": "This shows your current output volume. Scroll over it to adjust the level, left click to open volume settings, or right click to mute",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open volume"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open volume"]
       },
       {
         "title": "Volume panel",
@@ -165,7 +165,7 @@
         "say": "Keep an eye on your battery charge here, colored red when low and green while charging. Click it for more detailed power information",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "sleep 1 && serpantinum open battery"]
+        "exec": ["sh", "-c", "sleep 1 && lucretia open battery"]
       },
       {
         "title": "Battery panel",
@@ -179,7 +179,7 @@
         "say": "This icon only appears while a screen recording is in progress. Click it to stop recording and save your screenshot or clip",
         "sfx": "tutorial/tip.wav",
         "cooldown": 1,
-        "exec": ["sh", "-c", "serpantinum screenshot --record --full && sleep 30 && pgrep -x gpu-screen-recorder >/dev/null && serpantinum screenshot"]
+        "exec": ["sh", "-c", "lucretia screenshot --record --full && sleep 30 && pgrep -x gpu-screen-recorder >/dev/null && lucretia screenshot"]
       },
       {
         "title": "Topbar wrap-up",
@@ -187,7 +187,7 @@
         "w": 500, "h": 40, "mt": 50,
         "say": "That covers the topbar! You can always revisit any of this by pressing the help button and rewatching a section from the guide",
         "sfx": "tutorial/tip_guide.wav",
-        "exec": ["sh", "-c", "pgrep -x gpu-screen-recorder >/dev/null && serpantinum screenshot; serpantinum ipc call main handleCommand close"]
+        "exec": ["sh", "-c", "pgrep -x gpu-screen-recorder >/dev/null && lucretia screenshot; lucretia ipc call main handleCommand close"]
       }
     ]
   }

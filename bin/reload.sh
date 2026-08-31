@@ -24,5 +24,5 @@ setsid -f quickshell -p "$SHELL_PATH" >/dev/null 2>&1
 
 # 5. Notify user
 if command -v notify-send &>/dev/null; then
-    notify-send -a "Serpantinum" -i "preferences-desktop" "Quickshell" "Đã nạp lại toàn bộ shell thành công!" -t 2000 2>/dev/null || true
+    notify-send -a "Lucretia" -i "preferences-desktop" "Quickshell" "Đã nạp lại toàn bộ shell thành công!" -t 2000 2>/dev/null || true
 fi

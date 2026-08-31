@@ -299,9 +299,9 @@ Item {
             let loc = genSet.location || {};
             let lat = loc.latitude !== undefined ? loc.latitude : 0;
             let lon = loc.longitude !== undefined ? loc.longitude : 0;
-            Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/blue_light_filter.sh", "set", kelvin.toString(), monName, modeStr, lat.toString(), lon.toString()]);
+            Quickshell.execDetached(["bash", Caching.lucretiaDir + "/scripts/blue_light_filter.sh", "set", kelvin.toString(), monName, modeStr, lat.toString(), lon.toString()]);
         } else {
-            Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/blue_light_filter.sh", "reset", monName]);
+            Quickshell.execDetached(["bash", Caching.lucretiaDir + "/scripts/blue_light_filter.sh", "reset", monName]);
         }
     }
 

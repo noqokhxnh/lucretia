@@ -46,7 +46,7 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         onClicked: {
-            if (Caching.serpantinumDir) {
+            if (Caching.lucretiaDir) {
                 Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "toggle", "calendar"]);
             }
         }

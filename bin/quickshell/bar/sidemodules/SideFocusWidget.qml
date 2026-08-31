@@ -74,7 +74,7 @@ Rectangle {
             textColor: isHoveredOrHighlighted ? ThemeBackend.text : ThemeBackend.overlay2
             anchors.horizontalCenter: parent.horizontalCenter
             onClicked: {
-                if (Caching.serpantinumDir) {
+                if (Caching.lucretiaDir) {
                     Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "launcher"])
                 }
             }
@@ -155,7 +155,7 @@ Rectangle {
         cursorShape: Qt.PointingHandCursor
         z: -1
         onClicked: {
-            if (Caching.serpantinumDir) {
+            if (Caching.lucretiaDir) {
                 Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "launcher"])
             }
         }

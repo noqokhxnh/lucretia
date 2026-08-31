@@ -28,28 +28,36 @@ PanelWindow {
         return res > 0 ? res : val;
     }
 
-    readonly property color base:     ThemeBackend.base
-    readonly property color mantle:   ThemeBackend.mantle   || ThemeBackend.base
-    readonly property color crust:    ThemeBackend.crust
+    readonly property color base: ThemeBackend.base
+    readonly property color mantle: ThemeBackend.mantle || ThemeBackend.base
+    readonly property color crust: ThemeBackend.crust
     readonly property color surface0: ThemeBackend.surface0
     readonly property color surface1: ThemeBackend.surface1
     readonly property color surface2: ThemeBackend.surface2
-    readonly property color text:     ThemeBackend.text
+    readonly property color text: ThemeBackend.text
     readonly property color subtext0: ThemeBackend.subtext0
-    readonly property color green:    ThemeBackend.green
-    readonly property color blue:     ThemeBackend.blue     || "#89b4fa"
-    readonly property color mauve:    ThemeBackend.mauve    || "#cba6f7"
-    readonly property color peach:    ThemeBackend.peach    || "#fab387"
+    readonly property color green: ThemeBackend.green
+    readonly property color blue: ThemeBackend.blue || "#89b4fa"
+    readonly property color mauve: ThemeBackend.mauve || "#cba6f7"
+    readonly property color peach: ThemeBackend.peach || "#fab387"
 
     property real globalOrbitAngle: 0
     NumberAnimation on globalOrbitAngle {
-        from: 0; to: Math.PI * 2; duration: 120000; loops: Animation.Infinite; running: true
+        from: 0
+        to: Math.PI * 2
+        duration: 120000
+        loops: Animation.Infinite
+        running: true
     }
 
     property real panelReveal: 0.0
     property real introPhase: 0.0
     NumberAnimation on introPhase {
-        from: 0.0; to: 1.0; duration: 2500; easing.type: Easing.OutExpo; running: window.panelReveal > 0.5
+        from: 0.0
+        to: 1.0
+        duration: 2500
+        easing.type: Easing.OutExpo
+        running: window.panelReveal > 0.5
     }
 
     property real orbBoost: 0.0
@@ -88,12 +96,16 @@ PanelWindow {
     property bool idleTextActive: false
     property real idlePhase: 0.0
     NumberAnimation on idlePhase {
-        from: 0.0; to: Math.PI * 2; duration: 8000; loops: Animation.Infinite; running: window.idleTextActive
+        from: 0.0
+        to: Math.PI * 2
+        duration: 8000
+        loops: Animation.Infinite
+        running: window.idleTextActive
     }
 
     property real monitorZoomProgress: 0.0
 
-    component TypewriterText : Row {
+    component TypewriterText: Row {
         id: twRoot
         property string text: ""
         property real reveal: 0.0
@@ -116,7 +128,8 @@ PanelWindow {
 
                 onShownChanged: {
                     if (shown && twRoot.soundEnabled && modelData !== " ") {
-                        if (typeof Sounds !== "undefined") Sounds.playSfx(twRoot.typeSfx);
+                        if (typeof Sounds !== "undefined")
+                            Sounds.playSfx(twRoot.typeSfx);
                     }
                 }
 
@@ -126,12 +139,32 @@ PanelWindow {
 
                 transform: Translate {
                     y: (shown ? 0 : window.s(10)) + (window.idleTextActive && shown ? Math.sin(window.idlePhase + (index * 0.3)) * window.s(1.2) : 0)
-                    Behavior on y { NumberAnimation { duration: 550; easing.type: Easing.OutQuint } }
+                    Behavior on y {
+                        NumberAnimation {
+                            duration: 550
+                            easing.type: Easing.OutQuint
+                        }
+                    }
                 }
 
-                Behavior on opacity { NumberAnimation { duration: 400; easing.type: Easing.OutQuart } }
-                Behavior on scale { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
-                Behavior on color { ColorAnimation { duration: 600; easing.type: Easing.OutCubic } }
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 400
+                        easing.type: Easing.OutQuart
+                    }
+                }
+                Behavior on scale {
+                    NumberAnimation {
+                        duration: 600
+                        easing.type: Easing.OutQuint
+                    }
+                }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 600
+                        easing.type: Easing.OutCubic
+                    }
+                }
             }
         }
     }
@@ -140,75 +173,227 @@ PanelWindow {
 
     SequentialAnimation {
         id: introChoreography
-        ScriptAction { script: window.bgSoundHandle = Sounds.playUntilStopped("start/background.wav", 0.4, true) }
-        ScriptAction { script: Sounds.playSfx("start/start.wav") }
-        PauseAnimation { duration: 100 }
-
-        NumberAnimation { target: window; property: "panelReveal"; from: 0.0; to: 1.0; duration: 2000; easing.type: Easing.InOutCubic }
-        PauseAnimation { duration: 140 }
-
-        NumberAnimation { target: window; property: "welcomeReveal"; to: 1.0; duration: 850; easing.type: Easing.InOutSine }
-        PauseAnimation { duration: 800 }
-        NumberAnimation { target: window; property: "welcomeOpacity"; to: 0.0; duration: 400; easing.type: Easing.OutQuart }
-        ScriptAction { script: Sounds.playSfx("start/transition_serp.wav", 0.6) }
-
-        ParallelAnimation {
-            PropertyAction { target: window; property: "shellTextOpacity"; value: 1.0 }
-            NumberAnimation { target: window; property: "shellTextReveal"; to: 1.0; duration: 1600; easing.type: Easing.InOutSine }
-            NumberAnimation { target: window; property: "shellTextScale"; from: 0.94; to: 1.0; duration: 1600; easing.type: Easing.OutExpo }
+        ScriptAction {
+            script: window.bgSoundHandle = Sounds.playUntilStopped("start/background.wav", 0.4, true)
         }
-        PauseAnimation { duration: 140 }
-        ParallelAnimation {
-            NumberAnimation { target: window; property: "authorOpacity"; to: 1.0; duration: 500; easing.type: Easing.OutQuint }
-            NumberAnimation { target: window; property: "authorScale"; to: 1.0; duration: 500; easing.type: Easing.OutQuint }
-            ScriptAction { script: Sounds.playSfx("start/pop_author.wav") }
+        ScriptAction {
+            script: Sounds.playSfx("start/start.wav")
+        }
+        PauseAnimation {
+            duration: 100
         }
 
-        PauseAnimation { duration: 1500 }
+        NumberAnimation {
+            target: window
+            property: "panelReveal"
+            from: 0.0
+            to: 1.0
+            duration: 2000
+            easing.type: Easing.InOutCubic
+        }
+        PauseAnimation {
+            duration: 140
+        }
+
+        NumberAnimation {
+            target: window
+            property: "welcomeReveal"
+            to: 1.0
+            duration: 850
+            easing.type: Easing.InOutSine
+        }
+        PauseAnimation {
+            duration: 800
+        }
+        NumberAnimation {
+            target: window
+            property: "welcomeOpacity"
+            to: 0.0
+            duration: 400
+            easing.type: Easing.OutQuart
+        }
+        ScriptAction {
+            script: Sounds.playSfx("start/transition_serp.wav", 0.6)
+        }
 
         ParallelAnimation {
-            NumberAnimation { target: window; property: "shellTextOpacity"; to: 0.0; duration: 400; easing.type: Easing.OutQuart }
-            NumberAnimation { target: window; property: "authorOpacity"; to: 0.0; duration: 400; easing.type: Easing.OutQuart }
+            PropertyAction {
+                target: window
+                property: "shellTextOpacity"
+                value: 1.0
+            }
+            NumberAnimation {
+                target: window
+                property: "shellTextReveal"
+                to: 1.0
+                duration: 1600
+                easing.type: Easing.InOutSine
+            }
+            NumberAnimation {
+                target: window
+                property: "shellTextScale"
+                from: 0.94
+                to: 1.0
+                duration: 1600
+                easing.type: Easing.OutExpo
+            }
         }
-        ScriptAction { script: Sounds.playSfx("start/transition_serp.wav", 0.6) }
+        PauseAnimation {
+            duration: 140
+        }
+        ParallelAnimation {
+            NumberAnimation {
+                target: window
+                property: "authorOpacity"
+                to: 1.0
+                duration: 500
+                easing.type: Easing.OutQuint
+            }
+            NumberAnimation {
+                target: window
+                property: "authorScale"
+                to: 1.0
+                duration: 500
+                easing.type: Easing.OutQuint
+            }
+            ScriptAction {
+                script: Sounds.playSfx("start/pop_author.wav")
+            }
+        }
+
+        PauseAnimation {
+            duration: 1500
+        }
+
+        ParallelAnimation {
+            NumberAnimation {
+                target: window
+                property: "shellTextOpacity"
+                to: 0.0
+                duration: 400
+                easing.type: Easing.OutQuart
+            }
+            NumberAnimation {
+                target: window
+                property: "authorOpacity"
+                to: 0.0
+                duration: 400
+                easing.type: Easing.OutQuart
+            }
+        }
+        ScriptAction {
+            script: Sounds.playSfx("start/transition_serp.wav", 0.6)
+        }
 
         ParallelAnimation {
             SequentialAnimation {
-                PropertyAction { target: window; property: "authorAbsolute"; value: true }
-                PauseAnimation { duration: 800 }
-                NumberAnimation { target: window; property: "finalAuthorOpacity"; to: 0.6; duration: 1000; easing.type: Easing.OutQuint }
+                PropertyAction {
+                    target: window
+                    property: "authorAbsolute"
+                    value: true
+                }
+                PauseAnimation {
+                    duration: 800
+                }
+                NumberAnimation {
+                    target: window
+                    property: "finalAuthorOpacity"
+                    to: 0.6
+                    duration: 1000
+                    easing.type: Easing.OutQuint
+                }
             }
 
             SequentialAnimation {
-                PauseAnimation { duration: 210 }
+                PauseAnimation {
+                    duration: 210
+                }
 
                 ParallelAnimation {
                     ParallelAnimation {
-                        PropertyAction { target: window; property: "toSerpOpacity"; value: 1.0 }
-                        NumberAnimation { target: window; property: "toSerpReveal"; to: 1.0; duration: 1500; easing.type: Easing.InOutSine }
-                        NumberAnimation { target: window; property: "logoOpacity"; to: 1.0; duration: 1500; easing.type: Easing.OutQuart }
-                        NumberAnimation { target: window; property: "logoScale"; from: 0.94; to: 1.0; duration: 1800; easing.type: Easing.OutExpo }
+                        PropertyAction {
+                            target: window
+                            property: "toSerpOpacity"
+                            value: 1.0
+                        }
+                        NumberAnimation {
+                            target: window
+                            property: "toSerpReveal"
+                            to: 1.0
+                            duration: 1500
+                            easing.type: Easing.InOutSine
+                        }
+                        NumberAnimation {
+                            target: window
+                            property: "logoOpacity"
+                            to: 1.0
+                            duration: 1500
+                            easing.type: Easing.OutQuart
+                        }
+                        NumberAnimation {
+                            target: window
+                            property: "logoScale"
+                            from: 0.94
+                            to: 1.0
+                            duration: 1800
+                            easing.type: Easing.OutExpo
+                        }
                     }
 
                     SequentialAnimation {
-                        PauseAnimation { duration: 1200 }
+                        PauseAnimation {
+                            duration: 1200
+                        }
                         ParallelAnimation {
-                            NumberAnimation { target: window; property: "btnOpacity"; to: 1.0; duration: 600; easing.type: Easing.OutQuint }
-                            ScriptAction { script: window.idleTextActive = true }
+                            NumberAnimation {
+                                target: window
+                                property: "btnOpacity"
+                                to: 1.0
+                                duration: 600
+                                easing.type: Easing.OutQuint
+                            }
+                            ScriptAction {
+                                script: window.idleTextActive = true
+                            }
                         }
                     }
                 }
             }
 
             SequentialAnimation {
-                ScriptAction { script: Sounds.playSfx("start/wave.wav", 0.2) }
-                PauseAnimation { duration: 300 }
+                ScriptAction {
+                    script: Sounds.playSfx("start/wave.wav", 0.2)
+                }
+                PauseAnimation {
+                    duration: 300
+                }
 
                 ParallelAnimation {
-                    NumberAnimation { target: window; property: "orbBoost"; to: 1.0; duration: 3200; easing.type: Easing.OutSine }
-                    ScriptAction { script: window.colorizeActive = true }
-                    NumberAnimation { target: window; property: "logoFillLevel"; to: 1.5; duration: 4500; easing.type: Easing.OutSine }
-                    NumberAnimation { target: window; property: "monitorZoomProgress"; from: 0.0; to: 1.0; duration: 2800; easing.type: Easing.OutQuint }
+                    NumberAnimation {
+                        target: window
+                        property: "orbBoost"
+                        to: 1.0
+                        duration: 3200
+                        easing.type: Easing.OutSine
+                    }
+                    ScriptAction {
+                        script: window.colorizeActive = true
+                    }
+                    NumberAnimation {
+                        target: window
+                        property: "logoFillLevel"
+                        to: 1.5
+                        duration: 4500
+                        easing.type: Easing.OutSine
+                    }
+                    NumberAnimation {
+                        target: window
+                        property: "monitorZoomProgress"
+                        from: 0.0
+                        to: 1.0
+                        duration: 2800
+                        easing.type: Easing.OutQuint
+                    }
                 }
             }
         }
@@ -220,18 +405,27 @@ PanelWindow {
 
         property real phase: 0.0
         NumberAnimation on phase {
-            loops: Animation.Infinite; running: window.panelReveal > 0 && window.panelReveal < 1
-            from: 0; to: Math.PI * 2; duration: 4000
+            loops: Animation.Infinite
+            running: window.panelReveal > 0 && window.panelReveal < 1
+            from: 0
+            to: Math.PI * 2
+            duration: 4000
         }
 
         onPhaseChanged: requestPaint()
-        Connections { target: window; function onPanelRevealChanged() { bgCanvas.requestPaint() } }
+        Connections {
+            target: window
+            function onPanelRevealChanged() {
+                bgCanvas.requestPaint();
+            }
+        }
 
         onPaint: {
             var ctx = getContext("2d");
             ctx.clearRect(0, 0, width, height);
 
-            if (window.panelReveal <= 0.0) return;
+            if (window.panelReveal <= 0.0)
+                return;
             if (window.panelReveal >= 1.0) {
                 ctx.fillStyle = window.base.toString();
                 ctx.fillRect(0, 0, width, height);
@@ -239,7 +433,8 @@ PanelWindow {
             }
 
             function drawWipe(prog, color, ampMult, pOffset) {
-                if (prog <= 0.0) return;
+                if (prog <= 0.0)
+                    return;
                 if (prog >= 1.0) {
                     ctx.fillStyle = color;
                     ctx.fillRect(0, 0, width, height);
@@ -294,7 +489,8 @@ PanelWindow {
 
         Item {
             id: mauveOrbContainer
-            width: window.s(1200); height: width
+            width: window.s(1200)
+            height: width
             x: parent.width / 2 - width / 2
             y: parent.height / 2 - height / 2
             opacity: window.introPhase * 0.04 + window.orbBoost * 0.12
@@ -324,7 +520,8 @@ PanelWindow {
 
         Item {
             id: blueOrbContainer
-            width: window.s(1400); height: width
+            width: window.s(1400)
+            height: width
             x: parent.width / 2 - width / 2
             y: parent.height / 2 - height / 2
             opacity: window.introPhase * 0.04 + window.orbBoost * 0.10
@@ -359,14 +556,19 @@ PanelWindow {
             onPaint: {
                 var ctx = getContext("2d");
                 var rad = Math.max(width, height) * 0.75;
-                var grad = ctx.createRadialGradient(width/2, height/2, rad * 0.4, width/2, height/2, rad);
+                var grad = ctx.createRadialGradient(width / 2, height / 2, rad * 0.4, width / 2, height / 2, rad);
                 grad.addColorStop(0, "rgba(0, 0, 0, 0)");
                 grad.addColorStop(1, "rgba(0, 0, 0, 0.4)");
                 ctx.fillStyle = grad;
                 ctx.fillRect(0, 0, width, height);
             }
             Component.onCompleted: requestPaint()
-            Connections { target: window; function onWidthChanged() { vignetteCanvas.requestPaint() } }
+            Connections {
+                target: window
+                function onWidthChanged() {
+                    vignetteCanvas.requestPaint();
+                }
+            }
         }
 
         Item {
@@ -405,7 +607,7 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: window.s(360)
                             height: window.s(360)
-                            source: "file://" + Caching.serpantinumDir + "/assets/logo.svg"
+                            source: "file://" + Caching.lucretiaDir + "/assets/svg.png"
                             sourceSize: Qt.size(width, height)
                             fillMode: Image.PreserveAspectFit
                             smooth: true
@@ -420,7 +622,10 @@ PanelWindow {
                         layer.enabled: true
                         layer.smooth: true
 
-                        Rectangle { anchors.fill: parent; color: window.text }
+                        Rectangle {
+                            anchors.fill: parent
+                            color: window.text
+                        }
 
                         Canvas {
                             id: logoWaveCanvas
@@ -430,16 +635,24 @@ PanelWindow {
                             NumberAnimation on wavePhase {
                                 running: window.logoFillLevel > 0.0 && window.logoFillLevel < 1.45
                                 loops: Animation.Infinite
-                                from: 0; to: Math.PI * 2; duration: 3500
+                                from: 0
+                                to: Math.PI * 2
+                                duration: 3500
                             }
 
                             onWavePhaseChanged: requestPaint()
-                            Connections { target: window; function onLogoFillLevelChanged() { logoWaveCanvas.requestPaint() } }
+                            Connections {
+                                target: window
+                                function onLogoFillLevelChanged() {
+                                    logoWaveCanvas.requestPaint();
+                                }
+                            }
 
                             onPaint: {
                                 var ctx = getContext("2d");
                                 ctx.clearRect(0, 0, width, height);
-                                if (window.logoFillLevel <= 0.001) return;
+                                if (window.logoFillLevel <= 0.001)
+                                    return;
 
                                 var speedFact = 1.25;
                                 var p1 = Math.max(0.0, Math.min(1.0, (window.logoFillLevel - 0.00) * speedFact));
@@ -449,7 +662,8 @@ PanelWindow {
                                 var p5 = Math.max(0.0, Math.min(1.0, (window.logoFillLevel - 0.60) * speedFact));
 
                                 function drawWaterWipe(prog, colorStr, ampMult, phaseOffset, waveCount) {
-                                    if (prog <= 0.0) return;
+                                    if (prog <= 0.0)
+                                        return;
                                     if (prog >= 1.0) {
                                         ctx.fillStyle = colorStr;
                                         ctx.fillRect(0, 0, width, height);
@@ -525,10 +739,30 @@ PanelWindow {
                         shadowOpacity: window.colorizeActive ? 0.3 : 0.6
                         shadowVerticalOffset: window.colorizeActive ? 0 : window.s(6)
 
-                        Behavior on shadowColor { ColorAnimation { duration: 800; easing.type: Easing.InOutCubic } }
-                        Behavior on shadowBlur { NumberAnimation { duration: 800; easing.type: Easing.InOutCubic } }
-                        Behavior on shadowOpacity { NumberAnimation { duration: 800; easing.type: Easing.InOutCubic } }
-                        Behavior on shadowVerticalOffset { NumberAnimation { duration: 800; easing.type: Easing.InOutCubic } }
+                        Behavior on shadowColor {
+                            ColorAnimation {
+                                duration: 800
+                                easing.type: Easing.InOutCubic
+                            }
+                        }
+                        Behavior on shadowBlur {
+                            NumberAnimation {
+                                duration: 800
+                                easing.type: Easing.InOutCubic
+                            }
+                        }
+                        Behavior on shadowOpacity {
+                            NumberAnimation {
+                                duration: 800
+                                easing.type: Easing.InOutCubic
+                            }
+                        }
+                        Behavior on shadowVerticalOffset {
+                            NumberAnimation {
+                                duration: 800
+                                easing.type: Easing.InOutCubic
+                            }
+                        }
                     }
                 }
 
@@ -551,7 +785,9 @@ PanelWindow {
                     anchors.horizontalCenter: parent.horizontalCenter
                     anchors.top: serpText.bottom
                     anchors.topMargin: window.s(12)
-                    text: I18n.t("start.made_by", { "author": "ilyamiro" })
+                    text: I18n.t("start.made_by", {
+                        "author": "noqokhxnh"
+                    })
                     font.family: ThemeBackend.fontFamily
                     font.pixelSize: window.s(15)
                     scale: 0.88
@@ -621,9 +857,21 @@ PanelWindow {
                         SequentialAnimation on blinkColor {
                             loops: Animation.Infinite
                             running: window.shellTextOpacity > 0
-                            ColorAnimation { to: window.blue; duration: 900; easing.type: Easing.InOutSine }
-                            ColorAnimation { to: window.peach; duration: 900; easing.type: Easing.InOutSine }
-                            ColorAnimation { to: window.mauve; duration: 900; easing.type: Easing.InOutSine }
+                            ColorAnimation {
+                                to: window.blue
+                                duration: 900
+                                easing.type: Easing.InOutSine
+                            }
+                            ColorAnimation {
+                                to: window.peach
+                                duration: 900
+                                easing.type: Easing.InOutSine
+                            }
+                            ColorAnimation {
+                                to: window.mauve
+                                duration: 900
+                                easing.type: Easing.InOutSine
+                            }
                         }
                         color: blinkColor
 
@@ -650,7 +898,9 @@ PanelWindow {
 
                     Text {
                         id: introAuthorText
-                        text: I18n.t("start.made_by", { "author": "ilyamiro" })
+                        text: I18n.t("start.made_by", {
+                            "author": "noqokhxnh"
+                        })
                         font.family: ThemeBackend.fontFamily
                         font.pixelSize: window.s(14)
                         color: window.subtext0
@@ -701,16 +951,34 @@ PanelWindow {
 
     SequentialAnimation {
         id: closeSequence
-        ScriptAction { script: Sounds.playSfx("start/transition_serp.wav", 0.6) }
-        ScriptAction { script: window.exitSoundHandle = Sounds.playUntilStopped("start/exit.wav", 0.7, false) }
-        PauseAnimation { duration: 350 }
+        ScriptAction {
+            script: Sounds.playSfx("start/transition_serp.wav", 0.6)
+        }
+        ScriptAction {
+            script: window.exitSoundHandle = Sounds.playUntilStopped("start/exit.wav", 0.7, false)
+        }
+        PauseAnimation {
+            duration: 350
+        }
         ParallelAnimation {
-            NumberAnimation { target: window; property: "mainOpacity"; to: 0.0; duration: 400; easing.type: Easing.OutQuint }
-            NumberAnimation { target: window; property: "panelReveal"; to: 0.0; duration: 1760; easing.type: Easing.InOutCubic }
+            NumberAnimation {
+                target: window
+                property: "mainOpacity"
+                to: 0.0
+                duration: 400
+                easing.type: Easing.OutQuint
+            }
+            NumberAnimation {
+                target: window
+                property: "panelReveal"
+                to: 0.0
+                duration: 1760
+                easing.type: Easing.InOutCubic
+            }
         }
         ScriptAction {
             script: {
-                if (window.exitSoundHandle !== -1 ) {
+                if (window.exitSoundHandle !== -1) {
                     Sounds.stopSfx(window.exitSoundHandle);
                     window.exitSoundHandle = -1;
                 }
@@ -725,7 +993,7 @@ PanelWindow {
             }
         }
         ScriptAction {
-            script: Qt.quit();
+            script: Qt.quit()
         }
     }
 }

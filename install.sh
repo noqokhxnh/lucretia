@@ -12,7 +12,7 @@ fi
 # set -e
 
 # Script Versioning & Initialization
-DOTS_VERSION="1.4.3"
+DOTS_VERSION="2.0.0"
 VERSION_FILE="$HOME/.local/state/lucretia-version"
 
 # Terminal UI Colors & Formatting
@@ -92,7 +92,7 @@ else
 fi
 
 case "$DETECTED_OS" in
-    arch|endeavouros|manjaro|cachyos|parch|garuda)
+    arch|endeavouros|manjaro|cachyos|garuda|arcolinux|archcraft|artix|blackarch|rebornos|mabox|blendos|parch|parchlinux|biglinux|archlabs|archman|alci|bluestar|archbang|archex|archstrike|athena|athenaos|chimeraos|ctlos|crystal|hefftorlinux|instantos|nyarch|obarun|hyperbola|parabola|salientos|snal|steamos|holo|stormos|tearch|xerolinux|axyl|omarchy)
         OS="$DETECTED_OS"
         ;;
     *)
@@ -207,14 +207,17 @@ fi
 
 # Main official packages & dependencies
 ARCH_PKGS=(
+    # --- Base Development & Toolchain ---
+    "base-devel" "cmake" "pkgconf" "git" "wget" "curl" "unzip" "file" "psmisc"
+
     # --- Compositor, Wayland & Session Management ---
     "niri" "xorg-xwayland" "swayidle" "polkit-kde-agent" "xdg-desktop-portal" "xdg-desktop-portal-gtk"
-    "xdg-utils" "xdg-user-dirs" "gnome-keyring" "upower"
+    "xdg-utils" "xdg-user-dirs" "gnome-keyring" "upower" "wmctrl"
 
     # --- Audio, Sound Stack & Codecs ---
     "pipewire" "wireplumber" "pipewire-pulse" "pipewire-alsa" "pipewire-jack" "libpulse"
     "alsa-utils" "alsa-firmware" "sof-firmware" "pavucontrol" "pamixer" "playerctl"
-    "gst-plugin-pipewire" "gst-plugins-good"
+    "gst-plugin-pipewire" "gst-plugins-good" "easyeffects" "cava"
 
     # --- Network, Wireless & Bluetooth ---
     "networkmanager" "network-manager-applet" "wpa_supplicant" "wireless_tools" "iw"
@@ -224,10 +227,10 @@ ARCH_PKGS=(
     "power-profiles-daemon" "brightnessctl" "acpi" "lm_sensors" "bc"
 
     # --- Graphical Shell, Utilities & Custom Daemons ---
-    "foot" "nautilus" "quickshell-git" "swayosd-git" "matugen-bin" "awww" "mpvpaper"
-    "wl-clipboard" "cliphist" "grim" "slurp" "satty" "gpu-screen-recorder"
-    "ffmpeg" "imagemagick" "file" "wget" "git" "psmisc" "jq" "yq" "socat"
-    "inotify-tools" "ripgrep" "fd" "python" "libnotify"
+    "foot" "kitty" "nautilus" "quickshell-git" "swayosd-git" "matugen-bin" "awww" "mpvpaper"
+    "wl-clipboard" "cliphist" "grim" "slurp" "satty" "gpu-screen-recorder" "wf-recorder"
+    "ffmpeg" "imagemagick" "jq" "yq" "socat" "fastfetch" "wl-gammarelay-rs"
+    "inotify-tools" "ripgrep" "fd" "python" "libnotify" "zbar"
 
     # --- Input Method (Vietnamese & Multilingual Support) ---
     "fcitx5" "fcitx5-gtk" "fcitx5-qt" "fcitx5-configtool" "fcitx5-unikey"
@@ -237,14 +240,15 @@ ARCH_PKGS=(
 
     # --- Qt5 / Qt6 Ecosystem & Theming ---
     "qt5-wayland" "qt5-quickcontrols" "qt5-quickcontrols2" "qt5-graphicaleffects"
-    "qt6-wayland" "qt6-multimedia" "qt6-5compat" "qt5ct" "qt6ct" "adw-gtk-theme"
+    "qt6-wayland" "qt6-multimedia" "qt6-5compat" "qt6-websockets" "python-websockets"
+    "qt5ct" "qt6ct" "adw-gtk-theme"
 
     # --- System Typography & Fonts ---
     "inter-font" "ttf-jetbrains-mono-nerd" "ttf-iosevka-nerd" "otf-font-awesome"
     "ttf-nerd-fonts-symbols" "noto-fonts-emoji"
 
     # --- C++ Backend Build & Runtime Dependencies ---
-    "nlohmann-json" "zbar" "sqlite" "cmake" "libpng" "pkgconf"
+    "nlohmann-json" "sqlite" "libpng"
 )
 
 PKGS=("${ARCH_PKGS[@]}")

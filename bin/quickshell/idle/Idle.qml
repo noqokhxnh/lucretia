@@ -190,7 +190,7 @@ Item {
     }
 
     function lockSession() {
-        Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/lock.sh"]);
+        Quickshell.execDetached(["bash", Caching.lucretiaDir + "/scripts/lock.sh"]);
     }
 
     function performLock() {

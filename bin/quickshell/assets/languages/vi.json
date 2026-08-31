@@ -1,7 +1,7 @@
 {
   "guide": {
     "about": {
-      "title": "Serpantinum",
+      "title": "Lucretia",
       "loading": "Đang tải...",
       "unknown": "Không xác định",
       "version_by": "v{version} • bởi {author}",
@@ -619,9 +619,9 @@
     }
   },
   "start": {
-    "title": "Serpantinum",
+    "title": "Lucretia",
     "made_by": "Được tạo bởi @{author}",
-    "welcome": "Chào mừng đến với Serpantinum",
+    "welcome": "Chào mừng đến với Lucretia",
     "tagline": "Giao diện desktop shell dành riêng cho",
     "you": "Bạn",
     "start_preview": "Bắt đầu trải nghiệm"
@@ -746,7 +746,7 @@
     },
     "guide": {
       "name": "Cài đặt hệ thống",
-      "desc": "Cài đặt hệ thống Serpantinum"
+      "desc": "Cài đặt hệ thống Lucretia"
     },
     "calendar": {
       "name": "Lịch & Đồng hồ",
@@ -784,7 +784,7 @@
     }
   },
   "cli": {
-    "usage": "Cách dùng: serpantinum [lệnh] [tùy chọn...]",
+    "usage": "Cách dùng: lucretia [lệnh] [tùy chọn...]",
     "description": "Giao diện desktop shell dành cho Wayland.",
     "commands": "Các lệnh:",
     "script_commands": "Các lệnh script:",
@@ -797,23 +797,23 @@
     "version_desc": "Hiển thị thông tin phiên bản và thoát",
     "help_desc": "Hiển thị trợ giúp và thoát",
     "examples": "Ví dụ:",
-    "daemon_stopped": "Đã dừng daemon Serpantinum.",
-    "starting_daemon": "Daemon chưa chạy. Đang khởi động serpantinumd trong nền...",
+    "daemon_stopped": "Đã dừng daemon Lucretia.",
+    "starting_daemon": "Daemon chưa chạy. Đang khởi động lucretiad trong nền...",
     "error_missing_qml": "Error: missing target to launch.",
-    "launch_usage": "Usage: serpantinum launch <start|widgetredactor> [args...]",
+    "launch_usage": "Usage: lucretia launch <start|widgetredactor> [args...]",
     "error_qml_not_found": "Error: could not resolve {NAME}.qml in {DIR}",
     "error_shell_qml_not_found": "Error: could not resolve path to shell.qml in {DIR}",
     "error_unknown_command": "Error: unknown command '{CMD}'.",
     "error_unknown_target": "Error: unknown target '{TARGET}'.",
     "launch_help": {
-      "usage": "Usage: serpantinum launch <start|widgetredactor> [arguments...]",
+      "usage": "Usage: lucretia launch <start|widgetredactor> [arguments...]",
       "description": "Launch standalone components directly in runner mode.",
       "available_targets": "Các mục tiêu khả dụng:",
       "target_start": "Khởi chạy giao diện thiết lập ban đầu",
       "target_widgetredactor": "Khởi chạy trình chỉnh sửa widget desktop"
     },
     "msg_help": {
-      "usage": "Usage: serpantinum msg <command|workspace> [arguments...]",
+      "usage": "Usage: lucretia msg <command|workspace> [arguments...]",
       "description": "Send layout, workspace, and window management messages directly.",
       "available_commands": "Các thông điệp khả dụng:",
       "cmd_workspace": "Chuyển đến không gian làm việc <số> (thêm 'move' để di chuyển cửa sổ hiện tại)",
@@ -822,7 +822,7 @@
       "cmd_close": "Đóng mọi lớp phủ giao diện đang hoạt động"
     },
     "ipc_help": {
-      "usage": "Usage: serpantinum ipc call <target> <method> [arguments...]",
+      "usage": "Usage: lucretia ipc call <target> <method> [arguments...]",
       "description": "Gửi trực tiếp cuộc gọi IPC tới tiến trình quickshell đang chạy."
     },
     "scripts": {
@@ -842,11 +842,11 @@
   },
   "daemon": {
     "already_running": "Daemon đã đang chạy. Đang thoát...",
-    "shutting_down": "Đang tắt daemon serpantinum...",
-    "launching": "Đang khởi chạy daemon serpantinum...",
+    "shutting_down": "Đang tắt daemon lucretia...",
+    "launching": "Đang khởi chạy daemon lucretia...",
     "cli": {
-      "usage": "Usage: serpantinumd <command> [options...]",
-      "description": "Background service daemon for Serpantinum desktop shell.",
+      "usage": "Usage: lucretiad <command> [options...]",
+      "description": "Background service daemon for Lucretia desktop shell.",
       "commands": "Commands:",
       "cmd_start": "Khởi động dịch vụ daemon và các worker chạy ngầm",
       "cmd_stop": "Dừng dịch vụ daemon đang chạy",
@@ -855,9 +855,9 @@
       "opt_verbose": "Bật ghi nhật ký chi tiết",
       "opt_version": "Hiển thị thông tin phiên bản và thoát",
       "opt_help": "Hiển thị thông báo trợ giúp và thoát",
-      "stopped": "Serpantinum daemon stopped.",
-      "status_running": "Daemon Serpantinum đang chạy (PID: {PID}).",
-      "status_stopped": "Daemon Serpantinum hiện không chạy.",
+      "stopped": "Lucretia daemon stopped.",
+      "status_running": "Daemon Lucretia đang chạy (PID: {PID}).",
+      "status_stopped": "Daemon Lucretia hiện không chạy.",
       "unknown_arg": "Unknown argument: {ARG}"
     }
   },
@@ -872,7 +872,7 @@
     },
     "os": {
       "error_root": "Error: Do not run this script directly with root/sudo. Run as normal user.",
-      "error_unsupported": "Unsupported OS ({os}). Serpantinum strictly supports Arch Linux and derivatives.",
+      "error_unsupported": "Unsupported OS ({os}). Lucretia strictly supports Arch Linux and derivatives.",
       "error_not_found": "Cannot detect OS. /etc/os-release not found.",
       "unknown_cpu": "Unknown CPU",
       "unknown_gpu": "Unknown / virtual machine",
@@ -928,9 +928,9 @@
       "tagline": "A desktop shell built for you",
       "support_creator": "Support the creator:",
       "buy_coffee": "If you enjoy this project, consider buying me a coffee!",
-      "installed_success": "✔ Serpantinum {ver} ({commit}) installed successfully.",
+      "installed_success": "✔ Lucretia {ver} ({commit}) installed successfully.",
       "failed_packages": "The following packages encountered errors during installation:",
-      "restart_prompt": "Restart your compositor or run 'serpantinumd start' to begin.",
+      "restart_prompt": "Restart your compositor or run 'lucretiad start' to begin.",
       "ask_reboot": "Do you want to restart? [y/N] "
     },
     "deps": {

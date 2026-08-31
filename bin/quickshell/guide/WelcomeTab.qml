@@ -18,9 +18,20 @@ Item {
     opacity: revealed ? 1.0 : 0.0
     property real slideY: revealed ? 0 : rootObj.s(10)
 
-    Behavior on slideY { NumberAnimation { duration: 250; easing.type: Easing.OutQuart } }
-    transform: Translate { y: slideY }
-    Behavior on opacity { NumberAnimation { duration: 250 } }
+    Behavior on slideY {
+        NumberAnimation {
+            duration: 250
+            easing.type: Easing.OutQuart
+        }
+    }
+    transform: Translate {
+        y: slideY
+    }
+    Behavior on opacity {
+        NumberAnimation {
+            duration: 250
+        }
+    }
 
     function activateTab() {
         revealed = true;
@@ -29,11 +40,13 @@ Item {
     }
 
     onVisibleChanged: {
-        if (visible) activateTab();
+        if (visible)
+            activateTab();
     }
 
     Component.onCompleted: {
-        if (visible) activateTab();
+        if (visible)
+            activateTab();
     }
 
     property real titleWavePhase: 0.0
@@ -45,7 +58,7 @@ Item {
         duration: 7000
     }
 
-    component StartButtonContent : Item {
+    component StartButtonContent: Item {
         id: bRoot
         property color textColor: ThemeBackend.blue
         property real fillLevel: 0.0
@@ -61,16 +74,25 @@ Item {
                 font.family: "Iosevka Nerd Font"
                 font.pixelSize: rootObj.s(18)
                 color: bRoot.textColor
-                Behavior on color { ColorAnimation { duration: 150 } }
+                Behavior on color {
+                    ColorAnimation {
+                        duration: 150
+                    }
+                }
 
                 property real charNorm: 0.15
-                property real bump: bRoot.fillLevel > 0.001 && bRoot.fillLevel < 0.999
-                                    ? Math.exp(-Math.pow((bRoot.fillLevel - charNorm) * 12, 2))
-                                    : 0.0
+                property real bump: bRoot.fillLevel > 0.001 && bRoot.fillLevel < 0.999 ? Math.exp(-Math.pow((bRoot.fillLevel - charNorm) * 12, 2)) : 0.0
 
                 transform: [
-                    Translate { y: -iconText.bump * rootObj.s(2.5) },
-                    Scale { origin.x: width / 2; origin.y: height / 2; xScale: 1.0 + iconText.bump * 0.08; yScale: 1.0 + iconText.bump * 0.08 }
+                    Translate {
+                        y: -iconText.bump * rootObj.s(2.5)
+                    },
+                    Scale {
+                        origin.x: width / 2
+                        origin.y: height / 2
+                        xScale: 1.0 + iconText.bump * 0.08
+                        yScale: 1.0 + iconText.bump * 0.08
+                    }
                 ]
             }
 
@@ -89,16 +111,25 @@ Item {
                         font.pixelSize: rootObj.s(14)
 
                         color: bRoot.textColor
-                        Behavior on color { ColorAnimation { duration: 150 } }
+                        Behavior on color {
+                            ColorAnimation {
+                                duration: 150
+                            }
+                        }
 
                         property real charNorm: 0.25 + (index / 14) * 0.65
-                        property real bump: bRoot.fillLevel > 0.001 && bRoot.fillLevel < 0.999
-                                            ? Math.exp(-Math.pow((bRoot.fillLevel - charNorm) * 12, 2))
-                                            : 0.0
+                        property real bump: bRoot.fillLevel > 0.001 && bRoot.fillLevel < 0.999 ? Math.exp(-Math.pow((bRoot.fillLevel - charNorm) * 12, 2)) : 0.0
 
                         transform: [
-                            Translate { y: -charText.bump * rootObj.s(2.5) },
-                            Scale { origin.x: width / 2; origin.y: height / 2; xScale: 1.0 + charText.bump * 0.08; yScale: 1.0 + charText.bump * 0.08 }
+                            Translate {
+                                y: -charText.bump * rootObj.s(2.5)
+                            },
+                            Scale {
+                                origin.x: width / 2
+                                origin.y: height / 2
+                                xScale: 1.0 + charText.bump * 0.08
+                                yScale: 1.0 + charText.bump * 0.08
+                            }
                         ]
                     }
                 }
@@ -148,7 +179,7 @@ Item {
                     anchors.centerIn: parent
                     width: rootObj.s(210)
                     height: rootObj.s(210)
-                    source: "file://" + rootObj.appPaths.serpantinumDir + "/assets/logo.svg"
+                    source: "file://" + rootObj.appPaths.lucretiaDir + "/assets/svg.png"
                     sourceSize: Qt.size(width, height)
                     fillMode: Image.PreserveAspectFit
                     smooth: true
@@ -163,7 +194,10 @@ Item {
                 layer.enabled: true
                 layer.smooth: true
 
-                Rectangle { anchors.fill: parent; color: ThemeBackend.text }
+                Rectangle {
+                    anchors.fill: parent
+                    color: ThemeBackend.text
+                }
 
                 Canvas {
                     id: logoWaveCanvas
@@ -173,13 +207,17 @@ Item {
                     NumberAnimation on wavePhase {
                         running: welcomeTabRoot.visible && welcomeTabRoot.logoFillLevel < 1.14
                         loops: Animation.Infinite
-                        from: 0; to: Math.PI * 2; duration: 4500
+                        from: 0
+                        to: Math.PI * 2
+                        duration: 4500
                     }
 
                     onWavePhaseChanged: requestPaint()
                     Connections {
                         target: welcomeTabRoot
-                        function onLogoFillLevelChanged() { logoWaveCanvas.requestPaint() }
+                        function onLogoFillLevelChanged() {
+                            logoWaveCanvas.requestPaint();
+                        }
                     }
 
                     onPaint: {
@@ -187,10 +225,12 @@ Item {
                         ctx.clearRect(0, 0, width, height);
 
                         var prog = welcomeTabRoot.logoFillLevel;
-                        if (prog <= 0.001) return;
+                        if (prog <= 0.001)
+                            return;
 
                         function drawWaterWipe(p, colorStr, ampMult, phaseOffset, waveCount) {
-                            if (p <= 0.0) return;
+                            if (p <= 0.0)
+                                return;
                             if (p >= 1.0) {
                                 ctx.fillStyle = colorStr;
                                 ctx.fillRect(0, 0, width, height);
@@ -289,7 +329,9 @@ Item {
             }
 
             Text {
-                text: I18n.t("guide.welcome.by_author", { author: "ilyamiro" })
+                text: I18n.t("guide.welcome.by_author", {
+                    author: "noqokhxnh"
+                })
                 font.family: ThemeBackend.fontFamily
                 font.pixelSize: rootObj.s(14)
                 color: ThemeBackend.subtext0

@@ -1,23 +1,28 @@
 #!/usr/bin/env bash
 
-if [ -z "$SERPANTINUM_DIR" ]; then
-    SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
-    export SERPANTINUM_DIR="$(dirname "$SCRIPT_DIR")"
+if [ -z "$LUCRETIA_DIR" ]; then
+    if [ -n "$SERPANTINUM_DIR" ]; then
+        export LUCRETIA_DIR="$SERPANTINUM_DIR"
+    else
+        SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+        export LUCRETIA_DIR="$(dirname "$SCRIPT_DIR")"
+    fi
 fi
+export SERPANTINUM_DIR="$LUCRETIA_DIR"
 
-if [ -d "$SERPANTINUM_DIR/quickshell" ]; then
-    export QS_DIR="$SERPANTINUM_DIR/quickshell"
+if [ -d "$LUCRETIA_DIR/quickshell" ]; then
+    export QS_DIR="$LUCRETIA_DIR/quickshell"
 else
-    export QS_DIR="$SERPANTINUM_DIR"
+    export QS_DIR="$LUCRETIA_DIR"
 fi
 export MAIN_QML="$QS_DIR/Shell.qml"
-export IPC_SOCKET="${XDG_RUNTIME_DIR:-/tmp}/serpantinum.sock"
+export IPC_SOCKET="${XDG_RUNTIME_DIR:-/tmp}/lucretia.sock"
 
-export QS_CACHE_DIR="$HOME/.cache/serpantinum"
-export QS_STATE_DIR="$HOME/.local/state/serpantinum"
-export QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/serpantinum"
+export QS_CACHE_DIR="$HOME/.cache/lucretia"
+export QS_STATE_DIR="$HOME/.local/state/lucretia"
+export QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/lucretia"
 export QS_LOG_DIR="$QS_RUN_DIR/logs"
-export QS_SETTINGS="$HOME/.config/serpantinum/settings.json"
+export QS_SETTINGS="$HOME/.config/lucretia/settings.json"
 
 [[ -d "$QS_LOG_DIR" && -d "$QS_CACHE_DIR" && -d "$QS_STATE_DIR" ]] || mkdir -p "$QS_CACHE_DIR" "$QS_STATE_DIR" "$QS_RUN_DIR" "$QS_LOG_DIR"
 

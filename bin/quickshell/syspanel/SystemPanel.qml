@@ -505,7 +505,7 @@ Item {
                                 interval: 150
                                 onTriggered: {
                                     closeSequence.start();
-                                    Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/exit.sh"]);
+                                    Quickshell.execDetached(["bash", Caching.lucretiaDir + "/scripts/exit.sh"]);
                                     Quickshell.execDetached(["sh", "-c", "echo 'close' > " + Caching.runDir + "/widget_state"]);
                                 }
                             }
@@ -764,9 +764,9 @@ Item {
                                     let kelvin = Math.round(6500 - (temp / 100) * (6500 - 2500));
 
                                     if (isActive) {
-                                        Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/blue_light_filter.sh", "set", kelvin.toString(), mName]);
+                                        Quickshell.execDetached(["bash", Caching.lucretiaDir + "/scripts/blue_light_filter.sh", "set", kelvin.toString(), mName]);
                                     } else {
-                                        Quickshell.execDetached(["bash", Caching.serpantinumDir + "/scripts/blue_light_filter.sh", "reset", mName]);
+                                        Quickshell.execDetached(["bash", Caching.lucretiaDir + "/scripts/blue_light_filter.sh", "reset", mName]);
                                     }
                                     mSet.enabled = isActive;
                                     mons[mName] = mSet;
@@ -1145,8 +1145,8 @@ Item {
                                         actionCapsule.chargingSoundHandle = -1;
                                     }
                                     let finalCmd = cmd;
-                                    if (cmd === "lock") finalCmd = "bash " + Caching.serpantinumDir + "/scripts/lock.sh";
-                                    else if (cmd === "sleep") finalCmd = "bash " + Caching.serpantinumDir + "/scripts/lock.sh & systemctl suspend";
+                                    if (cmd === "lock") finalCmd = "bash " + Caching.lucretiaDir + "/scripts/lock.sh";
+                                    else if (cmd === "sleep") finalCmd = "bash " + Caching.lucretiaDir + "/scripts/lock.sh & systemctl suspend";
                                     else if (cmd === "hibernate") finalCmd = "dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.Hibernate boolean:true";
                                     else if (cmd === "reboot") finalCmd = "systemctl reboot";
                                     else if (cmd === "poweroff") finalCmd = "systemctl poweroff -i";

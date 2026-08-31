@@ -312,7 +312,7 @@ Item {
 
     Process {
         id: weatherPoller
-        command: ["bash", Caching.serpantinumDir + "/scripts/weather.sh", "--json"]
+        command: ["bash", Caching.lucretiaDir + "/scripts/weather.sh", "--json"]
         running: false
         stdout: StdioCollector {
             onStreamFinished: {

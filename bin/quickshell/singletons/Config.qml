@@ -7,7 +7,7 @@ Item {
     id: config
 
     readonly property string homeDir: Quickshell.env("HOME")
-    readonly property string userConfigDir: homeDir + "/.config/serpantinum"
+    readonly property string userConfigDir: homeDir + "/.config/lucretia"
     
     readonly property string settingsJsonPath: Quickshell.env("QS_SETTINGS") ? Quickshell.env("QS_SETTINGS") : (userConfigDir + "/settings.json")
 

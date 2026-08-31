@@ -21,6 +21,7 @@ Item {
         }
     }
     property var appPaths: Caching
+    property string dotsVersion: Updater.localVersion
     function closePopup() { closeSequence.start() }
 
     function s(val) {
@@ -149,7 +150,7 @@ Item {
 
     FileView {
         id: tutorialWatcher
-        path: Caching.serpantinumDir ? (Caching.serpantinumDir + "/assets/tutorial.json") : ""
+        path: Caching.lucretiaDir ? (Caching.lucretiaDir + "/assets/tutorial.json") : ""
         onLoaded: {
             try {
                 let data = JSON.parse(text().trim());

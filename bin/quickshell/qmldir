@@ -44,7 +44,8 @@ ScreenshotOverlay 1.0 screenshot/ScreenshotOverlay.qml
 Idle 1.0 idle/Idle.qml
 
 Start 1.0 serp/Start.qml
-Serpantinum 1.0 serp/Serpantinum.qml
+Lucretia 1.0 serp/Lucretia.qml
+Serpantinum 1.0 serp/Lucretia.qml
 
 singleton SystemInfo 1.0 info/SystemInfo.qml
 singleton SysData 1.0 info/SysData.qml

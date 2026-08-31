@@ -63,10 +63,10 @@ Variants {
             }
             property bool isFill: barStyle === "fill"
             property bool isSolid: barStyle === "solid" || barStyle === "fill"
-            property bool barConfigReady: typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.autohide !== undefined
+            property bool barConfigReady: typeof Config !== "undefined" && Config.dataReady
             property bool autohide: {
                 let dummy = configRevision;
-                return barConfigReady ? Config.rawSettings.bar.autohide : false;
+                return (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.autohide !== undefined) ? Config.rawSettings.bar.autohide : false;
             }
             property int autohideTimeout: {
                 let dummy = configRevision;

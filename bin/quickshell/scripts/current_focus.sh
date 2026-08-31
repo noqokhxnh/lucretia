@@ -2,7 +2,7 @@
 
 source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/caching.sh"
 
-RUN_DIR="${QS_RUN_FOCUSTIME:-${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/serpantinum/focustime}"
+RUN_DIR="${QS_RUN_FOCUSTIME:-${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/lucretia/focustime}"
 mkdir -p "$RUN_DIR"
 
 LOG_FILE="$RUN_DIR/focus_events.jsonl"
