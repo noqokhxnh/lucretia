@@ -233,6 +233,8 @@ def run_indexing(src_dir, per_dir_cache, index_file, poster_dir):
             except Exception:
                 pass
 
+    items.sort(key=lambda x: str(x.get("fileName", "")).lower())
+
     output_data = {
         "srcDir": os.path.abspath(src_dir),
         "dirHash": get_dir_hash(src_dir),

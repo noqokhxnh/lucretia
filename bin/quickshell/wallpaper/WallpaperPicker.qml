@@ -541,26 +541,11 @@ Item {
             return;
         }
 
-        let isVid = window.isVideoTarget(window.targetWallName);
-        if (isVid) {
-            if (window.currentFilter !== "Video" && window.currentFilter !== "All") {
-                window._silentFilterChange = true;
-                window.currentFilter = "Video";
-                window._silentFilterChange = false;
-            }
-        } else {
-            if (window.currentFilter === "Video" || window.currentFilter === "Search") {
-                window._silentFilterChange = true;
-                window.currentFilter = "All";
-                window._silentFilterChange = false;
-            } else if (window.currentFilter !== "All" && window.currentFilter !== "History") {
-                let b = window.bucketMap[window.targetWallName] || window.bucketMap[window.getCleanName(window.targetWallName)] || window.bucketMap[window.getCleanBaseName(window.targetWallName)] || "";
-                if (b && b !== window.currentFilter) {
-                    window._silentFilterChange = true;
-                    window.currentFilter = "All";
-                    window._silentFilterChange = false;
-                }
-            }
+        // Always keep 'All' tab active so both images and videos are shown
+        if (window.currentFilter !== "All" && window.currentFilter !== "History" && window.currentFilter !== "Search") {
+            window._silentFilterChange = true;
+            window.currentFilter = "All";
+            window._silentFilterChange = false;
         }
         window.applyFilters(true);
     }
@@ -615,6 +600,9 @@ Item {
                 ]);
             }
         } else {
+            window._silentFilterChange = true;
+            window.currentFilter = "All";
+            window._silentFilterChange = false;
             window.loadMonitors();
             window.refreshForDisplay();
             focusTimer.restart();
@@ -832,6 +820,9 @@ Item {
         window.bucketMap = newBucketMap;
         window.cacheVersion++;
 
+        localItems.sort((a, b) => String(a.fileName).localeCompare(String(b.fileName), undefined, { numeric: true, sensitivity: "base" }));
+        videoItems.sort((a, b) => String(a.fileName).localeCompare(String(b.fileName), undefined, { numeric: true, sensitivity: "base" }));
+
         if (localProxyModel.count === 0 && videoProxyModel.count === 0) {
             if (localItems.length > 0) localProxyModel.append(localItems);
             if (videoItems.length > 0) videoProxyModel.append(videoItems);
@@ -845,6 +836,8 @@ Item {
         id: srcModel
         folder: "file://" + window.srcDir
         nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif", "*.mp4", "*.mkv", "*.mov", "*.webm", "*.JPG", "*.JPEG", "*.PNG", "*.WEBP", "*.GIF", "*.MP4", "*.MKV", "*.MOV", "*.WEBM"]
+        sortField: FolderListModel.Name
+        sortReversed: false
         caseSensitive: true
         showDirs: false
         onCountChanged: {
@@ -978,14 +971,8 @@ Item {
         window.bucketMap = newBucketMap;
         window.cacheVersion++;
 
-        const order = { "Red": 1, "Orange": 2, "Yellow": 3, "Green": 4, "Blue": 5, "Purple": 6, "Pink": 7, "Monochrome": 8 };
-        localItems.sort((a, b) => {
-            let oA = order[a.bucket] || 10;
-            let oB = order[b.bucket] || 10;
-            if (oA !== oB) return oA - oB;
-            return String(a.fileName).localeCompare(String(b.fileName));
-        });
-        videoItems.sort((a, b) => String(a.fileName).localeCompare(String(b.fileName)));
+        localItems.sort((a, b) => String(a.fileName).localeCompare(String(b.fileName), undefined, { numeric: true, sensitivity: "base" }));
+        videoItems.sort((a, b) => String(a.fileName).localeCompare(String(b.fileName), undefined, { numeric: true, sensitivity: "base" }));
 
         let localChanged = !window.itemsEqualToModel(localProxyModel, localItems);
         let videoChanged = !window.itemsEqualToModel(videoProxyModel, videoItems);
@@ -1106,13 +1093,6 @@ Item {
 
         if (window.currentFilter === "All") {
             let combined = [];
-            for (let i = 0; i < localProxyModel.count; i++) {
-                let it = localProxyModel.get(i);
-                if (it && it.fileName && !seenNames[it.fileName]) {
-                    seenNames[it.fileName] = true;
-                    combined.push(it);
-                }
-            }
             for (let i = 0; i < videoProxyModel.count; i++) {
                 let it = videoProxyModel.get(i);
                 if (it && it.fileName && !seenNames[it.fileName]) {
@@ -1120,13 +1100,21 @@ Item {
                     combined.push(it);
                 }
             }
+            for (let i = 0; i < localProxyModel.count; i++) {
+                let it = localProxyModel.get(i);
+                if (it && it.fileName && !seenNames[it.fileName]) {
+                    seenNames[it.fileName] = true;
+                    combined.push(it);
+                }
+            }
 
-            const order = { "Red": 1, "Orange": 2, "Yellow": 3, "Green": 4, "Blue": 5, "Purple": 6, "Pink": 7, "Monochrome": 8, "Video": 9 };
             combined.sort((a, b) => {
-                let oA = order[a.bucket] !== undefined ? order[a.bucket] : 10;
-                let oB = order[b.bucket] !== undefined ? order[b.bucket] : 10;
-                if (oA !== oB) return oA - oB;
-                return String(a.fileName).localeCompare(String(b.fileName));
+                let isVidA = a.isVideo ? 1 : 0;
+                let isVidB = b.isVideo ? 1 : 0;
+                if (isVidA !== isVidB) {
+                    return isVidB - isVidA; // Videos placed first on the left
+                }
+                return String(a.fileName).localeCompare(String(b.fileName), undefined, { numeric: true, sensitivity: "base" });
             });
 
             for (let i = 0; i < combined.length; i++) {
