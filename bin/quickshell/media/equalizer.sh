@@ -11,7 +11,7 @@ if [ -z "$QS_RUN_MUSIC" ]; then
 fi
 
 STATE_FILE="$QS_RUN_MUSIC/eq_state.json"
-PRESET_DIR="$HOME/.config/easyeffects/output"
+PRESET_DIR="$HOME/.local/share/easyeffects/output"
 PRESET_NAME="live_eq"
 PRESET_FILE="$PRESET_DIR/${PRESET_NAME}.json"
 
@@ -39,7 +39,8 @@ try:
                 gain = gains[s_idx]
                 break
         bands[f\"band{i}\"] = { \"frequency\": freq, \"gain\": gain, \"mode\": \"Bell\", \"mute\": False, \"q\": 1.0, \"solo\": False, \"width\": 1.0, \"slope\": \"x1\" }
-    preset = { \"output\": { \"blocklist\": [], \"plugins_order\": [ \"equalizer\" ], \"equalizer\": { \"bypass\": False, \"input-gain\": 0.0, \"output-gain\": 0.0, \"left\": bands, \"right\": bands, \"mode\": \"IIR\", \"num-bands\": 32, \"split-channels\": False } } }
+    all_flat = all(g == 0.0 for g in gains)
+    preset = { \"output\": { \"blocklist\": [], \"plugins_order\": [ \"equalizer\" ], \"equalizer\": { \"bypass\": all_flat, \"input-gain\": 0.0, \"output-gain\": 0.0, \"left\": bands, \"right\": bands, \"mode\": \"IIR\", \"num-bands\": 32, \"split-channels\": False } } }
     print(json.dumps(preset, indent=4))
 except:
     sys.exit(1)
