@@ -176,6 +176,7 @@ Item {
         onConnectedChanged: {
             if (connected) {
                 console.log("[QsDaemonClient] Connected to C++ qs_daemon!");
+                root._lastMsgTime = Date.now();
                 // Send initial handshake / subscriptions
                 sendRequest("sysdata", "subscribe", {}, null);
                 sendRequest("music", "subscribe", {}, null);
@@ -220,17 +221,16 @@ Item {
         }
     }
 
-    // The daemon broadcasts spectrum events continuously, so any healthy
-    // connection produces steady traffic. If we hear nothing for a while the
-    // daemon likely died without a disconnect notification (or the socket is
-    // half-dead) — force a reconnect instead of waiting forever.
+    // Sysdata broadcasts arrive every 10s, so a healthy connection can go
+    // quiet for longer than that. Only force a reconnect if we hear nothing
+    // well past the slowest broadcast interval.
     Timer {
         id: livenessTimer
-        interval: 5000
+        interval: 10000
         repeat: true
         running: daemonSocket.connected
         onTriggered: {
-            if (daemonSocket.connected && (Date.now() - root._lastMsgTime > 4000)) {
+            if (daemonSocket.connected && (Date.now() - root._lastMsgTime > 25000)) {
                 console.warn("[QsDaemonClient] No daemon traffic, forcing reconnect");
                 daemonSocket.connected = false;
                 Qt.callLater(() => {
