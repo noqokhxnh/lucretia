@@ -23,7 +23,7 @@ PanelWindow {
     color: "transparent"
 
     mask: Region {
-        item: launcherWindow.isVisible ? launcherWindow : ((container.animProgress > 0.001) ? maskBoundary : null)
+        item: launcherWindow.isVisible ? maskFull : ((container.animProgress > 0.001) ? maskBoundary : null)
     }
 
     anchors {
@@ -437,22 +437,21 @@ PanelWindow {
 
                 let isFav = favSet.has(e.id) || favSet.has(e.name);
                 let isHid = hidSet.has(e.id) || hidSet.has(e.name);
-
                 let score = 0;
                 if (launcherWindow.smartRanking) {
                     let wmclassLower = (e.startupClass || "").toLowerCase();
-                    let baseName = e.id.toLowerCase().replace(".desktop", "");
+                    let baseName = (e.id || "").toLowerCase().replace(".desktop", "");
                     let appNameLower = (e.name || "").toLowerCase();
 
-                    let f_score = usageRanks.focus[wmclassLower] || 0;
-                    if (f_score === 0) f_score = usageRanks.focus[baseName] || 0;
-                    if (f_score === 0) f_score = usageRanks.focus[appNameLower] || 0;
+                    let f_score = (usageRanks && usageRanks.focus && usageRanks.focus[wmclassLower]) || 0;
+                    if (f_score === 0) f_score = (usageRanks && usageRanks.focus && usageRanks.focus[baseName]) || 0;
+                    if (f_score === 0) f_score = (usageRanks && usageRanks.focus && usageRanks.focus[appNameLower]) || 0;
 
-                    let l_score = usageRanks.launch[e.name] || 0;
+                    let l_score = (usageRanks && usageRanks.launch && usageRanks.launch[e.name]) || 0;
 
-                    let c_score = (usageRanks.context && usageRanks.context[wmclassLower]) || 0;
-                    if (c_score === 0) c_score = (usageRanks.context && usageRanks.context[baseName]) || 0;
-                    if (c_score === 0) c_score = (usageRanks.context && usageRanks.context[appNameLower]) || 0;
+                    let c_score = (usageRanks && usageRanks.context && usageRanks.context[wmclassLower]) || 0;
+                    if (c_score === 0) c_score = (usageRanks && usageRanks.context && usageRanks.context[baseName]) || 0;
+                    if (c_score === 0) c_score = (usageRanks && usageRanks.context && usageRanks.context[appNameLower]) || 0;
 
                     score = f_score + l_score + (0.5 * c_score);
                 }
@@ -858,9 +857,33 @@ PanelWindow {
         closeLauncher();
     }
 
+    function handleWheelScroll(wheel) {
+        if (appList) {
+            let dy = 0;
+            if (wheel.angleDelta && wheel.angleDelta.y !== 0) {
+                dy = wheel.angleDelta.y > 0 ? 80 : -80;
+            } else if (wheel.pixelDelta && wheel.pixelDelta.y !== 0) {
+                dy = wheel.pixelDelta.y;
+            }
+            if (dy !== 0) {
+                let maxContentY = Math.max(0, appList.contentHeight - appList.height);
+                appList.contentY = Math.max(0, Math.min(maxContentY, appList.contentY - dy));
+            }
+        }
+    }
+
     MouseArea {
         anchors.fill: parent
         onClicked: closeLauncher()
+        onWheel: (wheel) => {
+            handleWheelScroll(wheel);
+            wheel.accepted = true;
+        }
+    }
+
+    Item {
+        id: maskFull
+        anchors.fill: parent
     }
 
     Item {

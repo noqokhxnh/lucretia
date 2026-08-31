@@ -37,7 +37,7 @@ fi
 # ---------------------------------------------
 
 # Configuration: Fallback to 8
-SETTINGS_FILE="$HOME/.config/niri/settings.json"
+SETTINGS_FILE="$HOME/.config/lucretia/settings.json"
 
 print_workspaces() {
     # Dynamically read workspace count on each update

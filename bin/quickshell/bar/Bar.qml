@@ -50,6 +50,10 @@ Variants {
                 }
             }
 
+            Component.onCompleted: {
+                barWindow.configRevision++;
+            }
+
             property string barStyle: {
                 let dummy = configRevision;
                 if (typeof Config === "undefined" || !Config.rawSettings || !Config.rawSettings.bar) return "modular";

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Dynamic idle daemon for niri with AC & Battery awareness
 
-SETTINGS_FILE="$HOME/.config/niri/settings.json"
+SETTINGS_FILE="$HOME/.config/lucretia/settings.json"
 
 # Kill any existing swayidle instances to allow clean reloading
 killall -q -9 swayidle 2>/dev/null || true

@@ -115,8 +115,8 @@ if [ "$SHOULD_START" = true ]; then
     if pidof quickshell >/dev/null; then
         pidof quickshell | tr ' ' '\n' | head -n 1 > "$PID_FILE"
     else
-        mkdir -p "$HOME/.cache/quickshell"
-        quickshell -p "$SHELL_QML_PATH" > "$HOME/.cache/quickshell/quickshell.log" 2>&1 &
+        mkdir -p "$HOME/.cache/lucretia"
+        quickshell -p "$SHELL_QML_PATH" > "$HOME/.cache/lucretia/quickshell.log" 2>&1 &
         echo $! > "$PID_FILE"
         disown
     fi

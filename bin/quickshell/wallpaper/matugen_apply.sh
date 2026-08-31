@@ -9,14 +9,34 @@
 # Overrides live in settings.json under "wallpaperColorOverrides",
 # keyed by the wallpaper's original path (current_wallpaper.path).
 # -----------------------------------------------------------------------------
-SETTINGS_FILE="$HOME/.config/niri/settings.json"
+SETTINGS_FILE="$HOME/.config/lucretia/settings.json"
 SETTINGS_LOCK="$SETTINGS_FILE.lock"
-WALL_CACHE="$HOME/.cache/quickshell/wallpaper_picker"
+WALL_CACHE="$HOME/.cache/lucretia/wallpaper"
+[ -f "$WALL_CACHE/current_wallpaper.path" ] || [ -f "$WALL_CACHE/current_wallpaper.png" ] || WALL_CACHE="$HOME/.cache/lucretia/wallpaper_picker"
+
+get_current_key() {
+    for p in "$HOME/.cache/lucretia/wallpaper/current_wallpaper.path" "$HOME/.cache/lucretia/wallpaper_picker/current_wallpaper.path"; do
+        if [ -f "$p" ] && [ -s "$p" ]; then
+            cat "$p" 2>/dev/null
+            return
+        fi
+    done
+}
+
+get_cached_img() {
+    for p in "$HOME/.cache/lucretia/wallpaper/current_wallpaper.png" "$HOME/.cache/lucretia/wallpaper_picker/current_wallpaper.png"; do
+        if [ -f "$p" ] && [ -s "$p" ]; then
+            echo "$p"
+            return
+        fi
+    done
+    echo "$WALL_CACHE/current_wallpaper.png"
+}
 
 # Matugen can't process videos directly; fall back to the cached thumb.
 image_target() {
     case "$1" in
-        *.mp4|*.mkv|*.mov|*.webm|*.gif) echo "$WALL_CACHE/current_wallpaper.png" ;;
+        *.mp4|*.mkv|*.mov|*.webm|*.gif) get_cached_img ;;
         *) echo "$1" ;;
     esac
 }
@@ -26,7 +46,7 @@ case "${1:-}" in
     HEX="${2:-}"; SCHEME="${3:-}"
     [ -n "$HEX" ] && [ -n "$SCHEME" ] || exit 1
 
-    KEY="$(cat "$WALL_CACHE/current_wallpaper.path" 2>/dev/null)"
+    KEY="$(get_current_key)"
     [ -n "$KEY" ] || exit 0
 
     ( flock 9; mkdir -p "$(dirname "$SETTINGS_FILE")"
@@ -37,7 +57,7 @@ case "${1:-}" in
     ;;
 
   clear)
-    KEY="$(cat "$WALL_CACHE/current_wallpaper.path" 2>/dev/null)"
+    KEY="$(get_current_key)"
     if [ -n "$KEY" ] && [ -s "$SETTINGS_FILE" ]; then
         ( flock 9
           jq --arg k "$KEY" 'del(.wallpaperColorOverrides[$k]) |
@@ -56,7 +76,7 @@ case "${1:-}" in
   scheme)
     SCHEME="${2:-}"
     [ -n "$SCHEME" ] || exit 1
-    KEY="$(cat "$WALL_CACHE/current_wallpaper.path" 2>/dev/null)"
+    KEY="$(get_current_key)"
     TARGET="$(image_target "$KEY")"
     if [ -f "$TARGET" ]; then
         matugen image "$TARGET" -t "$SCHEME" --source-color-index 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-export QS_CACHE_DIR="$HOME/.cache/quickshell"
-export QS_STATE_DIR="$HOME/.local/state/quickshell"
-export QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/quickshell"
+export QS_CACHE_DIR="$HOME/.cache/lucretia"
+export QS_STATE_DIR="$HOME/.local/state/lucretia"
+export QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/lucretia"
 export QS_LOG_DIR="$QS_RUN_DIR/logs"
 
 [ -d "$QS_LOG_DIR" ] || mkdir -p "$QS_CACHE_DIR" "$QS_STATE_DIR" "$QS_RUN_DIR" "$QS_LOG_DIR"

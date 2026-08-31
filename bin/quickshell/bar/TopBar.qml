@@ -141,6 +141,12 @@ Item {
         }
     }
 
+    Component.onCompleted: {
+        if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.modules) {
+            contentWrapper.moduleSettings = parseModuleSettings(Config.rawSettings.bar.modules);
+        }
+    }
+
     property string layoutState: {
         if (isFill) return "default";
         if (barWindow && (barWindow.isLeftOpen || barWindow.isNotifOpen)) return "settings";

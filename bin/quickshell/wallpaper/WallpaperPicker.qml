@@ -395,11 +395,14 @@ Item {
 
         if (isVid) {
             script = `
-                mkdir -p '${stateDir}'
+                mkdir -p '${stateDir}' '${stateDir}_picker'
                 echo '${targetFile}' > '${stateDir}/current_video.path'
+                echo '${targetFile}' > '${stateDir}_picker/current_video.path' 2>/dev/null || true
                 echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
+                echo '${targetFile}' > '${stateDir}_picker/current_wallpaper.path' 2>/dev/null || true
                 ${writeScreenFiles}
                 ffmpeg -y -hide_banner -loglevel error -ss 00:00:01 -i '${targetFile}' -frames:v 1 -q:v 2 '${stateDir}/current_wallpaper.png' 2>/dev/null || ffmpeg -y -hide_banner -loglevel error -i '${targetFile}' -frames:v 1 -q:v 2 '${stateDir}/current_wallpaper.png' 2>/dev/null || true
+                cp -f '${stateDir}/current_wallpaper.png' '${stateDir}_picker/current_wallpaper.png' 2>/dev/null || true
                 for sn in $(cat /sys/class/drm/*/status 2>/dev/null | grep -l '^connected' | sed 's|.*/card[0-9]*-||; s|/status||'); do
                     cp -f '${stateDir}/current_wallpaper.png' "${stateDir}/current_wallpaper_\${sn}.png" 2>/dev/null || true
                 done
@@ -416,13 +419,21 @@ Item {
             `;
         } else {
             script = `
-                mkdir -p '${stateDir}'
-                rm -f '${stateDir}/current_video.path' 2>/dev/null || true
+                mkdir -p '${stateDir}' '${stateDir}_picker'
+                rm -f '${stateDir}/current_video.path' '${stateDir}_picker/current_video.path' 2>/dev/null || true
                 echo '${targetFile}' > '${stateDir}/current_wallpaper.path'
+                echo '${targetFile}' > '${stateDir}_picker/current_wallpaper.path' 2>/dev/null || true
                 cp -f '${targetFile}' '${stateDir}/current_wallpaper.png' 2>/dev/null || true
+                cp -f '${targetFile}' '${stateDir}_picker/current_wallpaper.png' 2>/dev/null || true
                 ${writeScreenFiles}
                 pkill -x mpvpaper 2>/dev/null || true
-                pgrep -x awww-daemon >/dev/null || (awww-daemon & sleep 0.3)
+                if ! pgrep -x awww-daemon >/dev/null; then
+                    awww-daemon &
+                    for _i in {1..30}; do
+                        awww query >/dev/null 2>&1 && break
+                        sleep 0.1
+                    done
+                fi
                 if [ '${outputs}' = 'all' ]; then
                     awww img '${targetFile}' --transition-type '${trans}' --transition-pos 0.5,0.5 --transition-fps 144 --transition-duration 1 >/dev/null 2>&1 &
                 else

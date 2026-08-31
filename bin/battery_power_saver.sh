@@ -21,7 +21,7 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # Config and state files
-SETTINGS_FILE="$HOME/.config/niri/settings.json"
+SETTINGS_FILE="$HOME/.config/lucretia/settings.json"
 PREV_AUTO_POWER_FILE="/tmp/battery_saver_prev_auto_power_mode"
 
 CRIT_LEVEL_FILE="/tmp/battery_crit_level"          # "warn"|"suspend"|"shutdown" — latch cảnh báo
