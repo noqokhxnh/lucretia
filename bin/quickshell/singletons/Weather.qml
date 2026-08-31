@@ -53,7 +53,30 @@ Item {
         QsDaemonClient.fetchWeather(function(res) {
             if (res && typeof res === "object") {
                 root.data = res;
+            } else {
+                // Socket may not be connected yet; retry a few times.
+                retryFetch.start();
             }
         });
+    }
+
+    Timer {
+        id: retryFetch
+        interval: 3000
+        repeat: true
+        property int attempts: 0
+        onTriggered: {
+            attempts++;
+            if (attempts > 5) {
+                retryFetch.stop();
+                return;
+            }
+            QsDaemonClient.fetchWeather(function(res) {
+                if (res && typeof res === "object") {
+                    root.data = res;
+                    retryFetch.stop();
+                }
+            });
+        }
     }
 }

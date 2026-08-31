@@ -48,6 +48,7 @@ step() {
     CURRENT_STEP=$((CURRENT_STEP + 1))
     _STEP_START=$SECONDS
     local pct=$((CURRENT_STEP * 100 / TOTAL_STEPS))
+    [ "$pct" -gt 100 ] && pct=100
     local filled=$((pct / 2))
     local empty=$((50 - filled))
     local bar=$(printf "%${filled}s" | tr ' ' '█')
@@ -1124,6 +1125,10 @@ if ! sudo -v; then
     exit 1
 fi
 
+TOTAL_STEPS=11
+[ "$HAS_NVIDIA_PROPRIETARY" = true ] && TOTAL_STEPS=$((TOTAL_STEPS + 1))
+[[ "$INSTALL_SDDM" == true || "$SETUP_SDDM_THEME" == true || "$REPLACE_DM" == true ]] && TOTAL_STEPS=$((TOTAL_STEPS + 1))
+
 # --- 0. Resolve Package Conflicts ---
 step "Resolving package conflicts"
 for jack_pkg in jack jack2 jack2-dbus; do
@@ -1254,27 +1259,29 @@ if [ "$HAS_NVIDIA_PROPRIETARY" = true ]; then
         sudo dracut --force >/dev/null 2>&1
         printf "  -> Dracut rebuild successful %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
     fi
+    step_done
 fi
 
 # --- 2. Display Manager Configuration ---
 if [[ "$INSTALL_SDDM" == true || "$SETUP_SDDM_THEME" == true || "$REPLACE_DM" == true ]]; then
     step "Configuring Display Manager"
-fi
 
-if [[ "$REPLACE_DM" == true ]]; then
-    DMS=("lightdm" "gdm" "gdm3" "lxdm" "lxdm-gtk3" "ly")
-    for dm in "${DMS[@]}"; do
-        if systemctl is-enabled "$dm.service" &>/dev/null || systemctl is-active "$dm.service" &>/dev/null; then
-            echo "  -> Disabling conflicting Display Manager: $dm"
-            sudo systemctl disable "$dm.service" 2>/dev/null || true
-            sudo pacman -Rns --noconfirm "$dm" > /dev/null 2>&1 || true
-        fi
-    done
-fi
+    if [[ "$REPLACE_DM" == true ]]; then
+        DMS=("lightdm" "gdm" "gdm3" "lxdm" "lxdm-gtk3" "ly")
+        for dm in "${DMS[@]}"; do
+            if systemctl is-enabled "$dm.service" &>/dev/null || systemctl is-active "$dm.service" &>/dev/null; then
+                echo "  -> Disabling conflicting Display Manager: $dm"
+                sudo systemctl disable "$dm.service" 2>/dev/null || true
+                sudo pacman -Rns --noconfirm "$dm" > /dev/null 2>&1 || true
+            fi
+        done
+    fi
 
-if [[ "$INSTALL_SDDM" == true ]]; then
-    sudo systemctl enable sddm.service -f
-    printf "  -> SDDM enabled successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
+    if [[ "$INSTALL_SDDM" == true ]]; then
+        sudo systemctl enable sddm.service -f
+        printf "  -> SDDM enabled successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
+    fi
+    step_done
 fi
 
 # ------------------------------------------------------------------------------
@@ -1706,7 +1713,7 @@ step "Compiling C++ Components"
 if [ -f "$REPO_DIR/bin/quickshell/rebuild_all.sh" ]; then
     echo -e "  → Compiling all Quickshell C++ components..."
     chmod +x "$REPO_DIR/bin/quickshell/rebuild_all.sh"
-    run_with_spinner "Building C++ backends..." "bash '$REPO_DIR/bin/quickshell/rebuild_all.sh' >/dev/null 2>&1" || true
+    run_with_spinner "Building C++ backends..." bash "$REPO_DIR/bin/quickshell/rebuild_all.sh" || true
     printf "  → C++ components compiled successfully %-4s ${C_GREEN}[ OK ]${RESET}\n" ""
 else
     # Fallback to legacy single-daemon compilation if rebuild_all.sh is missing
@@ -1800,8 +1807,9 @@ EOF
     printf "  -> Turbo boost sync installed %-16s ${C_GREEN}[ OK ]${RESET}\n" ""
 fi
 
-echo -e "  ${C_CYAN}→${RESET} Setting executable permissions on scripts..."
+echo -e "  ${C_CYAN}→${RESET} Setting executable permissions on scripts and binaries..."
 find "$TARGET_CONFIG_DIR/bin" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/null || true
+find "$TARGET_CONFIG_DIR/bin/quickshell" -maxdepth 3 -type f -executable -exec chmod +x {} + 2>/dev/null || true
 printf "  -> Permissions set successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
 
 # Setup SDDM Theme and Config

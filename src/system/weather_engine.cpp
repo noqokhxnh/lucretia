@@ -93,8 +93,16 @@ void WeatherEngine::onNetworkReply(QNetworkReply* reply) {
     m_isFetching = false;
 
     if (reply->error() != QNetworkReply::NoError) {
+        // Transient failures at boot (network not ready, DNS hiccup) would
+        // otherwise silence broadcasts until the next 15-min timer tick.
+        if (m_fetchFailures < 3) {
+            m_fetchFailures++;
+            int delayMs = m_fetchFailures * 5000;
+            QTimer::singleShot(delayMs, this, [this]() { refresh(false); });
+        }
         return;
     }
+    m_fetchFailures = 0;
 
     QByteArray data = reply->readAll();
     QJsonDocument doc = QJsonDocument::fromJson(data);
