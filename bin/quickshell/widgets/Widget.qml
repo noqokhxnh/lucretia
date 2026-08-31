@@ -113,6 +113,9 @@ PanelWindow {
                 if (item.source !== undefined && typeof item.source === "string") {
                     item.source = Qt.binding(() => root.wImagePath);
                 }
+                if (item.wVariant !== undefined) {
+                    item.wVariant = Qt.binding(() => root.wVariant);
+                }
             }
             root.updateEffectiveSize();
         }
