@@ -259,18 +259,23 @@ int main(int argc, char* argv[]) {
         std::string item_type = "text";
         std::string display_content = content;
 
-        if (content.find("[[ binary data") != std::string::npos) {
-            item_type = "image";
+        // Real image entries always start with the binary marker in the
+        // preview; plain text can contain the string anywhere, so prefix-check.
+        if (content.compare(0, 14, "[[ binary data") == 0) {
             std::string img_path = (fs::path(cache_dir) / (iid + ".png")).string();
             if (!is_valid_png(img_path)) {
                 std::remove(img_path.c_str());
                 std::string tmp_path = img_path + ".tmp";
                 std::string decode_cmd = "cliphist decode " + iid + " > \"" + tmp_path + "\" && mv \"" + tmp_path + "\" \"" + img_path + "\"";
-                if (std::system(decode_cmd.c_str()) != 0) {
+                if (std::system(decode_cmd.c_str()) != 0 || !is_valid_png(img_path)) {
                     std::remove(tmp_path.c_str());
+                    std::remove(img_path.c_str());
                 }
             }
-            display_content = img_path;
+            if (is_valid_png(img_path)) {
+                item_type = "image";
+                display_content = img_path;
+            }
         }
 
         items.push_back({

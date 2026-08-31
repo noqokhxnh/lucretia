@@ -40,6 +40,17 @@ static std::string exec_cmd_sync_clip(const std::string& cmd) {
     return result;
 }
 
+static bool is_valid_png(const std::string& path) {
+    if (!fs::exists(path)) return false;
+    std::error_code ec;
+    auto sz = fs::file_size(path, ec);
+    if (ec || sz == 0) return false;
+    std::ifstream f(path, std::ios::binary);
+    char magic[4];
+    f.read(magic, 4);
+    return f.gcount() == 4 && magic[0] == '\x89' && magic[1] == 'P' && magic[2] == 'N' && magic[3] == 'G';
+}
+
 ClipboardManager::ClipboardManager(QObject* parent) : QObject(parent) {}
 
 std::set<std::string> ClipboardManager::loadPinned(const QString& cacheDir) {
@@ -92,14 +103,21 @@ QJsonArray ClipboardManager::fetchClipboard(int offset, int limit, const QString
         std::string item_type = "text";
         std::string display_content = content;
 
-        if (content.find("[[ binary data") != std::string::npos) {
-            item_type = "image";
+        if (content.compare(0, 14, "[[ binary data") == 0) {
             std::string img_path = (fs::path(cacheDir.toStdString()) / (iid + ".png")).string();
-            if (!fs::exists(img_path)) {
-                std::string decode_cmd = "cliphist decode " + iid + " > \"" + img_path + "\"";
-                std::system(decode_cmd.c_str());
+            if (!is_valid_png(img_path)) {
+                std::remove(img_path.c_str());
+                std::string tmp_path = img_path + ".tmp";
+                std::string decode_cmd = "cliphist decode " + iid + " > \"" + tmp_path + "\" && mv \"" + tmp_path + "\" \"" + img_path + "\"";
+                if (std::system(decode_cmd.c_str()) != 0 || !is_valid_png(img_path)) {
+                    std::remove(tmp_path.c_str());
+                    std::remove(img_path.c_str());
+                }
             }
-            display_content = img_path;
+            if (is_valid_png(img_path)) {
+                item_type = "image";
+                display_content = img_path;
+            }
         }
 
         QJsonObject item;
