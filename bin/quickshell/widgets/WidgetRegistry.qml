@@ -136,6 +136,21 @@ QtObject {
                     textColor: "mauve"
                 }
             ]
+        },
+        "lunar": {
+            name: I18n.t("widgets.types.lunar"),
+            icon: "󰃮",
+            iconOffsetX: 0,
+            defaultWidth: 280,
+            defaultHeight: 120,
+            defaultVariant: "compact",
+            variants: {
+                "compact": { file: "faces/LunarFaceCompact.qml", icon: "1", label: I18n.t("widgets.variants.compact") },
+                "full":    { file: "faces/LunarFaceFull.qml",    icon: "2", label: I18n.t("widgets.variants.full")    },
+                "bloc":    { file: "faces/LunarFaceBloc.qml",    icon: "3", label: I18n.t("widgets.variants.bloc")    },
+                "round":   { file: "faces/LunarFaceRound.qml",   icon: "4", label: I18n.t("widgets.variants.round")   }
+            },
+            additionalSettings: []
         }
     })
 

@@ -827,7 +827,8 @@
       "music": "Music",
       "weather": "Weather",
       "image": "Image",
-      "app_shortcut": "App Shortcut"
+      "app_shortcut": "App Shortcut",
+      "lunar": "Lunar Calendar"
     },
     "variants": {
       "digital": "Digital",
@@ -840,7 +841,8 @@
       "rounded": "Rounded",
       "icon": "Icon",
       "card": "Card",
-      "badge": "Badge"
+      "badge": "Badge",
+      "bloc": "Daily Almanac"
     },
     "picker": {
       "select_app": "Select Application"

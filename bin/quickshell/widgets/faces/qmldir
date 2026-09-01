@@ -9,4 +9,8 @@ WeatherFaceCompact 1.0 WeatherFaceCompact.qml
 WeatherFaceFull 1.0 WeatherFaceFull.qml
 WeatherFaceRound 1.0 WeatherFaceRound.qml
 AppFaceSingle 1.0 AppFaceSingle.qml
+LunarFaceCompact 1.0 LunarFaceCompact.qml
+LunarFaceFull 1.0 LunarFaceFull.qml
+LunarFaceBloc 1.0 LunarFaceBloc.qml
+LunarFaceRound 1.0 LunarFaceRound.qml
 

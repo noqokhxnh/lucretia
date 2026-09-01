@@ -22,6 +22,7 @@ singleton Location 1.0 singletons/Location.qml
 singleton SysNotif 1.0 singletons/SysNotif.qml
 singleton Matugen 1.0 singletons/Matugen.qml
 singleton DateTime 1.0 singletons/DateTime.qml
+singleton Lunar 1.0 singletons/Lunar.qml
 singleton Weather 1.0 singletons/Weather.qml
 singleton TimerState 1.0 singletons/TimerState.qml
 singleton Updater 1.0 singletons/Updater.qml
