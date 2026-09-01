@@ -795,6 +795,7 @@ PanelWindow {
 
         if (appModel.count > 0) {
             appList.currentIndex = 0;
+            appList.positionViewAtBeginning();
         } else {
             appList.currentIndex = -1;
         }
@@ -1308,7 +1309,7 @@ PanelWindow {
 
                         onCurrentIndexChanged: {
                             if (currentIndex >= 0) {
-                                positionViewAtIndex(currentIndex, ListView.Contain);
+                                positionViewAtIndex(currentIndex, ListView.Visible);
                             }
                         }
 

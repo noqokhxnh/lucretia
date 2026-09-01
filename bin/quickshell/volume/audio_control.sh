@@ -27,14 +27,14 @@ case $ACTION in
             if [[ "$TYPE" == "sink" ]]; then
                 local sink=$(get_real_sink)
                 if [[ "$sink" == "@DEFAULT_AUDIO_SINK@" ]]; then
-                    wpctl set-volume @DEFAULT_AUDIO_SINK@ "$VAL%"
+                    wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ "$VAL%"
                 else
                     pactl set-sink-volume "$sink" "$VAL%"
                 fi
             elif [[ "$TYPE" == "source" ]]; then
                 local source=$(get_real_source)
                 if [[ "$source" == "@DEFAULT_AUDIO_SOURCE@" ]]; then
-                    wpctl set-volume @DEFAULT_AUDIO_SOURCE@ "$VAL%"
+                    wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SOURCE@ "$VAL%"
                 else
                     pactl set-source-volume "$source" "$VAL%"
                 fi
