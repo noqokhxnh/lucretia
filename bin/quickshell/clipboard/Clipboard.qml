@@ -1046,7 +1046,7 @@ PanelWindow {
 
                         onCurrentIndexChanged: {
                             if (currentIndex >= 0) {
-                                positionViewAtIndex(currentIndex, ListView.Contain);
+                                positionViewAtIndex(currentIndex, ListView.Visible);
                             }
                         }
 
@@ -1114,7 +1114,7 @@ PanelWindow {
                                     easing.type: Easing.OutQuart
                                     onRunningChanged: {
                                         if (!running && clipDelegateWrapper.isSelected) {
-                                            clipList.positionViewAtIndex(clipList.currentIndex, ListView.Contain);
+                                            clipList.positionViewAtIndex(clipList.currentIndex, ListView.Visible);
                                         }
                                     }
                                 }
@@ -1168,7 +1168,7 @@ PanelWindow {
                                     if ((typeof model !== "undefined" && model && model.type !== "image") && clipboardWindow.expandedClipId !== clipIdString) {
                                         clipboardWindow.fetchFullText(clipIdString);
                                     }
-                                    clipList.positionViewAtIndex(index, ListView.Contain);
+                                    clipList.positionViewAtIndex(index, ListView.Visible);
                                 }
                             }
 

@@ -465,7 +465,7 @@ Item {
 
             onCurrentIndexChanged: {
                 if (currentIndex >= 0) {
-                    positionViewAtIndex(currentIndex, ListView.Contain);
+                    positionViewAtIndex(currentIndex, ListView.Visible);
                 }
             }
 

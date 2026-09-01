@@ -1246,6 +1246,7 @@ Item {
 
                                         Components.QsSlider {
                                             anchors.fill: parent
+                                            to: 150
                                             value: window.sysVolume
                                             isMuted: window.sysMuted
                                             activeColor: window.profileStart

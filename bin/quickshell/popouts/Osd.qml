@@ -543,7 +543,7 @@ PanelWindow {
                     Layout.preferredWidth: osdWindow.s(16)
                     Layout.alignment: Qt.AlignHCenter
                     from: 0.0
-                    to: 100.0
+                    to: osdWindow.kind === "volume" ? 150.0 : 100.0
                     value: osdWindow.currentVal
                     backgroundColor: ThemeBackend.surface1
 
@@ -565,7 +565,8 @@ PanelWindow {
                     onDragFinished: OsdController.restartTimer()
                     onMoved: val => {
                         OsdController.restartTimer();
-                        let pct = Math.max(0, Math.min(100, Math.round(val)));
+                        let maxVal = osdWindow.kind === "volume" ? 150 : 100;
+                        let pct = Math.max(0, Math.min(maxVal, Math.round(val)));
                         if (osdWindow.kind !== "volume") {
                             OsdController.briVal = pct;
                         }
@@ -630,7 +631,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
 
                     from: 0.0
-                    to: 100.0
+                    to: osdWindow.kind === "volume" ? 150.0 : 100.0
                     value: osdWindow.currentVal
                     backgroundColor: ThemeBackend.surface1
 
@@ -652,7 +653,8 @@ PanelWindow {
                     onDragFinished: OsdController.restartTimer()
                     onMoved: val => {
                         OsdController.restartTimer();
-                        let pct = Math.max(0, Math.min(100, Math.round(val)));
+                        let maxVal = osdWindow.kind === "volume" ? 150 : 100;
+                        let pct = Math.max(0, Math.min(maxVal, Math.round(val)));
                         if (osdWindow.kind !== "volume") {
                             OsdController.briVal = pct;
                         }

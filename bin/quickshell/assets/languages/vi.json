@@ -773,7 +773,8 @@
       "music": "Nhạc",
       "weather": "Thời tiết",
       "image": "Hình ảnh",
-      "app_shortcut": "Lối tắt ứng dụng"
+      "app_shortcut": "Lối tắt ứng dụng",
+      "lunar": "Lịch Âm"
     },
     "variants": {
       "digital": "Kỹ thuật số",
@@ -786,7 +787,8 @@
       "rounded": "Bo góc",
       "icon": "Biểu tượng",
       "card": "Thẻ",
-      "badge": "Huy hiệu"
+      "badge": "Huy hiệu",
+      "bloc": "Lịch Bloc"
     },
     "picker": {
       "select_app": "Chọn ứng dụng"
