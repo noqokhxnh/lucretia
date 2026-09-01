@@ -21,15 +21,6 @@ curl -sL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh | 
 
 ---
 
-##  Preview
-
-| | | |
-|---|---|---|
-| ![screenshot1](public/screenshot1.png) | ![screenshot2](public/screenshot2.png) | ![screenshot3](public/screenshot3.png) |
-| ![screenshot4](public/screenshot4.png) | ![screenshot5](public/screenshot5.png) | ![screenshot6](public/screenshot6.png) |
-| ![screenshot7](public/screenshot7.png) | ![screenshot8](public/screenshot8.png) | ![screenshot9](public/screenshot9.png) |
-
----
 
 ## 🤝 Contributing & Pull Request Guidelines
 
