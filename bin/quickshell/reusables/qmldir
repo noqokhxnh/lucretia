@@ -18,3 +18,5 @@ Switch 1.0 Switch.qml
 ImageBox 1.0 ImageBox.qml
 TimeSelector 1.0 TimeSelector.qml
 Dropdown 1.0 Dropdown.qml
+AppPicker 1.0 AppPicker.qml
+AppIcon 1.0 AppIcon.qml

@@ -772,7 +772,8 @@
       "clock": "Đồng hồ",
       "music": "Nhạc",
       "weather": "Thời tiết",
-      "image": "Hình ảnh"
+      "image": "Hình ảnh",
+      "app_shortcut": "Lối tắt ứng dụng"
     },
     "variants": {
       "digital": "Kỹ thuật số",
@@ -782,7 +783,13 @@
       "round": "Tròn",
       "compact": "Nhỏ gọn",
       "rect": "Chữ nhật",
-      "rounded": "Bo góc"
+      "rounded": "Bo góc",
+      "icon": "Biểu tượng",
+      "card": "Thẻ",
+      "badge": "Huy hiệu"
+    },
+    "picker": {
+      "select_app": "Chọn ứng dụng"
     }
   },
   "cli": {

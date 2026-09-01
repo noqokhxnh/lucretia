@@ -112,6 +112,30 @@ QtObject {
                     textColor: "mauve"
                 }
             ]
+        },
+        "app": {
+            name: I18n.t("widgets.types.app_shortcut"),
+            icon: "󰀻",
+            defaultWidth: 80,
+            defaultHeight: 80,
+            defaultVariant: "icon",
+            requiresAppPicker: true,
+            variants: {
+                "icon":  { file: "faces/AppFaceSingle.qml", icon: "1", label: I18n.t("widgets.variants.icon") },
+                "card":  { file: "faces/AppFaceSingle.qml", icon: "2", label: I18n.t("widgets.variants.card") },
+                "badge": { file: "faces/AppFaceSingle.qml", icon: "3", label: I18n.t("widgets.variants.badge") }
+            },
+            additionalSettings: [
+                {
+                    id: "pickApp",
+                    icon: "󰀻",
+                    iconFontSize: 16,
+                    action: "pickApp",
+                    row: "top",
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                }
+            ]
         }
     })
 

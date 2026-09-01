@@ -826,7 +826,8 @@
       "clock": "Clock",
       "music": "Music",
       "weather": "Weather",
-      "image": "Image"
+      "image": "Image",
+      "app_shortcut": "App Shortcut"
     },
     "variants": {
       "digital": "Digital",
@@ -836,7 +837,13 @@
       "round": "Round",
       "compact": "Compact",
       "rect": "Rect",
-      "rounded": "Rounded"
+      "rounded": "Rounded",
+      "icon": "Icon",
+      "card": "Card",
+      "badge": "Badge"
+    },
+    "picker": {
+      "select_app": "Select Application"
     }
   },
   "cli": {

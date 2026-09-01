@@ -430,11 +430,37 @@ PanelWindow {
             }
         }
 
+        function openAppPicker(targetIdx, targetId, curApp) {
+            appPickerLoader.active = true;
+            let trigger = () => {
+                if (appPickerLoader.item) {
+                    appPickerLoader.item.targetWidgetIndex = targetIdx;
+                    appPickerLoader.item.targetWidgetId = String(targetId);
+                    appPickerLoader.item.openPicker(curApp, false);
+                }
+            };
+            if (appPickerLoader.status === Loader.Ready) {
+                trigger();
+            } else {
+                let conn = function() {
+                    if (appPickerLoader.status === Loader.Ready) {
+                        appPickerLoader.statusChanged.disconnect(conn);
+                        trigger();
+                    }
+                };
+                appPickerLoader.statusChanged.connect(conn);
+            }
+        }
+
         function addWidget(typeKey) {
             let t = WidgetRegistry.types[typeKey];
             if (!t) return;
             if (t.requiresFilePicker) {
                 openImagePicker(-1, "", "", false);
+                return;
+            }
+            if (t.requiresAppPicker) {
+                openAppPicker(-1, "", "");
                 return;
             }
             let def = WidgetRegistry.defaultSize(typeKey);
@@ -477,6 +503,9 @@ PanelWindow {
             if (action === "pickImage") {
                 let curImg = activeWidgetsModel.get(itemIndex) ? (activeWidgetsModel.get(itemIndex).wImagePath || "") : "";
                 openImagePicker(itemIndex, itemId, curImg, proxy.wVariant === "round");
+            } else if (action === "pickApp") {
+                let curApp = activeWidgetsModel.get(itemIndex) ? (activeWidgetsModel.get(itemIndex).wImagePath || "") : "";
+                openAppPicker(itemIndex, itemId, curApp);
             }
         }
 
@@ -729,6 +758,9 @@ PanelWindow {
                                 }
                                 if (item.source !== undefined && typeof item.source === "string") {
                                     item.source = Qt.binding(() => widgetProxy.wImagePath);
+                                }
+                                if (item.wVariant !== undefined) {
+                                    item.wVariant = Qt.binding(() => widgetProxy.wVariant);
                                 }
                                 let res = redactorMode.gridEnabled
                                     ? redactorMode.snapBoxToGrid(item, model.wX, model.wY, model.wWidth, model.wHeight)
@@ -1303,7 +1335,14 @@ PanelWindow {
                         ColumnLayout {
                             id: bottomChrome
                             z: 40
-                            y: ((widgetProxy.y + selectionUI.y + parent.height + height + s(8)) > redactorMode.safeHeight) ? -height - s(8) : parent.height + s(8)
+                            y: {
+                                let spaceBelow = redactorMode.safeHeight - (model.wY + model.wHeight);
+                                let neededH = height + s(16);
+                                if (spaceBelow < neededH) {
+                                    return -height - s(8);
+                                }
+                                return parent.height + s(8);
+                            }
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: s(6)
 
@@ -1653,6 +1692,22 @@ PanelWindow {
             }
         }
 
+        // Persistent Top-Right Done Button
+        ClickButton {
+            id: topDoneBtn
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: s(16)
+            z: 250000
+            implicitHeight: s(38)
+            buttonText: I18n.t("widgets.redactor.done")
+            buttonIcon: "󰄬"
+            textFontSize: s(13)
+            accentColor: ThemeBackend.mauve
+            textColor: ThemeBackend.crust
+            onClicked: redactorWindow.exitRedactor()
+        }
+
         Item {
             id: toolbar
             implicitWidth: toolbarLayout.implicitWidth + s(32)
@@ -1663,15 +1718,30 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             z: 200000
 
-            opacity: (activeWidgetsModel.count === 0 || redactorMode.selectedId === "" || !redactorMode.toolbarObscured) ? 1.0 : 0.0
+            opacity: {
+                if (toolbarHoverArea.containsMouse) return 1.0;
+                if (activeWidgetsModel.count === 0 || redactorMode.selectedId === "") return 1.0;
+                if (redactorMode.toolbarObscured) return 0.35;
+                return 1.0;
+            }
             visible: opacity > 0
-            enabled: opacity > 0
+            enabled: true
             Behavior on opacity { NumberAnimation { duration: 150; easing.type: Easing.OutQuad } }
+
+            MouseArea {
+                id: toolbarHoverArea
+                anchors.fill: parent
+                hoverEnabled: true
+                z: -1
+            }
 
             Rectangle {
                 anchors.fill: parent
                 color: ThemeBackend.base
                 radius: ThemeBackend.borderRadius
+                border.color: toolbarHoverArea.containsMouse ? ThemeBackend.mauve : ThemeBackend.surface1
+                border.width: 1
+                Behavior on border.color { ColorAnimation { duration: 150 } }
             }
 
             RowLayout {
@@ -1797,6 +1867,61 @@ PanelWindow {
                         redactorMode.topZ += 1;
                         redactorMode.selectedId = newId;
                         redactorWindow.sendIpc("add", [newId, "image", spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", filePath]);
+                        redactorWindow.sendIpc("bringToFront", [newId]);
+                        redactorMode.updateToolbarObscured();
+                    }
+                }
+            }
+        }
+
+        Loader {
+            id: appPickerLoader
+            anchors.fill: parent
+            z: 350000
+            active: false
+            sourceComponent: AppPicker {
+                rootObj: redactorMode
+                property int targetWidgetIndex: -1
+                property string targetWidgetId: ""
+
+                onAppSelected: (desktopId, appName, appIcon) => {
+                    let appData = JSON.stringify({ id: desktopId, name: appName, icon: appIcon });
+                    if (targetWidgetIndex >= 0 && targetWidgetId !== "") {
+                        activeWidgetsModel.setProperty(targetWidgetIndex, "wImagePath", appData);
+                        redactorWindow.sendIpc("imagePath", [targetWidgetId, appData]);
+                        targetWidgetIndex = -1;
+                        targetWidgetId = "";
+                    } else if (desktopId !== "") {
+                        let def = WidgetRegistry.defaultSize("app");
+                        let defW = def.w;
+                        let defH = def.h;
+                        let spawnX = Math.max(0, (redactorMode.safeWidth - s(defW)) / 2);
+                        let spawnY = Math.max(0, (redactorMode.safeHeight - s(defH)) / 2);
+                        let newId = "w_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
+
+                        if (redactorMode.gridEnabled) {
+                            let snapped = redactorMode.snapBoxToGrid(null, spawnX, spawnY, defW, defH);
+                            spawnX = snapped.x;
+                            spawnY = snapped.y;
+                            defW = snapped.w;
+                            defH = snapped.h;
+                        }
+
+                        activeWidgetsModel.append({
+                            "wType": "app",
+                            "wVariant": WidgetRegistry.defaultVariant("app"),
+                            "wX": spawnX,
+                            "wY": spawnY,
+                            "wWidth": defW,
+                            "wHeight": defH,
+                            "wOpacity": 1.0,
+                            "wImagePath": appData,
+                            "wId": newId
+                        });
+
+                        redactorMode.topZ += 1;
+                        redactorMode.selectedId = newId;
+                        redactorWindow.sendIpc("add", [newId, "app", spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", appData]);
                         redactorWindow.sendIpc("bringToFront", [newId]);
                         redactorMode.updateToolbarObscured();
                     }
