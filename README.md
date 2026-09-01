@@ -1,5 +1,5 @@
 
-> **Forked from** [ilyamiro/nixos-configuration](https://github.com/ilyamiro/nixos-configuration) — adapted for **Niri**.
+> **Forked from** [ilyamiro/nixos-configuration](https://github.com/ilyamiro/nixos-configuration).
 
 
 ```bash
