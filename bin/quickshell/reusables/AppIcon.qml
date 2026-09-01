@@ -163,7 +163,7 @@ Item {
         height: root.iconSize
         sourceSize: Qt.size(128, 128)
         fillMode: Image.PreserveAspectFit
-        asynchronous: true
+        asynchronous: false
         smooth: true
         mipmap: true
         property bool hasFailed: false
@@ -179,6 +179,8 @@ Item {
                 } else {
                     hasFailed = true;
                 }
+            } else if (status === Image.Ready) {
+                hasFailed = false;
             }
         }
     }
@@ -186,7 +188,7 @@ Item {
     Text {
         id: fontIconLabel
         anchors.centerIn: parent
-        visible: !srcImage.visible
+        visible: srcImage.hasFailed || root.candidates.length === 0
         text: root.getSmartFontIcon()
         font.family: ThemeBackend.fontFamily
         font.pixelSize: root.iconSize * 0.7
