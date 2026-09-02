@@ -520,7 +520,12 @@ void DaemonServer::broadcastSysData() {
     event["event"] = "sysdata";
     event["data"] = metrics;
     QByteArray data = QJsonDocument(event).toJson(QJsonDocument::Compact) + "\n";
-    for (auto* c : sysSubscribers) c->write(data);
+    for (auto* c : sysSubscribers) {
+        if (c && c->state() == QLocalSocket::ConnectedState) {
+            c->write(data);
+            c->flush();
+        }
+    }
 }
 
 void DaemonServer::broadcastMusicData() {
@@ -530,7 +535,12 @@ void DaemonServer::broadcastMusicData() {
     event["event"] = "music";
     event["data"] = state;
     QByteArray data = QJsonDocument(event).toJson(QJsonDocument::Compact) + "\n";
-    for (auto* c : musicSubscribers) c->write(data);
+    for (auto* c : musicSubscribers) {
+        if (c && c->state() == QLocalSocket::ConnectedState) {
+            c->write(data);
+            c->flush();
+        }
+    }
 }
 
 void DaemonServer::sendResponse(QLocalSocket* client, const QString& reqId, const QJsonObject& result, const QString& status) {

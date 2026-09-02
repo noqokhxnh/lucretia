@@ -28,12 +28,14 @@ Item {
             if (txt !== "") {
                 try {
                     let data = JSON.parse(txt);
-                    root.appClass = data.app_class || "";
-                    root.appTitle = data.app_title || "";
+                    let newCls = data.app_class || "";
+                    let newTitle = data.app_title || "";
+                    if (root.appClass !== newCls) root.appClass = newCls;
+                    if (root.appTitle !== newTitle) root.appTitle = newTitle;
                 } catch(e) {}
             } else {
-                root.appClass = "";
-                root.appTitle = "";
+                if (root.appClass !== "") root.appClass = "";
+                if (root.appTitle !== "") root.appTitle = "";
             }
         }
     }

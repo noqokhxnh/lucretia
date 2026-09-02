@@ -27,7 +27,7 @@ Item {
             Layout.preferredHeight: root.imageSize
             source: root.imageSource !== "" ? root.imageSource : (Caching.lucretiaDir ? ("file://" + Caching.lucretiaDir + "/assets/pushy2.gif") : Qt.resolvedUrl("../assets/pushy2.gif"))
             isGif: true
-            playing: true
+            playing: root.visible && root.opacity > 0
             fillMode: Image.PreserveAspectFit
         }
 

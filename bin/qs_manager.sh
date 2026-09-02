@@ -45,7 +45,8 @@ if [[ "$ACTION" == "close" ]]; then
             kill $(cat "$BT_PID_FILE") 2>/dev/null
             rm -f "$BT_PID_FILE"
         fi
-        (bluetoothctl scan off > /dev/null 2>&1) &
+        pkill -f "bluetoothctl.*scan on" 2>/dev/null || true
+        (timeout 2 bluetoothctl scan off > /dev/null 2>&1) &
     fi
     exit 0
 fi
@@ -209,9 +210,10 @@ handle_wallpaper_prep() {
 
 handle_network_prep() {
     echo "" > "$BT_SCAN_LOG"
-    { echo "scan on"; sleep infinity; } | stdbuf -oL bluetoothctl > "$BT_SCAN_LOG" 2>&1 &
+    pkill -f "bluetoothctl.*scan on" 2>/dev/null || true
+    (timeout 15 bluetoothctl scan on > "$BT_SCAN_LOG" 2>&1) &
     echo $! > "$BT_PID_FILE"
-    (nmcli device wifi rescan) >/dev/null 2>&1 &
+    (timeout 5 nmcli device wifi rescan) >/dev/null 2>&1 &
 }
 
 # -----------------------------------------------------------------------------

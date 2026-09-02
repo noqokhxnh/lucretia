@@ -23,7 +23,7 @@ ShellRoot {
 
     Process {
         id: zombieCleanup
-        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; pkill -f 'watchers/.*\\.sh' 2>/dev/null || true; QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\"; rm -f \"$QS_RUN/qs_daemon.sock\" \"$QS_RUN\"/qs_*.lock /tmp/quickshell_qs_daemon.sock; rm -rf ~/.cache/lucretia/crashes/*"]
+        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; pkill -f 'watchers/.*\\.sh' 2>/dev/null || true; QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\"; rm -f \"$QS_RUN/qs_daemon.sock\" \"$QS_RUN\"/qs_*.lock /tmp/quickshell_qs_daemon.sock"]
         running: true
         onExited: {
             qsDaemon.running = true;

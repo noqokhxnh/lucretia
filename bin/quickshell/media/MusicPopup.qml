@@ -286,7 +286,7 @@ Item {
         from: 0; to: 1.0
         duration: 8000
         loops: Animation.Infinite
-        running: true
+        running: root.visible
     }
 
     property real globalOrbitAngle: 0
@@ -294,7 +294,7 @@ Item {
         from: 0; to: Math.PI * 2
         duration: 90000
         loops: Animation.Infinite
-        running: true
+        running: root.visible
     }
 
     property real eqLightningProgress: 0.0

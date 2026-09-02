@@ -817,7 +817,7 @@ Item {
                             opacity: uptimePulse
                             property real uptimePulse: 1.0
                             SequentialAnimation on uptimePulse {
-                                loops: Animation.Infinite; running: true
+                                loops: Animation.Infinite; running: window.visible
                                 NumberAnimation { to: 0.2; duration: 800; easing.type: Easing.InOutSine }
                                 NumberAnimation { to: 1.0; duration: 800; easing.type: Easing.InOutSine }
                             }

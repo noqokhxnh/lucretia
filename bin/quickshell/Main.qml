@@ -328,60 +328,26 @@ PanelWindow {
         id: osdPopups
     }
 
-    Process {
-        id: settingsReader
-        command: ["bash", "-c", `cat "${Config.settingsJsonPath}" 2>/devnull || echo '{}'`]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    if (this.text && this.text.trim().length > 0 && this.text.trim() !== "{}") {
-                        let parsed = JSON.parse(this.text);
-                        let sName = masterWindow.screen ? masterWindow.screen.name : "";
-                        let sVal = undefined;
-
-                        if (sName !== "" && parsed.display && parsed.display.monitors && parsed.display.monitors[sName] && parsed.display.monitors[sName].scale !== undefined) {
-                            sVal = parsed.display.monitors[sName].scale;
-                        } else if (parsed.general && parsed.general.uiScale !== undefined) {
-                            sVal = parsed.general.uiScale;
-                        } else if (parsed.uiScale !== undefined) {
-                            sVal = parsed.uiScale;
-                        }
-
-                        if (sVal !== undefined && masterWindow.globalUiScale !== sVal) {
-                            masterWindow.globalUiScale = sVal;
-                        }
-
-                        if (parsed.bar) {
-                            masterWindow.rawBarSettings = parsed.bar;
-                            if (parsed.bar.position !== undefined) masterWindow.barPosition = parsed.bar.position;
-                            if (parsed.bar.autohide !== undefined) masterWindow.barAutohide = Boolean(parsed.bar.autohide);
-                        }
-                    }
-                } catch (e) {
-                }
-            }
-        }
-    }
-
-    Process {
-        id: settingsWatcher
-        command: ["bash", "-c", `while [ ! -f "${Config.settingsJsonPath}" ]; do sleep 1; done; inotifywait -qq -e modify,close_write "${Config.settingsJsonPath}"`]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                settingsReader.running = false;
-                settingsReader.running = true;
-                settingsWatcher.running = false;
-                settingsWatcher.running = true;
-            }
-        }
-    }
-
     Connections {
         target: (typeof Config !== "undefined") ? Config : null
         function onSettingsLoaded() {
-            let b = (Config.rawSettings && Config.rawSettings.bar) ? Config.rawSettings.bar : {};
+            let parsed = Config.rawSettings || {};
+            let sName = masterWindow.screen ? masterWindow.screen.name : "";
+            let sVal = undefined;
+
+            if (sName !== "" && parsed.display && parsed.display.monitors && parsed.display.monitors[sName] && parsed.display.monitors[sName].scale !== undefined) {
+                sVal = parsed.display.monitors[sName].scale;
+            } else if (parsed.general && parsed.general.uiScale !== undefined) {
+                sVal = parsed.general.uiScale;
+            } else if (parsed.uiScale !== undefined) {
+                sVal = parsed.uiScale;
+            }
+
+            if (sVal !== undefined && masterWindow.globalUiScale !== sVal) {
+                masterWindow.globalUiScale = sVal;
+            }
+
+            let b = parsed.bar || {};
             masterWindow.rawBarSettings = b;
             masterWindow.barPosition = (b && b.position !== undefined) ? b.position : "top";
             masterWindow.barAutohide = (b && b.autohide !== undefined) ? Boolean(b.autohide) : false;
