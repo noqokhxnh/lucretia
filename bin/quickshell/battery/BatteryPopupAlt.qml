@@ -212,7 +212,7 @@ Item {
             "bash ~/.config/niri/bin/quickshell/watchers/audio_fetch.sh | jq -r '.volume + \" \" + (if .is_muted == \"true\" then \"off\" else \"on\" end)' || echo '0 on'; " +
             "brightnessctl -m 2>/dev/null | awk -F, '{print substr($4, 1, length($4)-1)}' || echo '0'"
         ]
-        running: true
+        running: window.visible
         stdout: StdioCollector {
             onStreamFinished: {
                 let lines = this.text.trim().split("\n");
@@ -252,13 +252,13 @@ Item {
     }
 
     Timer {
-        interval: 1500; running: true; repeat: true; triggeredOnStart: true;
+        interval: 1500; running: window.visible; repeat: true; triggeredOnStart: true;
         onTriggered: sysPoller.running = true
     }
 
     property real globalOrbitAngle: 0
     NumberAnimation on globalOrbitAngle {
-        from: 0; to: Math.PI * 2; duration: 90000; loops: Animation.Infinite; running: true
+        from: 0; to: Math.PI * 2; duration: 90000; loops: Animation.Infinite; running: window.visible
     }
 
     // --- ENHANCED STARTUP ANIMATION STATES ---
