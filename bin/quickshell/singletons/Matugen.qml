@@ -9,6 +9,8 @@ Item {
 
     readonly property bool isRunning: matugenProcess.running
     property string lastWallpaper: ""
+    property string _lastGeneratedKey: ""
+    property string _currentRunningKey: ""
     property string matugenBaseDir: {
         let dir = "";
         if (typeof Caching !== "undefined" && Caching.qsDir) {
@@ -144,16 +146,29 @@ Item {
             return false;
         }
 
-        if (root.isRunning) {
-            root._pendingRequest = { type: "image", imagePath: imagePath, mode: mode, schemeType: schemeType };
+        let cleanPath = imagePath.startsWith("file://") ? imagePath.substring(7) : imagePath;
+        let themeConfig = Config.getSetting("theme", {});
+        let selectedMode = mode || themeConfig.mode || "dark";
+        let selectedType = schemeType || themeConfig.schemeType || "scheme-tonal-spot";
+        let key = "image::" + cleanPath + "::" + selectedMode + "::" + selectedType;
+
+        if (root._lastGeneratedKey === key) {
             return false;
         }
-        root._startImageGenerate(imagePath, mode, schemeType);
+
+        if (root.isRunning) {
+            if (root._currentRunningKey === key) {
+                return false;
+            }
+            root._pendingRequest = { type: "image", imagePath: cleanPath, mode: selectedMode, schemeType: selectedType, key: key };
+            return false;
+        }
+        root._startImageGenerate(cleanPath, selectedMode, selectedType, key);
         return true;
     }
 
-    function _startImageGenerate(imagePath, mode, schemeType) {
-        let cleanPath = imagePath.startsWith("file://") ? imagePath.substring(7) : imagePath;
+    function _startImageGenerate(cleanPath, mode, schemeType, key) {
+        root._currentRunningKey = key || ("image::" + cleanPath + "::" + (mode || "dark") + "::" + (schemeType || "scheme-tonal-spot"));
         root.lastWallpaper = cleanPath;
 
         let themeConfig = Config.getSetting("theme", {});
@@ -187,18 +202,33 @@ Item {
             return false;
         }
 
-        if (root.isRunning) {
-            root._pendingRequest = { type: "static", colorsObj: colorsObj, mode: mode };
+        let themeConfig = Config.getSetting("theme", {});
+        let selectedMode = mode || themeConfig.mode || "dark";
+        let rawJson = JSON.stringify(colorsObj);
+        let key = "static::" + rawJson + "::" + selectedMode;
+
+        if (root._lastGeneratedKey === key) {
             return false;
         }
-        root._startStaticGenerate(colorsObj, mode);
+
+        if (root.isRunning) {
+            if (root._currentRunningKey === key) {
+                return false;
+            }
+            root._pendingRequest = { type: "static", colorsObj: colorsObj, mode: selectedMode, key: key };
+            return false;
+        }
+        root._startStaticGenerate(colorsObj, selectedMode, key);
         return true;
     }
 
-    function _startStaticGenerate(colorsObj, mode) {
+    function _startStaticGenerate(colorsObj, mode, key) {
+        let rawJson = JSON.stringify(colorsObj);
+        let selectedMode = mode || "dark";
+        root._currentRunningKey = key || ("static::" + rawJson + "::" + selectedMode);
+
         let md3Obj = root.toMd3(colorsObj);
         let md3Json = JSON.stringify(md3Obj);
-        let rawJson = JSON.stringify(colorsObj);
 
         let script =
             "STATE_DIR=\"$HOME/.local/state/lucretia\"; " +
@@ -224,25 +254,28 @@ Item {
             let success = (exitCode === 0);
 
             if (success) {
+                root._lastGeneratedKey = root._currentRunningKey;
                 let stateDir = (typeof Caching !== "undefined" && Caching.stateDir) ? Caching.stateDir : (Quickshell.env("HOME") + "/.local/state/lucretia");
                 if (matugenProcess.reqType === "image") {
                     Quickshell.execDetached(["bash", "-c", "mkdir -p \"" + stateDir + "\" && cp -f \"" + stateDir + "/qs_colors.json\" \"" + stateDir + "/qs_matugen_colors.json\" 2>/dev/null || true"]);
                 }
                 Quickshell.execDetached(["bash", "-c", "killall -USR1 .kitty-wrapped 2>/dev/null || pkill -SIGUSR1 kitty 2>/dev/null || true"]);
-                if (typeof ThemeBackend !== "undefined") {
-                    ThemeBackend.reloadColors();
-                }
+            } else {
+                root._lastGeneratedKey = "";
             }
 
+            root._currentRunningKey = "";
             root.generationFinished(success);
 
             if (root._pendingRequest) {
                 let req = root._pendingRequest;
                 root._pendingRequest = null;
-                if (req.type === "image") {
-                    root._startImageGenerate(req.imagePath, req.mode, req.schemeType);
-                } else {
-                    root._startStaticGenerate(req.colorsObj, req.mode);
+                if (req.key !== root._lastGeneratedKey) {
+                    if (req.type === "image") {
+                        root._startImageGenerate(req.imagePath, req.mode, req.schemeType, req.key);
+                    } else {
+                        root._startStaticGenerate(req.colorsObj, req.mode, req.key);
+                    }
                 }
             }
         }
