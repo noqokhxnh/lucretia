@@ -228,18 +228,25 @@ Item {
         if (root.isMatugenTheme()) {
             root.applyMatugenColors();
             let wp = themeConfig.wallpaper || Config.getSetting("wallpaper", "");
+            let started = false;
             if (typeof Matugen !== "undefined" && typeof Matugen.generate === "function") {
-                Matugen.generate(wp, themeConfig.mode, themeConfig.schemeType);
+                started = Matugen.generate(wp, themeConfig.mode, themeConfig.schemeType);
             }
-            root._readInProgress = false;
+            if (!started) {
+                root._readInProgress = false;
+            }
         } else {
-            root._readInProgress = false;
             if (customColors) {
                 root.applyColorObject(customColors);
+                let started = false;
                 if (typeof Matugen !== "undefined" && typeof Matugen.generateFromStatic === "function") {
-                    Matugen.generateFromStatic(customColors, themeConfig.mode);
+                    started = Matugen.generateFromStatic(customColors, themeConfig.mode);
+                }
+                if (!started) {
+                    root._readInProgress = false;
                 }
             } else {
+                root._readInProgress = false;
                 themeWatcher.reload();
             }
         }

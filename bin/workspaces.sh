@@ -87,7 +87,13 @@ print_workspaces() {
         )
     ' > "$QS_RUN_WORKSPACES/workspaces.tmp"
     
-    mv "$QS_RUN_WORKSPACES/workspaces.tmp" "$QS_RUN_WORKSPACES/workspaces.json"
+    if [ -f "$QS_RUN_WORKSPACES/workspaces.tmp" ]; then
+        if ! cmp -s "$QS_RUN_WORKSPACES/workspaces.tmp" "$QS_RUN_WORKSPACES/workspaces.json"; then
+            mv "$QS_RUN_WORKSPACES/workspaces.tmp" "$QS_RUN_WORKSPACES/workspaces.json"
+        else
+            rm -f "$QS_RUN_WORKSPACES/workspaces.tmp"
+        fi
+    fi
 }
 
 # Print initial state
@@ -98,7 +104,7 @@ print_workspaces
 # Listen to Niri event-stream wrapped in an infinite loop
 # ============================================================================
 while true; do
-    niri msg -j event-stream 2>/dev/null | while read -r line; do
+    niri msg -j event-stream 2>/dev/null | grep --line-buffered -E '"(WorkspacesChanged|WorkspaceActivated|WindowOpenedOrChanged|WindowClosed|WindowFocusChanged)"' | while read -r line; do
         # Debounce: read and discard events arriving within a 50ms window
         while read -t 0.05 -r extra_line; do
             continue

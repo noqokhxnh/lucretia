@@ -52,7 +52,7 @@ Rectangle {
         workspacesWidgetRoot.isNiri = de.indexOf("niri") !== -1;
         workspacesWidgetRoot.isSway = de.indexOf("sway") !== -1;
         if (workspacesWidgetRoot.isNiri && workspacesWidgetRoot.moduleActive) {
-            niriPoller.running = true;
+            niriWsFileView.reload();
         }
         if (workspacesWidgetRoot.isSway && workspacesWidgetRoot.moduleActive) {
             swayPoller.running = true;
@@ -61,18 +61,13 @@ Rectangle {
 
     onModuleActiveChanged: {
         if (!moduleActive) {
-            if (isNiri) {
-                niriPoller.running = false;
-                niriWaiter.running = false;
-            }
             if (isSway) {
                 swayPoller.running = false;
                 swayWaiter.running = false;
             }
         } else {
             if (isNiri) {
-                niriPoller.running = false;
-                niriPoller.running = true;
+                niriWsFileView.reload();
             }
             if (isSway) {
                 swayPoller.running = false;
@@ -81,63 +76,36 @@ Rectangle {
         }
     }
 
-    Process {
-        id: niriPoller
-        running: false
-        command: [
-            "bash",
-            "-c",
-            "workspaces=$(niri msg -j workspaces 2>/dev/null || echo '[]'); windows=$(niri msg -j windows 2>/dev/null || echo '[]'); echo \"{\\\"workspaces\\\": $workspaces, \\\"windows\\\": $windows}\""
-        ]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    let data = JSON.parse(this.text);
-                    let wsList = data.workspaces || [];
-                    let winList = data.windows || [];
-                    let occ = {};
-                    for (let i = 0; i < winList.length; i++) {
-                        let win = winList[i];
-                        if (win.workspace_id !== undefined && win.workspace_id !== null) {
-                            occ[win.workspace_id] = true;
-                        }
+    // --- Niri: Zero-process FileView watcher ---
+    // Reads workspace state from the workspaces.json file written by the
+    // workspaces.sh daemon (launched by Shell.qml). Uses kernel inotify
+    // via FileView.watchChanges — no child processes are spawned.
+    FileView {
+        id: niriWsFileView
+        path: (workspacesWidgetRoot.isNiri && typeof Caching !== "undefined") ? (Caching.getRunDir("workspaces") + "/workspaces.json") : ""
+        watchChanges: workspacesWidgetRoot.isNiri && workspacesWidgetRoot.moduleActive
+        onFileChanged: reload()
+        onLoaded: {
+            let txt = text().trim();
+            if (txt === "") return;
+            try {
+                let wsList = JSON.parse(txt);
+                if (!Array.isArray(wsList)) return;
+                let occ = {};
+                let activeIdx = 0;
+                for (let i = 0; i < wsList.length; i++) {
+                    let w = wsList[i];
+                    let idx = (w.id !== undefined ? w.id : (i + 1)) - 1;
+                    if (w.state === "active") {
+                        activeIdx = idx;
+                        occ[idx] = true;
+                    } else if (w.state === "occupied") {
+                        occ[idx] = true;
                     }
-                    let activeIdx = 0;
-                    for (let j = 0; j < wsList.length; j++) {
-                        let w = wsList[j];
-                        let idx = (w.idx !== undefined ? w.idx : (w.id !== undefined ? w.id : 1)) - 1;
-                        if (w.is_focused || w.is_active) {
-                            activeIdx = idx;
-                        }
-                        if (w.active_window_id !== null || occ[w.id] || occ[w.idx]) {
-                            occ[idx] = true;
-                        }
-                    }
-                    workspacesWidgetRoot.niriActiveIndex = activeIdx;
-                    workspacesWidgetRoot.niriOccupiedMap = occ;
-                } catch (e) {}
-
-                niriWaiter.running = false;
-                if (workspacesWidgetRoot.moduleActive && workspacesWidgetRoot.isNiri) {
-                    niriWaiter.running = true;
                 }
-            }
-        }
-    }
-
-    Process {
-        id: niriWaiter
-        running: false
-        command: [
-            "bash",
-            "-c",
-            "niri msg --json event-stream 2>/dev/null | grep -m 1 -E '\"(WorkspacesChanged|WorkspaceActivated|WindowOpenedOrChanged|WindowClosed|WindowFocusChanged)\"'"
-        ]
-        onExited: {
-            niriPoller.running = false;
-            if (workspacesWidgetRoot.moduleActive && workspacesWidgetRoot.isNiri) {
-                niriPoller.running = true;
-            }
+                workspacesWidgetRoot.niriActiveIndex = activeIdx;
+                workspacesWidgetRoot.niriOccupiedMap = occ;
+            } catch (e) {}
         }
     }
 

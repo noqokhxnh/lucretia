@@ -440,7 +440,7 @@ Item {
     // Boot Initialization (Runs once on start)
     // =========================================================================
     Component.onCompleted: {
-        settingsReader.running = true;
+        settingsFileView.reload();
         envReader.running = true;
     }
 
@@ -450,105 +450,101 @@ Item {
         running: false
         stdout: StdioCollector {
             onStreamFinished: {
-                let lines = this.text ? this.text.trim().split('\n') : [];
-                for (let line of lines) {
-                    line = line.trim();
-                    let parts = line.split("=");
-                    if (parts.length >= 2) {
-                        let key = parts[0].trim();
-                        let val = parts.slice(1).join("=").replace(/^['"]|['"]$/g, '').trim();
-                        config.rawEnvs[key] = val;
-                        
-                        if (key === "OPENWEATHER_KEY") config.weatherApiKey = val;
-                        else if (key === "OPENWEATHER_CITY_ID") config.weatherCityId = val;
-                        else if (key === "OPENWEATHER_UNIT") config.weatherUnit = val;
+                if (this.text && this.text.trim().length > 0) {
+                    let lines = this.text.trim().split('\n');
+                    for (let line of lines) {
+                        let parts = line.split('=');
+                        if (parts.length === 2) {
+                            let key = parts[0].trim();
+                            let val = parts[1].trim().replace(/^["']|["']$/g, '');
+                            if (key === "WEATHER_CITY") config.weatherCity = val;
+                            if (key === "WEATHER_API_KEY") config.weatherApiKey = val;
+                            if (key === "WEATHER_LAT") config.weatherLat = parseFloat(val) || 0;
+                            if (key === "WEATHER_LON") config.weatherLon = parseFloat(val) || 0;
+                            if (key === "WEATHER_USE_GEOLOCATION") config.weatherUseGeolocation = (val.toLowerCase() === "true" || val === "1");
+                        }
                     }
                 }
             }
         }
     }
 
-    Process {
-        id: settingsReader
-        command: ["bash", "-c", `cat "${config.settingsJsonPath}" 2>/dev/null || echo '{}'`]
-        running: false
-        stdout: StdioCollector {
-            onStreamFinished: {
+    FileView {
+        id: settingsFileView
+        path: config.settingsJsonPath
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: {
+            let txt = text().trim();
+            if (txt && txt.length > 0 && txt !== "{}") {
                 try {
-                    if (this.text && this.text.trim().length > 0 && this.text.trim() !== "{}") {
-                        config.rawSettings = JSON.parse(this.text);
-                        
-                        // Map explicitly defined properties
-                        if (config.rawSettings.uiScale !== undefined) config.uiScale = config.rawSettings.uiScale;
-                        if (config.rawSettings.openGuideAtStartup !== undefined) config.openGuideAtStartup = config.rawSettings.openGuideAtStartup;
-                        if (config.rawSettings.topbarHelpIcon !== undefined) config.topbarHelpIcon = config.rawSettings.topbarHelpIcon;
-                        if (config.rawSettings.wallpaperDir !== undefined) config.wallpaperDir = config.rawSettings.wallpaperDir;
-                        if (config.rawSettings.language !== undefined && config.rawSettings.language !== "") config.language = config.rawSettings.language;
-                        if (config.rawSettings.kbOptions !== undefined) config.kbOptions = config.rawSettings.kbOptions;
-                        if (config.rawSettings.workspaceCount !== undefined) {
-                            config.workspaceCount = config.rawSettings.workspaceCount;
-                            config.initialWorkspaceCount = config.rawSettings.workspaceCount; 
+                    config.rawSettings = JSON.parse(txt);
+                    
+                    // Map explicitly defined properties
+                    if (config.rawSettings.uiScale !== undefined) config.uiScale = config.rawSettings.uiScale;
+                    if (config.rawSettings.openGuideAtStartup !== undefined) config.openGuideAtStartup = config.rawSettings.openGuideAtStartup;
+                    if (config.rawSettings.topbarHelpIcon !== undefined) config.topbarHelpIcon = config.rawSettings.topbarHelpIcon;
+                    if (config.rawSettings.wallpaperDir !== undefined) config.wallpaperDir = config.rawSettings.wallpaperDir;
+                    if (config.rawSettings.language !== undefined && config.rawSettings.language !== "") config.language = config.rawSettings.language;
+                    if (config.rawSettings.kbOptions !== undefined) config.kbOptions = config.rawSettings.kbOptions;
+                    if (config.rawSettings.workspaceCount !== undefined) {
+                        config.workspaceCount = config.rawSettings.workspaceCount;
+                        config.initialWorkspaceCount = config.rawSettings.workspaceCount; 
+                    }
+                    if (config.rawSettings.animSpeedMultiplier !== undefined) config.animSpeedMultiplier = config.rawSettings.animSpeedMultiplier;
+                    if (config.rawSettings.themeMode !== undefined) config.themeMode = config.rawSettings.themeMode;
+                    if (config.rawSettings.enabledModules !== undefined) {
+                        config.enabledModules = Object.assign({}, config.enabledModules, config.rawSettings.enabledModules);
+                    }
+                    if (config.rawSettings.autoPowerMode !== undefined) config.autoPowerMode = config.rawSettings.autoPowerMode;
+                    if (config.rawSettings.autoBatterySaver !== undefined) config.autoBatterySaver = config.rawSettings.autoBatterySaver;
+                    if (config.rawSettings.critProtect !== undefined) config.critProtect = config.rawSettings.critProtect;
+                    if (config.rawSettings.bluetoothPowerSave !== undefined) config.bluetoothPowerSave = config.rawSettings.bluetoothPowerSave;
+                    if (config.rawSettings.boostPowerSave !== undefined) config.boostPowerSave = config.rawSettings.boostPowerSave;
+                    if (config.rawSettings.beautifyScreenshot !== undefined) config.beautifyScreenshot = config.rawSettings.beautifyScreenshot;
+                    if (config.rawSettings.autoPowerNotify !== undefined) config.autoPowerNotify = config.rawSettings.autoPowerNotify;
+                    if (config.rawSettings.dndMode !== undefined) {
+                        config.dndMode = config.rawSettings.dndMode;
+                        if (config.dndMode) {
+                            sh("dunstctl set-paused true 2>/dev/null; makoctl set-mode do-not-disturb 2>/dev/null; swaync-client -dn 2>/dev/null");
                         }
-                        if (config.rawSettings.animSpeedMultiplier !== undefined) config.animSpeedMultiplier = config.rawSettings.animSpeedMultiplier;
-                        if (config.rawSettings.themeMode !== undefined) config.themeMode = config.rawSettings.themeMode;
-                        if (config.rawSettings.enabledModules !== undefined) {
-                            config.enabledModules = Object.assign({}, config.enabledModules, config.rawSettings.enabledModules);
+                    }
+                    if (config.rawSettings.powerProfile !== undefined) {
+                        config.powerProfile = config.rawSettings.powerProfile;
+                        sh("/usr/bin/python3 /usr/bin/powerprofilesctl set " + config.powerProfile + " 2>/dev/null || true");
+                    }
+                    if (config.rawSettings.idleLockTimeout !== undefined) config.idleLockTimeout = config.rawSettings.idleLockTimeout;
+                    if (config.rawSettings.idleScreenOffTimeout !== undefined) config.idleScreenOffTimeout = config.rawSettings.idleScreenOffTimeout;
+                    if (config.rawSettings.idleSleepTimeout !== undefined) config.idleSleepTimeout = config.rawSettings.idleSleepTimeout;
+                    if (config.rawSettings.activeHex !== undefined) config.activeHex = config.rawSettings.activeHex;
+                    if (config.rawSettings.selectedSchemeType !== undefined) config.selectedSchemeType = config.rawSettings.selectedSchemeType;
+                    
+                    // Map Keybinds
+                    if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {
+                        let tempBinds = [];
+                        for (let k of config.rawSettings.keybinds) {
+                            tempBinds.push({
+                                type: k.type || "bind",
+                                mods: k.mods || "",
+                                key: k.key || "",
+                                dispatcher: k.dispatcher || "exec",
+                                command: k.command || "",
+                                isEditing: false
+                            });
                         }
-                        if (config.rawSettings.autoPowerMode !== undefined) config.autoPowerMode = config.rawSettings.autoPowerMode;
-                        if (config.rawSettings.autoBatterySaver !== undefined) config.autoBatterySaver = config.rawSettings.autoBatterySaver;
-                        if (config.rawSettings.critProtect !== undefined) config.critProtect = config.rawSettings.critProtect;
-                        if (config.rawSettings.bluetoothPowerSave !== undefined) config.bluetoothPowerSave = config.rawSettings.bluetoothPowerSave;
-                        if (config.rawSettings.boostPowerSave !== undefined) config.boostPowerSave = config.rawSettings.boostPowerSave;
-                        if (config.rawSettings.beautifyScreenshot !== undefined) config.beautifyScreenshot = config.rawSettings.beautifyScreenshot;
-                        if (config.rawSettings.autoPowerNotify !== undefined) config.autoPowerNotify = config.rawSettings.autoPowerNotify;
-                        if (config.rawSettings.dndMode !== undefined) {
-                            config.dndMode = config.rawSettings.dndMode;
-                            if (config.dndMode) {
-                                sh("dunstctl set-paused true 2>/dev/null; makoctl set-mode do-not-disturb 2>/dev/null; swaync-client -dn 2>/dev/null");
-                            }
-                        }
-                        if (config.rawSettings.powerProfile !== undefined) {
-                            config.powerProfile = config.rawSettings.powerProfile;
-                            sh("/usr/bin/python3 /usr/bin/powerprofilesctl set " + config.powerProfile + " 2>/dev/null || true");
-                        }
-                        if (config.rawSettings.idleLockTimeout !== undefined) config.idleLockTimeout = config.rawSettings.idleLockTimeout;
-                        if (config.rawSettings.idleScreenOffTimeout !== undefined) config.idleScreenOffTimeout = config.rawSettings.idleScreenOffTimeout;
-                        if (config.rawSettings.idleSleepTimeout !== undefined) config.idleSleepTimeout = config.rawSettings.idleSleepTimeout;
-                        if (config.rawSettings.activeHex !== undefined) config.activeHex = config.rawSettings.activeHex;
-                        if (config.rawSettings.selectedSchemeType !== undefined) config.selectedSchemeType = config.rawSettings.selectedSchemeType;
-                        
-                        // Map Keybinds
-                        if (config.rawSettings.keybinds !== undefined && Array.isArray(config.rawSettings.keybinds)) {
-                            let tempBinds = [];
-                            for (let k of config.rawSettings.keybinds) {
-                                tempBinds.push({
-                                    type: k.type || "bind",
-                                    mods: k.mods || "",
-                                    key: k.key || "",
-                                    dispatcher: k.dispatcher || "exec",
-                                    command: k.command || "",
-                                    isEditing: false
-                                });
-                            }
-                            config.keybindsData = tempBinds;
-                        } else {
-                            config.keybindsData = [];
-                        }
-
-                        // Map Startups
-                        if (config.rawSettings.startup !== undefined && Array.isArray(config.rawSettings.startup)) {
-                            let tempStartup = [];
-                            for (let s of config.rawSettings.startup) {
-                                tempStartup.push({ command: s.command || "" });
-                            }
-                            config.startupData = tempStartup;
-                        } else {
-                            config.startupData = [];
-                        }
+                        config.keybindsData = tempBinds;
                     } else {
-                        config.saveAppSettings();
                         config.keybindsData = [];
-                        config.saveAllKeybinds([]);
+                    }
+
+                    // Map Startups
+                    if (config.rawSettings.startup !== undefined && Array.isArray(config.rawSettings.startup)) {
+                        let tempStartup = [];
+                        for (let s of config.rawSettings.startup) {
+                            tempStartup.push({ command: s.command || "" });
+                        }
+                        config.startupData = tempStartup;
+                    } else {
                         config.startupData = [];
                     }
                 } catch (e) {
@@ -556,25 +552,11 @@ Item {
                     config.keybindsData = [];
                     config.startupData = [];
                 }
+                config.settingsLoaded();
                 config.keybindsLoaded();
                 config.startupLoaded();
                 config.dataReady = true;
             }
         }
     }
-
-    Process {
-        id: settingsWatcher
-        command: ["bash", "-c", "while [ ! -f '" + config.settingsJsonPath + "' ]; do sleep 1; done; exec inotifywait -qq -e modify,close_write '" + config.settingsJsonPath + "'"]
-        running: true
-        stdout: StdioCollector {
-            onStreamFinished: {
-                settingsReader.running = false;
-                settingsReader.running = true;
-                settingsWatcher.running = false;
-                settingsWatcher.running = true;
-            }
-        }
-    }
 }
-

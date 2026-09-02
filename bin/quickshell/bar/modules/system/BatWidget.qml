@@ -58,15 +58,6 @@ Rectangle {
     visible: opacity > 0
     Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
-    property real globalWavePhase: 0.0
-    NumberAnimation on globalWavePhase {
-        from: 0
-        to: Math.PI * 2
-        duration: batWidgetRoot.isCharging ? 1800 : 3600
-        loops: Animation.Infinite
-        running: batWidgetRoot.showLayout && batWidgetRoot.moduleActive
-    }
-
     Timer {
         running: batWidgetRoot.moduleActive && barWindow && barWindow.isStartupReady && barWindow.isDataReady
         interval: 100
@@ -92,10 +83,6 @@ Rectangle {
             Behavior on animValue { NumberAnimation { duration: 600; easing.type: Easing.OutQuint } }
 
             property real fillRatio: Math.max(0.0, Math.min(1.0, isNaN(animValue) ? 0.0 : animValue))
-            property real fillY: height * (1.0 - fillRatio)
-            property real maxWaveAmp: batWidgetRoot.isCharging ? (barWindow ? barWindow.s(3.5) : 3.5) : (barWindow ? barWindow.s(0.5) : 0.5)
-            property real waveAmp: (fillRatio < 0.99 && fillRatio > 0.01) ? maxWaveAmp * Math.sin(fillRatio * Math.PI) : 0
-            property real waveCenterOffset: 0.375 * waveAmp * (Math.sin(batWidgetRoot.globalWavePhase) - Math.cos(batWidgetRoot.globalWavePhase))
 
             height: sysLayout.pillHeight
             property real targetWidth: batWidgetRoot.isDesktop ? (barWindow ? barWindow.s(32) : 32) : (baseContentRow.implicitWidth + (barWindow ? barWindow.s(18) : 18))
@@ -121,73 +108,27 @@ Rectangle {
             }
             Behavior on opacity { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
 
-            Canvas {
-                id: pillCanvas
-                anchors.fill: parent
-                renderTarget: Canvas.FramebufferObject
-                renderStrategy: Canvas.Cooperative
+            // --- Hardware-accelerated GPU fill (SceneGraph) ---
+            Item {
+                id: fillContainer
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: Math.min(parent.height, Math.max(0, parent.height * batPill.fillRatio))
+                clip: true
+                visible: batPill.fillRatio > 0
 
-                onPaint: {
-                    var ctx = getContext("2d");
-                    ctx.clearRect(0, 0, width, height);
-                    if (batPill.fillRatio <= 0) return;
-
-                    ctx.save();
-                    var r = batPill.radius;
-                    ctx.beginPath();
-                    ctx.moveTo(r, 0);
-                    ctx.lineTo(width - r, 0);
-                    ctx.quadraticCurveTo(width, 0, width, r);
-                    ctx.lineTo(width, height - r);
-                    ctx.quadraticCurveTo(width, height, width - r, height);
-                    ctx.lineTo(r, height);
-                    ctx.quadraticCurveTo(0, height, 0, height - r);
-                    ctx.lineTo(0, r);
-                    ctx.quadraticCurveTo(0, 0, r, 0);
-                    ctx.closePath();
-                    ctx.clip();
-
-                    ctx.beginPath();
-                    ctx.moveTo(0, batPill.fillY);
-                    if (batPill.waveAmp > 0) {
-                        var cp1y = batPill.fillY + Math.sin(batWidgetRoot.globalWavePhase) * batPill.waveAmp;
-                        var cp2y = batPill.fillY + Math.cos(batWidgetRoot.globalWavePhase + Math.PI) * batPill.waveAmp;
-                        ctx.bezierCurveTo(width * 0.33, cp2y, width * 0.66, cp1y, width, batPill.fillY);
-                        ctx.lineTo(width, height);
-                        ctx.lineTo(0, height);
-                    } else {
-                        ctx.lineTo(width, batPill.fillY);
-                        ctx.lineTo(width, height);
-                        ctx.lineTo(0, height);
+                Rectangle {
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.bottom: parent.bottom
+                    height: batPill.height
+                    radius: batPill.radius
+                    gradient: Gradient {
+                        GradientStop { position: 0.0; color: Qt.lighter(batWidgetRoot.batDynamicColor, 1.25) }
+                        GradientStop { position: 1.0; color: batWidgetRoot.batDynamicColor }
                     }
-                    ctx.closePath();
-
-                    var grad = ctx.createLinearGradient(0, 0, 0, height);
-                    grad.addColorStop(0, Qt.lighter(batWidgetRoot.batDynamicColor, 1.25).toString());
-                    grad.addColorStop(1, batWidgetRoot.batDynamicColor.toString());
-                    ctx.fillStyle = grad;
-                    ctx.globalAlpha = 0.95;
-                    ctx.fill();
-                    ctx.restore();
-                }
-
-                Connections {
-                    target: batWidgetRoot
-                    enabled: (batWidgetRoot.showLayout && batWidgetRoot.moduleActive) && batPill.waveAmp > 0
-                    function onGlobalWavePhaseChanged() { pillCanvas.requestPaint(); }
-                }
-
-                Connections {
-                    target: batPill
-                    enabled: batWidgetRoot.showLayout && batWidgetRoot.moduleActive
-                    function onFillRatioChanged() { pillCanvas.requestPaint(); }
-                    function onWaveAmpChanged() { pillCanvas.requestPaint(); }
-                }
-
-                Connections {
-                    target: batWidgetRoot
-                    enabled: batWidgetRoot.showLayout && batWidgetRoot.moduleActive
-                    function onBatDynamicColorChanged() { pillCanvas.requestPaint(); }
+                    opacity: 0.95
                 }
             }
 
@@ -220,7 +161,7 @@ Rectangle {
                 anchors.bottom: parent.bottom
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: Math.min(parent.height, Math.max(0, (parent.height * batPill.fillRatio) - batPill.waveCenterOffset))
+                height: Math.min(parent.height, Math.max(0, parent.height * batPill.fillRatio))
                 clip: true
                 visible: batPill.fillRatio > 0
 

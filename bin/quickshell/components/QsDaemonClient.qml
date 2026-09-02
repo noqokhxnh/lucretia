@@ -66,7 +66,7 @@ Item {
     property bool isConnected: daemonSocket.connected
 
     // Last time a message arrived from the daemon (liveness watchdog)
-    property int _lastMsgTime: 0
+    property double _lastMsgTime: 0
 
     // --- Real-time Event Signals ---
     signal sysDataReceived(var data)
@@ -176,6 +176,7 @@ Item {
         onConnectedChanged: {
             if (connected) {
                 console.log("[QsDaemonClient] Connected to C++ qs_daemon!");
+                root.reconnectAttempts = 0;
                 root._lastMsgTime = Date.now();
                 // Send initial handshake / subscriptions
                 sendRequest("sysdata", "subscribe", {}, null);
@@ -197,6 +198,8 @@ Item {
         initialConnectTimer.start();
     }
 
+    property int reconnectAttempts: 0
+
     Timer {
         id: initialConnectTimer
         interval: 1000
@@ -209,11 +212,12 @@ Item {
 
     Timer {
         id: reconnectTimer
-        interval: 1500
+        interval: Math.min(2000 * Math.pow(1.5, root.reconnectAttempts), 30000)
         repeat: true
         running: !daemonSocket.connected && !initialConnectTimer.running
         onTriggered: {
-            console.log("[QsDaemonClient] Reconnecting to socket...");
+            root.reconnectAttempts++;
+            console.log("[QsDaemonClient] Reconnecting to socket (attempt " + root.reconnectAttempts + ", delay " + (interval/1000).toFixed(1) + "s)...");
             daemonSocket.connected = false;
             Qt.callLater(() => {
                 daemonSocket.connected = true;
@@ -221,17 +225,15 @@ Item {
         }
     }
 
-    // Sysdata broadcasts arrive every 10s, so a healthy connection can go
-    // quiet for longer than that. Only force a reconnect if we hear nothing
-    // well past the slowest broadcast interval.
+    // Relaxed liveness watchdog: only reconnect if completely silent for > 45s
     Timer {
         id: livenessTimer
-        interval: 10000
+        interval: 20000
         repeat: true
         running: daemonSocket.connected
         onTriggered: {
-            if (daemonSocket.connected && (Date.now() - root._lastMsgTime > 25000)) {
-                console.warn("[QsDaemonClient] No daemon traffic, forcing reconnect");
+            if (daemonSocket.connected && (Date.now() - root._lastMsgTime > 45000)) {
+                console.warn("[QsDaemonClient] No daemon traffic for 45s, forcing reconnect");
                 daemonSocket.connected = false;
                 Qt.callLater(() => {
                     daemonSocket.connected = true;

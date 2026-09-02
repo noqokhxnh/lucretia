@@ -80,6 +80,7 @@ get_active_window() {
 
 last_cls=""
 last_title=""
+logged_cls=""
 
 emit_state() {
     local cls="$1" title="$2" ts json_payload
@@ -92,6 +93,10 @@ emit_state() {
     if [ "$cls" = "$last_cls" ] && [ "$title" = "$last_title" ]; then
         return
     fi
+    local cls_changed=false
+    if [ "$cls" != "$last_cls" ]; then
+        cls_changed=true
+    fi
     last_cls="$cls"
     last_title="$title"
 
@@ -99,9 +104,19 @@ emit_state() {
     json_payload=$(jq -nc --arg cls "$cls" --arg title "$title" --argjson ts "$ts" \
         '{timestamp: $ts, app_class: $cls, app_title: $title}')
 
-    echo "$json_payload" >> "$LOG_FILE"
+    if [ "$cls_changed" = true ] && [ "$cls" != "$logged_cls" ]; then
+        logged_cls="$cls"
+        echo "$json_payload" >> "$LOG_FILE"
+    fi
+
     echo "$json_payload" > "$STATE_FILE.tmp"
-    mv "$STATE_FILE.tmp" "$STATE_FILE"
+    if [ -f "$STATE_FILE.tmp" ]; then
+        if ! cmp -s "$STATE_FILE.tmp" "$STATE_FILE"; then
+            mv "$STATE_FILE.tmp" "$STATE_FILE"
+        else
+            rm -f "$STATE_FILE.tmp"
+        fi
+    fi
 }
 
 listen_events() {

@@ -223,7 +223,7 @@ Item {
                     imageRadius: root.s(0)
                     source: Caching.lucretiaDir ? ("file://" + Caching.lucretiaDir + "/assets/pushy.gif") : Qt.resolvedUrl("../../assets/pushy.gif")
                     isGif: true
-                    playing: true
+                    playing: root.visible && root.opacity > 0 && (!NotificationManager.groupedHistory || NotificationManager.groupedHistory.count === 0)
                     fillMode: Image.PreserveAspectFit
                     interactive: false
                 }
