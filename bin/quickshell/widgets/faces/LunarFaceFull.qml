@@ -35,7 +35,6 @@ Item {
     }
 
     onMonthOffsetChanged: updateGrid()
-
     Component.onCompleted: updateGrid()
 
     Connections {
@@ -45,24 +44,30 @@ Item {
         }
     }
 
+    // Responsive scaling factor
+    readonly property real sH: Math.max(0.65, Math.min(1.5, root.height / 320))
+    readonly property real sW: Math.max(0.65, Math.min(1.5, root.width / 420))
+    readonly property real sMin: Math.min(sH, sW)
+
     Rectangle {
         anchors.fill: parent
-        color: ThemeBackend.surfaceVariant ?? ThemeBackend.surface0
+        color: ThemeBackend.surface0
         radius: ThemeBackend.borderRadius
-        border.color: Qt.alpha(ThemeBackend.surface1, 0.6)
+        border.color: Qt.alpha(ThemeBackend.surface1, 0.7)
         border.width: 1
         antialiasing: true
 
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: Math.max(10, Math.min(20, root.width * 0.04))
-            spacing: Math.max(4, Math.min(10, root.height * 0.025))
+            anchors.margins: Math.max(8, Math.min(18, 12 * root.sMin))
+            spacing: Math.max(4, Math.min(10, 6 * root.sH))
 
-            // Header: Month/Year navigation & Can Chi
+            // 1. Header: Month/Year navigation & Can Chi information
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 6
+                spacing: 8
 
+                // Title & Subtitle Column
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 1
@@ -70,8 +75,9 @@ Item {
                     Text {
                         text: Qt.formatDateTime(root.currentViewDate, "MMMM yyyy").toUpperCase()
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(12, Math.min(17, root.height * 0.065))
+                        font.pixelSize: Math.max(12, Math.min(18, 14.5 * root.sMin))
                         font.weight: Font.Black
+                        font.letterSpacing: 0.5
                         color: ThemeBackend.text
                     }
 
@@ -80,82 +86,156 @@ Item {
                             let m = root.currentViewDate.getMonth() + 1;
                             let y = root.currentViewDate.getFullYear();
                             let dInfo = Lunar.getDetailsForDate(15, m, y);
-                            return (dInfo ? (dInfo.canChiMonth + " • " + dInfo.canChiYear) : "");
+                            return (dInfo ? ("Tháng " + dInfo.canChiMonth + " • Năm " + dInfo.canChiYear) : "");
                         }
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(9, Math.min(12, root.height * 0.045))
+                        font.pixelSize: Math.max(9, Math.min(12, 10.5 * root.sMin))
                         font.weight: Font.DemiBold
                         color: ThemeBackend.mauve
                         elide: Text.ElideRight
                     }
                 }
 
-                // Reset to today button
-                IconButton {
-                    size: Math.max(22, Math.min(30, root.height * 0.11))
-                    cornerRadius: Math.max(4, size * 0.25)
-                    buttonIcon: "󰃭"
-                    iconFontSize: Math.max(10, size * 0.5)
-                    accentColor: ThemeBackend.surface1
-                    textColor: ThemeBackend.text
+                // Quick Today jump button
+                Rectangle {
+                    visible: root.monthOffset !== 0
                     opacity: root.monthOffset !== 0 ? 1.0 : 0.0
-                    visible: opacity > 0
+                    implicitHeight: Math.max(22, Math.min(30, 26 * root.sH))
+                    implicitWidth: todayBtnText.implicitWidth + 16
+                    radius: height / 2
+                    color: todayMa.containsMouse ? ThemeBackend.surface2 : ThemeBackend.surface1
+                    border.color: Qt.alpha(ThemeBackend.mauve, 0.4)
+                    border.width: 1
+
                     Behavior on opacity { NumberAnimation { duration: 150 } }
-                    onClicked: root.monthOffset = 0
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: 4
+                        Text {
+                            text: "󰃭"
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: Math.max(9, Math.min(12, 10.5 * root.sMin))
+                            color: ThemeBackend.mauve
+                        }
+                        Text {
+                            id: todayBtnText
+                            text: "Hôm nay"
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Math.max(8.5, Math.min(11, 9.5 * root.sMin))
+                            font.weight: Font.Bold
+                            color: ThemeBackend.text
+                        }
+                    }
+
+                    MouseArea {
+                        id: todayMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.monthOffset = 0
+                    }
                 }
 
-                // Prev month
-                IconButton {
-                    size: Math.max(22, Math.min(30, root.height * 0.11))
-                    cornerRadius: Math.max(4, size * 0.25)
-                    buttonIcon: ""
-                    iconFontSize: Math.max(10, size * 0.5)
-                    accentColor: ThemeBackend.surface1
-                    textColor: ThemeBackend.text
-                    onClicked: root.monthOffset -= 1
-                }
+                // Prev Month Button
+                Rectangle {
+                    implicitWidth: Math.max(22, Math.min(30, 26 * root.sH))
+                    implicitHeight: implicitWidth
+                    radius: implicitWidth / 2
+                    color: prevMa.containsMouse ? ThemeBackend.surface2 : ThemeBackend.surface1
+                    border.color: Qt.alpha(ThemeBackend.surface2, 0.6)
+                    border.width: 1
 
-                // Next month
-                IconButton {
-                    size: Math.max(22, Math.min(30, root.height * 0.11))
-                    cornerRadius: Math.max(4, size * 0.25)
-                    buttonIcon: ""
-                    iconFontSize: Math.max(10, size * 0.5)
-                    accentColor: ThemeBackend.surface1
-                    textColor: ThemeBackend.text
-                    onClicked: root.monthOffset += 1
-                }
-            }
-
-            // Days of week header
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 2
-
-                Repeater {
-                    model: [
-                        I18n.t("calendar.days.mo") || "T2",
-                        I18n.t("calendar.days.tu") || "T3",
-                        I18n.t("calendar.days.we") || "T4",
-                        I18n.t("calendar.days.th") || "T5",
-                        I18n.t("calendar.days.fr") || "T6",
-                        I18n.t("calendar.days.sa") || "T7",
-                        I18n.t("calendar.days.su") || "CN"
-                    ]
+                    Behavior on color { ColorAnimation { duration: 150 } }
 
                     Text {
-                        Layout.fillWidth: true
-                        text: modelData
-                        font.family: ThemeBackend.fontFamily
-                        font.weight: Font.Black
-                        font.pixelSize: Math.max(9, Math.min(12, root.height * 0.045))
-                        color: index >= 5 ? ThemeBackend.peach : ThemeBackend.overlay0
-                        horizontalAlignment: Text.AlignHCenter
+                        anchors.centerIn: parent
+                        text: ""
+                        font.family: "Iosevka Nerd Font"
+                        font.pixelSize: Math.max(10, Math.min(14, 12 * root.sMin))
+                        color: ThemeBackend.text
+                    }
+
+                    MouseArea {
+                        id: prevMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.monthOffset -= 1
+                    }
+                }
+
+                // Next Month Button
+                Rectangle {
+                    implicitWidth: Math.max(22, Math.min(30, 26 * root.sH))
+                    implicitHeight: implicitWidth
+                    radius: implicitWidth / 2
+                    color: nextMa.containsMouse ? ThemeBackend.surface2 : ThemeBackend.surface1
+                    border.color: Qt.alpha(ThemeBackend.surface2, 0.6)
+                    border.width: 1
+
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: ""
+                        font.family: "Iosevka Nerd Font"
+                        font.pixelSize: Math.max(10, Math.min(14, 12 * root.sMin))
+                        color: ThemeBackend.text
+                    }
+
+                    MouseArea {
+                        id: nextMa
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.monthOffset += 1
                     }
                 }
             }
 
-            // 7x6 Calendar Grid
+            // 2. Days of week header strip
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: Math.max(18, Math.min(26, 22 * root.sH))
+                radius: Math.max(4, ThemeBackend.borderRadius - 4)
+                color: Qt.alpha(ThemeBackend.surface1, 0.4)
+
+                RowLayout {
+                    anchors.fill: parent
+                    spacing: 2
+
+                    Repeater {
+                        model: [
+                            I18n.t("calendar.days.mo") || "T2",
+                            I18n.t("calendar.days.tu") || "T3",
+                            I18n.t("calendar.days.we") || "T4",
+                            I18n.t("calendar.days.th") || "T5",
+                            I18n.t("calendar.days.fr") || "T6",
+                            I18n.t("calendar.days.sa") || "T7",
+                            I18n.t("calendar.days.su") || "CN"
+                        ]
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: modelData
+                            font.family: ThemeBackend.fontFamily
+                            font.weight: Font.Black
+                            font.pixelSize: Math.max(8.5, Math.min(11.5, 10 * root.sMin))
+                            color: {
+                                if (index === 6) return ThemeBackend.peach; // Sunday
+                                if (index === 5) return ThemeBackend.mauve; // Saturday
+                                return ThemeBackend.subtext0;
+                            }
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+                }
+            }
+
+            // 3. 7x6 Calendar Grid
             GridLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
@@ -170,9 +250,19 @@ Item {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
                         radius: Math.max(4, Math.min(8, height * 0.22))
-                        color: modelData.isToday ? ThemeBackend.mauve : (cellMa.containsMouse ? ThemeBackend.surface2 : "transparent")
-                        border.color: modelData.isToday ? Qt.lighter(ThemeBackend.mauve, 1.2) : (modelData.isLunar1st || modelData.isLunar15th ? Qt.alpha(modelData.isLunar1st ? ThemeBackend.red : ThemeBackend.yellow, 0.3) : "transparent")
+                        color: {
+                            if (modelData.isToday) return ThemeBackend.mauve;
+                            if (cellMa.containsMouse) return ThemeBackend.surface2;
+                            return "transparent";
+                        }
+                        border.color: {
+                            if (modelData.isToday) return Qt.lighter(ThemeBackend.mauve, 1.2);
+                            if (modelData.isLunar1st) return Qt.alpha(ThemeBackend.red, 0.4);
+                            if (modelData.isLunar15th) return Qt.alpha(ThemeBackend.yellow, 0.4);
+                            return "transparent";
+                        }
                         border.width: 1
+                        opacity: modelData.isCurrentMonth ? 1.0 : 0.35
 
                         Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -193,85 +283,90 @@ Item {
                                 Layout.fillHeight: true
                                 text: String(modelData.solarDay)
                                 font.family: ThemeBackend.fontFamily
-                                font.pixelSize: Math.max(9, Math.min(14, parent.height * 0.48))
+                                font.pixelSize: Math.max(9, Math.min(14, parent.height * 0.46))
                                 font.weight: modelData.isToday ? Font.Black : (modelData.isCurrentMonth ? Font.Bold : Font.Normal)
-                                color: modelData.isToday ? ThemeBackend.crust : (modelData.isCurrentMonth ? ThemeBackend.text : ThemeBackend.surface2)
+                                color: modelData.isToday ? ThemeBackend.crust : (modelData.isCurrentMonth ? ThemeBackend.text : ThemeBackend.subtext1)
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
 
                             // Lunar day (Bottom)
-                            Text {
+                            RowLayout {
                                 Layout.fillWidth: true
                                 Layout.preferredHeight: Math.max(8, parent.height * 0.4)
-                                text: modelData.lunarDayText
-                                font.family: ThemeBackend.fontFamily
-                                font.pixelSize: Math.max(7, Math.min(10, parent.height * 0.34))
-                                font.weight: (modelData.isLunar1st || modelData.isLunar15th) ? Font.Black : Font.Normal
-                                color: {
-                                    if (modelData.isToday) return Qt.darker(ThemeBackend.crust, 1.2);
-                                    if (!modelData.isCurrentMonth) return ThemeBackend.surface2;
-                                    if (modelData.isLunar1st) return ThemeBackend.red;
-                                    if (modelData.isLunar15th) return ThemeBackend.yellow;
-                                    return ThemeBackend.subtext0;
+                                spacing: 2
+
+                                Item { Layout.fillWidth: true }
+
+                                // Indicator dot for 1st or 15th
+                                Rectangle {
+                                    visible: !modelData.isToday && (modelData.isLunar1st || modelData.isLunar15th)
+                                    width: Math.max(3, Math.min(5, parent.height * 0.3))
+                                    height: width
+                                    radius: width / 2
+                                    color: modelData.isLunar1st ? ThemeBackend.red : ThemeBackend.yellow
+                                    Layout.alignment: Qt.AlignVCenter
                                 }
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
+
+                                Text {
+                                    text: modelData.lunarDayText
+                                    font.family: ThemeBackend.fontFamily
+                                    font.pixelSize: Math.max(7, Math.min(10, parent.height * 0.34))
+                                    font.weight: (modelData.isLunar1st || modelData.isLunar15th || modelData.isToday) ? Font.Black : Font.Medium
+                                    color: {
+                                        if (modelData.isToday) return Qt.darker(ThemeBackend.crust, 1.25);
+                                        if (modelData.isLunar1st) return ThemeBackend.red;
+                                        if (modelData.isLunar15th) return ThemeBackend.yellow;
+                                        return ThemeBackend.subtext0;
+                                    }
+                                    Layout.alignment: Qt.AlignVCenter
+                                }
+
+                                Item { Layout.fillWidth: true }
                             }
                         }
                     }
                 }
             }
 
-            // Footer info: Solar term & Zodiac Day
+            // 4. Footer Bar: Today Lunar Status
             RowLayout {
                 Layout.fillWidth: true
-                spacing: 6
 
+                Item { Layout.fillWidth: true }
+
+                // Today Lunar Summary Badge
                 Rectangle {
-                    implicitHeight: Math.max(16, Math.min(22, root.height * 0.08))
-                    implicitWidth: ftTietKhi.implicitWidth + 12
+                    implicitHeight: Math.max(18, Math.min(24, 21 * root.sH))
+                    implicitWidth: todayLunarText.implicitWidth + 18
                     radius: height / 2
-                    color: ThemeBackend.surface1
+                    color: Qt.alpha(ThemeBackend.surface1, 0.7)
+                    border.color: Qt.alpha(ThemeBackend.surface2, 0.5)
+                    border.width: 1
 
-                    Text {
-                        id: ftTietKhi
+                    RowLayout {
                         anchors.centerIn: parent
-                        text: " " + Lunar.solarTerm
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(8, Math.min(11, root.height * 0.042))
-                        font.weight: Font.Bold
-                        color: ThemeBackend.peach
-                    }
-                }
+                        spacing: 5
 
-                Rectangle {
-                    implicitHeight: Math.max(16, Math.min(22, root.height * 0.08))
-                    implicitWidth: ftHoangDao.implicitWidth + 12
-                    radius: height / 2
-                    color: Lunar.isAuspiciousDay ? Qt.alpha(ThemeBackend.green, 0.18) : Qt.alpha(ThemeBackend.surface1, 0.8)
+                        Text {
+                            text: Lunar.moonPhaseIcon
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: Math.max(9, Math.min(12, 10.5 * root.sMin))
+                            color: ThemeBackend.mauve
+                        }
 
-                    Text {
-                        id: ftHoangDao
-                        anchors.centerIn: parent
-                        text: (Lunar.isAuspiciousDay ? "★ " : "• ") + Lunar.dayZodiacType + ": " + Lunar.dayZodiacName
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(8, Math.min(11, root.height * 0.042))
-                        font.weight: Font.Bold
-                        color: Lunar.isAuspiciousDay ? ThemeBackend.green : ThemeBackend.subtext0
+                        Text {
+                            id: todayLunarText
+                            text: "Hôm nay: " + (Lunar.lunarDay === 1 ? "Mùng 1" : (Lunar.lunarDay === 15 ? "Rằm" : "Ngày " + Lunar.lunarDay)) + " " + Lunar.monthName + " (" + Lunar.canChiDay + ")"
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Math.max(8, Math.min(10.5, 9.5 * root.sMin))
+                            font.weight: Font.Bold
+                            color: ThemeBackend.text
+                        }
                     }
                 }
 
                 Item { Layout.fillWidth: true }
-
-                Text {
-                    text: Lunar.moonPhaseIcon + " " + Lunar.moonPhaseName
-                    font.family: "Iosevka Nerd Font"
-                    font.pixelSize: Math.max(8, Math.min(11, root.height * 0.042))
-                    color: ThemeBackend.subtext0
-                    Layout.alignment: Qt.AlignVCenter
-                    elide: Text.ElideRight
-                }
             }
         }
     }
