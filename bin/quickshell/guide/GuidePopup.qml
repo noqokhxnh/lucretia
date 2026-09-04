@@ -134,6 +134,7 @@ Item {
         { id: "General", key: "general", name: "General", icon: "󰒓", file: "general/GeneralTab.qml"},
         { id: "Display", key: "display", name: "Display", icon: "󰃠", file: "DisplayTab.qml" },
         { id: "Bar", key: "bar", name: "Bar", icon: "󰹑", file: "BarTab.qml" },
+        { id: "Keybinds", key: "keybinds", name: "Keybinds", icon: "󰌌", file: "KeybindsTab.qml" },
         { id: "Launcher", key: "launcher", name: "Launcher", icon: "󰵆", file: "LauncherTab.qml" },
         { id: "Theme", key: "theme", name: "Theme", icon: "✦", file: "theme/ThemeTab.qml"},
         { id: "Notifications", key: "notifications", name: "Notifications", icon: "󰂚", file: "notifications/NotificationsTab.qml" },
