@@ -11,6 +11,7 @@ import Quickshell.Services.UPower
 import Quickshell.Services.Pipewire
 import "../"
 import "../reusables"
+import "../singletons"
 import "../notifications"
 
 Item {
@@ -398,7 +399,7 @@ Item {
     Rectangle {
         id: sidebarPanel
         anchors.fill: parent
-        color: Qt.rgba(ThemeBackend.base.r, ThemeBackend.base.g, ThemeBackend.base.base, 0.97)
+        color: Qt.rgba(ThemeBackend.base.r, ThemeBackend.base.g, ThemeBackend.base.b, 0.97)
         radius: Math.min(ThemeBackend.borderRadius, root.s(28))
         border.width: 0
         clip: true

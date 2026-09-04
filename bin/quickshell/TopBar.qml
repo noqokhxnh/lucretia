@@ -2551,7 +2551,7 @@ Variants {
                                     id: batMouse
                                     hoverEnabled: true
                                     anchors.fill: parent
-                                    onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle battery"])
+                                    onClicked: Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle system"])
                                 }
                             }
                         }

@@ -202,12 +202,12 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "battery": { 
-            w: 360, h: 400, comp: "battery/BatteryPopup.qml", 
+            w: 500, h: "fill", comp: "syspanel/SystemPanel.qml", 
             pos: { 
-                "top": { anchor: "top-right", mt: 52, mr: 5 }, 
-                "bottom": { anchor: "bottom-right", mb: 52, mr: 5 }, 
-                "left": { anchor: "bottom-left", ml: 52, mb: 5 }, 
-                "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
+                "top": { anchor: "right" }, 
+                "bottom": { anchor: "right" }, 
+                "left": { anchor: "right" }, 
+                "right": { anchor: "left" } 
             } 
         },
         "settings": { 
