@@ -32,6 +32,17 @@ Item {
     property bool dataReady: false
     property var rawSettings: ({})
 
+    readonly property real uiScale: {
+        let raw = rawSettings || {};
+        if (raw.general && raw.general.uiScale !== undefined) return raw.general.uiScale;
+        if (raw.uiScale !== undefined) return raw.uiScale;
+        return 1.0;
+    }
+
+    function setUiScale(val) {
+        setSetting("uiScale", val);
+    }
+
     signal settingsLoaded()
 
     function sh(cmd) {

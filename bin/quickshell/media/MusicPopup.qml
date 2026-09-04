@@ -15,6 +15,9 @@ Item {
 
     focus: true
 
+    implicitWidth: root.s(650)
+    implicitHeight: root.s(600)
+
     function s(val) { 
         return Scaler.s(val); 
     }
