@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../singletons"
 
 Item {
     id: window
@@ -16,16 +17,14 @@ Item {
         return Scaler.s(val);
     }
 
-    MatugenColors { id: _theme }
-    
-    readonly property color base: _theme.base
-    readonly property color text: _theme.text
-    readonly property color crust: _theme.crust
-    readonly property color surface0: _theme.surface0
-    readonly property color surface1: _theme.surface1
-    readonly property color surface2: _theme.surface2
-    readonly property color mauve: _theme.mauve || "#cba6f7"
-    readonly property color red: _theme.red || "#f38ba8"
+    readonly property color base: ThemeBackend.base
+    readonly property color text: ThemeBackend.text
+    readonly property color crust: ThemeBackend.crust
+    readonly property color surface0: ThemeBackend.surface0
+    readonly property color surface1: ThemeBackend.surface1
+    readonly property color surface2: ThemeBackend.surface2
+    readonly property color mauve: ThemeBackend.mauve
+    readonly property color red: ThemeBackend.red
 
     property string backendScript: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/notes/notes_backend"
     property string tempFile: Quickshell.env("HOME") + "/.cache/qs_note_current.txt"
