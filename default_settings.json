@@ -13,6 +13,69 @@
   "bluetoothPowerSave": true,
   "boostPowerSave": true,
   "monitors": [],
+  "enabledModules": {
+    "music": true,
+    "battery": true,
+    "wifi": true,
+    "bluetooth": true,
+    "volume": true,
+    "tray": true,
+    "system": false,
+    "updater": true,
+    "dnd": false,
+    "notes": false,
+    "focustime": false
+  },
+  "bar": {
+    "position": "top",
+    "width": 100,
+    "opacity": 100,
+    "style": "modular",
+    "time": {
+      "format": "HH:mm:ss"
+    },
+    "autohide": false,
+    "autohideTimeout": 1000,
+    "workspaceCount": 8,
+    "groupColors": {
+      "g_kb": "#b7c4ff",
+      "g_tray": "#5c3d56"
+    },
+    "modules": {
+      "left": [
+        "left",
+        "vis",
+        "workspaces",
+        "media"
+      ],
+      "center": [
+        "timedate",
+        "info",
+        "weather"
+      ],
+      "right": [
+        [
+          "tray",
+          "wifi",
+          "bt",
+          "vol",
+          "bat"
+        ]
+      ]
+    }
+  },
+  "general": {
+    "language": "vi",
+    "openGuideAtStartup": false,
+    "wallpaperDir": "",
+    "workspaceCount": 8,
+    "avatarPath": "",
+    "muteSfx": false,
+    "sfxVolume": 23,
+    "weatherInterval": 30,
+    "weatherUnit": "metric",
+    "quickactions": true
+  },
   "keybinds": [
     {
       "type": "bind",
@@ -180,7 +243,7 @@
       "mods": "$mainMod",
       "key": "B",
       "dispatcher": "exec",
-      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle battery"
+      "command": "bash ~/.config/niri/bin/qs_manager.sh toggle system"
     },
     {
       "type": "bind",

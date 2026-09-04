@@ -121,7 +121,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "music": { 
-            w: 625, h: 565, comp: "media/MusicPopup.qml", 
+            w: 650, h: 600, comp: "media/MusicPopup.qml", 
             pos: { 
                 "top": { anchor: "top-left", mt: 52, ml: 5 }, 
                 "bottom": { anchor: "bottom-left", mb: 52, ml: 5 }, 
@@ -157,7 +157,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "notes": { 
-            w: 900, h: 640, comp: "notes/NotesPopup.qml", 
+            w: 920, h: 640, comp: "notes/NotesPopup.qml", 
             pos: { 
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
@@ -202,12 +202,12 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             } 
         },
         "battery": { 
-            w: 360, h: 400, comp: "battery/BatteryPopup.qml", 
+            w: 500, h: "fill", comp: "syspanel/SystemPanel.qml", 
             pos: { 
-                "top": { anchor: "top-right", mt: 52, mr: 5 }, 
-                "bottom": { anchor: "bottom-right", mb: 52, mr: 5 }, 
-                "left": { anchor: "bottom-left", ml: 52, mb: 5 }, 
-                "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
+                "top": { anchor: "right" }, 
+                "bottom": { anchor: "right" }, 
+                "left": { anchor: "right" }, 
+                "right": { anchor: "left" } 
             } 
         },
         "settings": { 

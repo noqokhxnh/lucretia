@@ -1483,6 +1483,10 @@ jq -n --slurpfile local "$OLD_JSON" --slurpfile up "$UPSTREAM_JSON" \
 
 printf "  -> Configuration merged %-23s ${C_GREEN}[ OK ]${RESET}\n" ""
 
+# Ensure ~/.config/lucretia/settings.json is synchronized via symlink
+mkdir -p "$HOME/.config/lucretia"
+ln -sf "$SETTINGS_FILE" "$HOME/.config/lucretia/settings.json"
+
 # ------------------------------------------------------------------------------
 # 5.5. WEATHER ENVIRONMENT PERSISTENCE
 # ------------------------------------------------------------------------------
@@ -1624,20 +1628,8 @@ printf "  -> env.conf generated successfully %-10s ${C_GREEN}[ OK ]${RESET}\n" "
 
 # ------------------------------------------------------------------------------
 # 6.5. DESKTOP VS LAPTOP ADAPTABILITY
+# Handled dynamically by syspanel/SystemPanel.qml via UPower/SystemInfo
 # ------------------------------------------------------------------------------
-QS_BAT_DIR="$TARGET_CONFIG_DIR/bin/quickshell/battery"
-echo -e "  ${C_CYAN}→${RESET} Checking chassis for battery presence..."
-if ls /sys/class/power_supply/BAT* 1> /dev/null 2>&1; then
-    echo -e "  -> ${C_GREEN}Battery detected.${RESET} Keeping Laptop Battery widget."
-    if [ -f "$REPO_DIR/bin/quickshell/battery/BatteryPopup.qml" ]; then
-        cp -f "$REPO_DIR/bin/quickshell/battery/BatteryPopup.qml" "$QS_BAT_DIR/BatteryPopup.qml" 2>/dev/null || true
-    fi
-else
-    echo -e "  -> ${C_YELLOW}No battery detected (Desktop system).${RESET} Swapping to System Monitor widget."
-    if [ -f "$REPO_DIR/bin/quickshell/battery/BatteryPopupAlt.qml" ]; then
-        cp -f "$REPO_DIR/bin/quickshell/battery/BatteryPopupAlt.qml" "$QS_BAT_DIR/BatteryPopup.qml" 2>/dev/null || true
-    fi
-fi
 
 # ------------------------------------------------------------------------------
 # 6.5. HEALING & REBUILDING QUICKSHELL & CONFIGURING FCITX5
@@ -1906,6 +1898,14 @@ ENABLE_TELEMETRY="$ENABLE_TELEMETRY"
 EOF
 
 printf "  → Configuration and version state saved %-7s ${C_GREEN}[ OK ]${RESET}\n" ""
+
+# Set flag to open welcome / guide once on first install or update
+mkdir -p "$HOME/.local/state"
+touch "$HOME/.local/state/lucretia_show_welcome"
+
+if pgrep -x quickshell >/dev/null 2>&1; then
+    (sleep 1 && bash "$TARGET_CONFIG_DIR/bin/qs_manager.sh" open guide welcome) &
+fi
 
 # ==============================================================================
 # Final Output & Success Summary

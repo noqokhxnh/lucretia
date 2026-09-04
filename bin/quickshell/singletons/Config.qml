@@ -7,12 +7,41 @@ Item {
     id: config
 
     readonly property string homeDir: Quickshell.env("HOME")
-    readonly property string userConfigDir: homeDir + "/.config/lucretia"
+    readonly property string niriConfigDir: homeDir + "/.config/niri"
+    readonly property string lucretiaConfigDir: homeDir + "/.config/lucretia"
     
-    readonly property string settingsJsonPath: Quickshell.env("QS_SETTINGS") ? Quickshell.env("QS_SETTINGS") : (userConfigDir + "/settings.json")
+    readonly property string settingsJsonPath: {
+        let envPath = Quickshell.env("QS_SETTINGS");
+        if (envPath && envPath.length > 0) return envPath;
+        return niriConfigDir + "/settings.json";
+    }
+
+    Timer {
+        id: fallbackReadyTimer
+        interval: 1000
+        running: !config.dataReady
+        repeat: false
+        onTriggered: {
+            if (!config.dataReady) {
+                config.dataReady = true;
+                config.settingsLoaded();
+            }
+        }
+    }
 
     property bool dataReady: false
     property var rawSettings: ({})
+
+    readonly property real uiScale: {
+        let raw = rawSettings || {};
+        if (raw.general && raw.general.uiScale !== undefined) return raw.general.uiScale;
+        if (raw.uiScale !== undefined) return raw.uiScale;
+        return 1.0;
+    }
+
+    function setUiScale(val) {
+        setSetting("uiScale", val);
+    }
 
     signal settingsLoaded()
 

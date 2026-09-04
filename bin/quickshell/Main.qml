@@ -282,6 +282,49 @@ PanelWindow {
     }
 
     Timer {
+        id: welcomeCheckTimer
+        interval: 1200
+        running: true
+        repeat: false
+        onTriggered: {
+            welcomeChecker.running = true;
+        }
+    }
+
+    Process {
+        id: welcomeChecker
+        running: false
+        command: [
+            "bash", "-c",
+            "STATE_DIR=\"$HOME/.local/state\"; " +
+            "SHOW_FLAG=\"$STATE_DIR/lucretia_show_welcome\"; " +
+            "VER_FILE=\"$STATE_DIR/lucretia-version\"; " +
+            "SEEN_FILE=\"$STATE_DIR/lucretia_last_seen_version\"; " +
+            "CACHE_DIR=\"${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/guide\"; " +
+            "SHOULD_OPEN=0; " +
+            "if [ -f \"$SHOW_FLAG\" ]; then SHOULD_OPEN=1; rm -f \"$SHOW_FLAG\"; fi; " +
+            "CUR_VER=\"\"; [ -f \"$VER_FILE\" ] && CUR_VER=$(grep '^LOCAL_VERSION=' \"$VER_FILE\" 2>/dev/null | cut -d'\"' -f2); " +
+            "if [ -z \"$CUR_VER\" ] && [ -f \"$HOME/.config/niri/install.sh\" ]; then CUR_VER=$(grep '^DOTS_VERSION=' \"$HOME/.config/niri/install.sh\" 2>/dev/null | cut -d'\"' -f2); fi; " +
+            "LAST_SEEN=\"\"; [ -f \"$SEEN_FILE\" ] && LAST_SEEN=$(cat \"$SEEN_FILE\" 2>/dev/null); " +
+            "if [ ! -f \"$SEEN_FILE\" ]; then SHOULD_OPEN=1; " +
+            "elif [ -n \"$CUR_VER\" ] && [ \"$CUR_VER\" != \"$LAST_SEEN\" ]; then SHOULD_OPEN=1; fi; " +
+            "[ -z \"$CUR_VER\" ] && CUR_VER=\"1.0.0\"; " +
+            "echo \"$CUR_VER\" > \"$SEEN_FILE\"; " +
+            "if [ \"$SHOULD_OPEN\" -eq 1 ]; then " +
+            "  mkdir -p \"$CACHE_DIR\"; echo \"0\" > \"$CACHE_DIR/last_tab.txt\"; " +
+            "  echo \"OPEN_GUIDE\"; " +
+            "fi"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                if (this.text.indexOf("OPEN_GUIDE") !== -1) {
+                    masterWindow.switchWidget("guide", "welcome");
+                }
+            }
+        }
+    }
+
+    Timer {
         id: preloadStaggerTimer
         interval: 150
         repeat: true

@@ -9,11 +9,15 @@ import Quickshell.Io
 import Quickshell.Services.Mpris
 import "../"
 import "../reusables"
+import "../singletons"
 
 Item {
     id: root
 
     focus: true
+
+    implicitWidth: root.s(650)
+    implicitHeight: root.s(600)
 
     function s(val) { 
         return Scaler.s(val); 
@@ -618,7 +622,7 @@ Item {
                         id: blurA
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
-                        opacity: blurCrossfader.showingA && status === Image.Ready && root.hasTargetPlayer ? 0.9 : 0.0
+                        opacity: blurCrossfader.showingA && status === Image.Ready && root.hasTargetPlayer ? 0.35 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 800; easing.type: Easing.InOutQuad } }
                     }
 
@@ -626,7 +630,7 @@ Item {
                         id: blurB
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
-                        opacity: !blurCrossfader.showingA && status === Image.Ready && root.hasTargetPlayer ? 0.9 : 0.0
+                        opacity: !blurCrossfader.showingA && status === Image.Ready && root.hasTargetPlayer ? 0.35 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 800; easing.type: Easing.InOutQuad } }
                     }
 
@@ -1005,14 +1009,14 @@ Item {
                                                 radius: width / 2
                                                 color: ThemeBackend.surface2 || "#585b70"
                                                 border.width: 1
-                                                border.color: Qt.rgba(1, 1, 1, 0.18)
+                                                border.color: ThemeBackend.surface1
 
                                                 Rectangle {
                                                     anchors.centerIn: parent
                                                     width: parent.width * 0.38
                                                     height: width
                                                     radius: width / 2
-                                                    color: "#0d0e15"
+                                                    color: ThemeBackend.crust
                                                 }
                                             }
                                         }
@@ -1286,7 +1290,7 @@ Item {
                     Layout.preferredHeight: root.s(2)
                     Layout.topMargin: root.s(16)
                     Layout.bottomMargin: root.s(16)
-                    color: "#1AFFFFFF"
+                    color: ThemeBackend.surface1
                     radius: root.s(1)
 
                     opacity: root.introSeparator

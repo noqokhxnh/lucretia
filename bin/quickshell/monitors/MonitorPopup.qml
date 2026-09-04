@@ -4,6 +4,7 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../singletons"
 
 Item {
     id: window
@@ -22,28 +23,27 @@ Item {
     }
     
     // -------------------------------------------------------------------------
-    // COLORS (Dynamic Matugen Palette)
+    // COLORS (Dynamic Theme Backend Palette)
     // -------------------------------------------------------------------------
-    MatugenColors { id: _theme }
-    readonly property color base: _theme.base
-    readonly property color mantle: _theme.mantle
-    readonly property color crust: _theme.crust
-    readonly property color text: _theme.text
-    readonly property color subtext0: _theme.subtext0
-    readonly property color overlay0: _theme.overlay0
-    readonly property color surface0: _theme.surface0
-    readonly property color surface1: _theme.surface1
-    readonly property color surface2: _theme.surface2
+    readonly property color base: ThemeBackend.base
+    readonly property color mantle: ThemeBackend.mantle
+    readonly property color crust: ThemeBackend.crust
+    readonly property color text: ThemeBackend.text
+    readonly property color subtext0: ThemeBackend.subtext0
+    readonly property color overlay0: ThemeBackend.overlay0
+    readonly property color surface0: ThemeBackend.surface0
+    readonly property color surface1: ThemeBackend.surface1
+    readonly property color surface2: ThemeBackend.surface2
     
-    readonly property color mauve: _theme.mauve
-    readonly property color blue: _theme.blue
-    readonly property color pink: _theme.pink
-    readonly property color teal: _theme.teal
-    readonly property color yellow: _theme.yellow
-    readonly property color peach: _theme.peach
-    readonly property color green: _theme.green
-    readonly property color red: _theme.red
-    readonly property color sapphire: _theme.sapphire
+    readonly property color mauve: ThemeBackend.mauve
+    readonly property color blue: ThemeBackend.blue
+    readonly property color pink: ThemeBackend.pink
+    readonly property color teal: ThemeBackend.teal
+    readonly property color yellow: ThemeBackend.yellow
+    readonly property color peach: ThemeBackend.peach
+    readonly property color green: ThemeBackend.green
+    readonly property color red: ThemeBackend.red
+    readonly property color sapphire: ThemeBackend.sapphire
 
     // -------------------------------------------------------------------------
     // STATE & MATH

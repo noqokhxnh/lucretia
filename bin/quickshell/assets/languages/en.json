@@ -30,6 +30,7 @@
       "general": "General",
       "display": "Display",
       "bar": "Bar",
+      "keybinds": "Keybinds",
       "launcher": "Launcher",
       "theme": "Theme",
       "notifications": "Notifications",
@@ -38,6 +39,43 @@
       "tutorial": "Tutorial",
       "update": "Update",
       "about": "About"
+    },
+    "keybinds": {
+      "desc": "View, configure, and customize keyboard shortcuts",
+      "search_placeholder": "Search shortcuts...",
+      "add_shortcut": "Add Shortcut",
+      "section_combo": "Shortcut Combination",
+      "record_btn": "Record Combo",
+      "listening": "Press keys now...",
+      "no_combo": "No shortcut set",
+      "conflict": "Conflict with: ",
+      "modifiers": "Modifiers:",
+      "key": "Key:",
+      "section_action": "Action & Command",
+      "presets": "Presets:",
+      "add_title": "Add New Keybinding",
+      "edit_title": "Edit Keybinding: ",
+      "cancel": "Cancel",
+      "save": "Save & Apply",
+      "delete": "Delete",
+      "empty": "No shortcuts found",
+      "clear_search": "Clear search",
+      "delete_confirm_title": "Delete Shortcut",
+      "delete_confirm_msg": "Are you sure you want to remove this shortcut? This will update your Niri configuration immediately.",
+      "recording_hint": "Recording... Press combination (Esc to cancel)",
+      "toast_saved": "Shortcut saved and applied live!",
+      "toast_deleted": "Shortcut removed successfully!",
+      "undo": "Undo",
+      "restore_backup": "Restore Backup",
+      "toast_restored": "Restored previous shortcuts configuration!",
+      "tested": "Executed: ",
+      "cloned": "Shortcut copied! Pick a key combination.",
+      "duplicate": "Duplicate",
+      "test_run": "Test",
+      "popular_keys": "Popular Keys:",
+      "validation_key": "Please choose or record a key name!",
+      "validation_action": "Please enter an action command!",
+      "all_categories": "All"
     },
     "launcher": {
       "position": {
@@ -61,9 +99,9 @@
         "desc": "Command prefix used for > executions (e.g. kitty -e, alacritty -e, foot -e)"
       },
       "smart_ranking": {
-	"title": "Smart sorting of items in launcher",
-	"desc": "Sort apps based on usage and amount of time spent in them"			
-      },			
+        "title": "Smart sorting of items in launcher",
+        "desc": "Sort apps based on usage and amount of time spent in them"
+      },
       "test": "Open launcher"
     },
     "notifications": {
@@ -834,7 +872,7 @@
       "digital": "Digital",
       "analog": "Analog",
       "full": "Full",
-      "minimal": "Minimal",			
+      "minimal": "Minimal",
       "round": "Round",
       "compact": "Compact",
       "rect": "Rect",

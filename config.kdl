@@ -146,7 +146,7 @@ binds {
     Super+A { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle applauncher"; }
     Super+Shift+I { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle settings"; }
     Super+Shift+Q { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle music"; }
-    Super+Shift+B { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle battery"; }
+    Super+Shift+B { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle system"; }
     Super+Shift+W { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle wallpaper"; }
     Super+Shift+C { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle calendar"; }
     Super+C { spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle photobooth"; }

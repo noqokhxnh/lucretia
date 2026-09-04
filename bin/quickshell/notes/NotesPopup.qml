@@ -4,21 +4,27 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import "../"
+import "../singletons"
 
 Item {
     id: window
     focus: true
 
-    MatugenColors { id: _theme }
-    
-    readonly property color base: _theme.base
-    readonly property color text: _theme.text
-    readonly property color crust: _theme.crust
-    readonly property color surface0: _theme.surface0
-    readonly property color surface1: _theme.surface1
-    readonly property color surface2: _theme.surface2
-    readonly property color mauve: _theme.mauve || "#cba6f7"
-    readonly property color red: _theme.red || "#f38ba8"
+    implicitWidth: window.s(920)
+    implicitHeight: window.s(640)
+
+    function s(val) {
+        return Scaler.s(val);
+    }
+
+    readonly property color base: ThemeBackend.base
+    readonly property color text: ThemeBackend.text
+    readonly property color crust: ThemeBackend.crust
+    readonly property color surface0: ThemeBackend.surface0
+    readonly property color surface1: ThemeBackend.surface1
+    readonly property color surface2: ThemeBackend.surface2
+    readonly property color mauve: ThemeBackend.mauve
+    readonly property color red: ThemeBackend.red
 
     property string backendScript: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/notes/notes_backend"
     property string tempFile: Quickshell.env("HOME") + "/.cache/qs_note_current.txt"
@@ -187,15 +193,14 @@ Item {
 
     Rectangle {
         id: card
-        width: parent.width
-        height: parent.height
-        radius: 16
+        anchors.fill: parent
+        radius: window.s(16)
         color: window.base
         border.color: window.surface1
         border.width: 1
         clip: true
 
-        transform: Translate { y: (window.introPhase - 1) * 60 }
+        transform: Translate { y: (window.introPhase - 1) * window.s(60) }
         opacity: window.introPhase
 
         OrbitBackground {
@@ -211,7 +216,7 @@ Item {
 
             // Sidebar
             Rectangle {
-                Layout.preferredWidth: 300
+                Layout.preferredWidth: window.s(280)
                 Layout.fillHeight: true
                 color: window.crust
 
@@ -222,18 +227,18 @@ Item {
                     // Sidebar Header — draggable title bar with pin & create
                     Rectangle {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: 70
+                        Layout.preferredHeight: window.s(60)
                         color: dragHandle.containsMouse || dragHandle.pressed ? window.surface0 : "transparent"
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         // Title text
                         Text {
                             anchors.left: parent.left
-                            anchors.leftMargin: 24
+                            anchors.leftMargin: window.s(20)
                             anchors.verticalCenter: parent.verticalCenter
                             text: "My Notes"
                             font.family: "JetBrains Mono"
-                            font.pixelSize: 20
+                            font.pixelSize: window.s(18)
                             font.weight: Font.Bold
                             color: window.mauve
                         }
@@ -242,11 +247,11 @@ Item {
                         Rectangle {
                             id: pinBtn
                             anchors.right: createBtn.left
-                            anchors.rightMargin: 8
+                            anchors.rightMargin: window.s(8)
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 34
-                            height: 34
-                            radius: 10
+                            width: window.s(32)
+                            height: window.s(32)
+                            radius: window.s(8)
                             color: pinMa.containsMouse ? (window.isPinned ? window.mauve : window.surface1) : (window.isPinned ? window.mauve : "transparent")
                             Behavior on color { ColorAnimation { duration: 200 } }
                             opacity: window.isPinned ? 1.0 : (pinMa.containsMouse ? 0.8 : 0.35)
@@ -256,7 +261,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: window.isPinned ? "󰐃" : "󰐐" // filled pin / unfilled pin (Nerd Font)
                                 font.family: "Iosevka Nerd Font"
-                                font.pixelSize: 16
+                                font.pixelSize: window.s(15)
                                 color: pinMa.containsMouse ? window.crust : window.text
                             }
 
@@ -274,11 +279,11 @@ Item {
                         Rectangle {
                             id: createBtn
                             anchors.right: parent.right
-                            anchors.rightMargin: 20
+                            anchors.rightMargin: window.s(16)
                             anchors.verticalCenter: parent.verticalCenter
-                            width: 34
-                            height: 34
-                            radius: 10
+                            width: window.s(32)
+                            height: window.s(32)
+                            radius: window.s(8)
                             color: createMa.containsMouse ? window.mauve : window.surface1
                             Behavior on color { ColorAnimation { duration: 200 } }
 
@@ -286,7 +291,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: "󰐙" // Nerd font plus icon
                                 font.family: "Iosevka Nerd Font"
-                                font.pixelSize: 18
+                                font.pixelSize: window.s(16)
                                 font.weight: Font.Bold
                                 color: createMa.containsMouse ? window.crust : window.text
                             }
@@ -303,7 +308,7 @@ Item {
                         MouseArea {
                             id: dragHandle
                             anchors.fill: parent
-                            anchors.rightMargin: 110 // leave room for pin + create buttons
+                            anchors.rightMargin: window.s(96) // leave room for pin + create buttons
                             hoverEnabled: true
                             cursorShape: Qt.SizeAllCursor
 
@@ -322,8 +327,8 @@ Item {
                                 let gp = mapToItem(null, mouse.x, mouse.y);
                                 let dx = gp.x - lastGx;
                                 let dy = gp.y - lastGy;
-                                masterWindow.animX += dx;
-                                masterWindow.animY += dy;
+                                masterWindow._animX += dx;
+                                masterWindow._animY += dy;
                                 lastGx = gp.x;
                                 lastGy = gp.y;
                             }
@@ -341,15 +346,15 @@ Item {
                         Layout.fillHeight: true
                         clip: true
                         model: notesModel
-                        spacing: 8
-                        topMargin: 10
-                        bottomMargin: 10
+                        spacing: window.s(8)
+                        topMargin: window.s(10)
+                        bottomMargin: window.s(10)
 
                         delegate: Rectangle {
-                            width: listView.width - 32
+                            width: listView.width - window.s(24)
                             anchors.horizontalCenter: listView.horizontalCenter
-                            height: 80
-                            radius: 14
+                            height: window.s(72)
+                            radius: window.s(12)
                             color: window.currentNoteId === model.id ? window.surface1 : (ma.containsMouse ? window.surface0 : "transparent")
                             border.color: window.currentNoteId === model.id ? window.mauve : "transparent"
                             border.width: 1
@@ -359,15 +364,15 @@ Item {
                             Column {
                                 anchors.left: parent.left
                                 anchors.right: deleteBtn.left
-                                anchors.margins: 16
+                                anchors.margins: window.s(12)
                                 anchors.verticalCenter: parent.verticalCenter
-                                spacing: 6
+                                spacing: window.s(4)
 
                                 Text {
                                     width: parent.width
                                     text: model.content.trim() === "" ? "Untitled Note" : model.content.split('\n')[0]
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: 15
+                                    font.pixelSize: window.s(14)
                                     font.weight: window.currentNoteId === model.id ? Font.Bold : Font.Normal
                                     color: window.currentNoteId === model.id ? window.mauve : window.text
                                     elide: Text.ElideRight
@@ -380,7 +385,7 @@ Item {
                                         return "No additional text";
                                     }
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: 12
+                                    font.pixelSize: window.s(11.5)
                                     color: window.surface2
                                     elide: Text.ElideRight
                                 }
@@ -390,11 +395,11 @@ Item {
                             Rectangle {
                                 id: deleteBtn
                                 anchors.right: parent.right
-                                anchors.rightMargin: 15
+                                anchors.rightMargin: window.s(10)
                                 anchors.verticalCenter: parent.verticalCenter
-                                width: 24
-                                height: 24
-                                radius: 6
+                                width: window.s(22)
+                                height: window.s(22)
+                                radius: window.s(6)
                                 color: "transparent"
                                 opacity: ma.containsMouse || window.currentNoteId === model.id ? 1 : 0
                                 Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -403,7 +408,7 @@ Item {
                                     anchors.centerIn: parent
                                     text: "󰆴" // Nerd font trash icon
                                     font.family: "Iosevka Nerd Font"
-                                    font.pixelSize: 14
+                                    font.pixelSize: window.s(13)
                                     color: delMa.containsMouse ? window.red : window.surface2
                                 }
 
@@ -420,7 +425,7 @@ Item {
                             MouseArea {
                                 id: ma
                                 anchors.fill: parent
-                                anchors.rightMargin: 40 // keep delete button clickable
+                                anchors.rightMargin: window.s(36) // keep delete button clickable
                                 hoverEnabled: true
                                 onClicked: {
                                     if (window.currentNoteId !== model.id) {
@@ -440,88 +445,89 @@ Item {
                 color: window.surface1
             }
 
-                // Main Editor
+            // Main Editor
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.fillHeight: true
+                color: "transparent"
+
                 Rectangle {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    color: "transparent"
+                    anchors.fill: parent
+                    anchors.margins: window.s(16)
+                    radius: window.s(16)
+                    color: window.surface0
+                    border.color: window.surface1
+                    border.width: 1
 
-                    Rectangle {
+                    ScrollView {
                         anchors.fill: parent
-                        anchors.margins: 24
-                        radius: 18
-                        color: window.surface0
-                        border.color: window.surface1
-                        border.width: 1
-
-                        ScrollView {
-                            anchors.fill: parent
-                            clip: true
+                        anchors.bottomMargin: window.s(28)
+                        clip: true
+                        
+                        TextArea {
+                            id: textArea
+                            text: ""
+                            color: window.text
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: window.s(15)
+                            wrapMode: TextEdit.Wrap
+                            padding: window.s(18)
+                            background: Item {}
+                            enabled: window.currentNoteId !== ""
                             
-                            TextArea {
-                                id: textArea
-                                text: ""
-                                color: window.text
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 16
-                                wrapMode: TextEdit.Wrap
-                                padding: 24
-                                background: Item {}
-                                enabled: window.currentNoteId !== ""
-                                
-                                placeholderText: window.currentNoteId !== "" ? "Start writing your thoughts..." : "Select a note to view or edit"
-                                placeholderTextColor: window.surface2
+                            placeholderText: window.currentNoteId !== "" ? "Start writing your thoughts..." : "Select a note to view or edit"
+                            placeholderTextColor: window.surface2
 
-                                onTextChanged: {
-                                    if (window.isProgrammaticTextChange) return;
-                                    if (window.currentNoteId !== "" && textArea.focus) {
-                                        window.isDirty = true;
-                                        saveTimer.restart();
-                                    }
+                            onTextChanged: {
+                                if (window.isProgrammaticTextChange) return;
+                                if (window.currentNoteId !== "" && textArea.focus) {
+                                    window.isDirty = true;
+                                    saveTimer.restart();
                                 }
+                            }
 
-                                Keys.onEscapePressed: {
-                                    if (window.isPinned) {
-                                        window.isMinimized = true;
-                                        // Minimize without clearing the stack (keeps loaded for restore)
-                                        let shellPath = Quickshell.env("HOME") + "/.config/niri/bin/quickshell/Shell.qml";
-                                        Quickshell.execDetached(["quickshell", "-p", shellPath, "ipc", "call", "main", "hideWidget", ""]);
-                                    } else {
-                                        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
-                                    }
-                                    event.accepted = true;
+                            Keys.onEscapePressed: {
+                                if (window.isPinned) {
+                                    window.isMinimized = true;
+                                    // Minimize without clearing the stack (keeps loaded for restore)
+                                    let shellPath = Quickshell.env("HOME") + "/.config/niri/bin/quickshell/Shell.qml";
+                                    Quickshell.execDetached(["quickshell", "-p", shellPath, "ipc", "call", "main", "hideWidget", ""]);
+                                } else {
+                                    Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
                                 }
+                                event.accepted = true;
                             }
                         }
+                    }
 
-                        // Bottom bar: pinned badge + saving indicator
-                        Row {
-                            anchors.bottom: parent.bottom
-                            anchors.right: parent.right
-                            anchors.margins: 10
-                            spacing: 12
+                    // Bottom bar: pinned badge + saving indicator
+                    Row {
+                        anchors.bottom: parent.bottom
+                        anchors.right: parent.right
+                        anchors.margins: window.s(8)
+                        spacing: window.s(10)
 
-                            // Pinned badge
-                            Text {
-                                text: "󰐃 Pinned"
-                                font.family: "Iosevka Nerd Font"
-                                font.pixelSize: 12
-                                color: window.mauve
-                                visible: window.isPinned
-                                opacity: window.currentNoteId !== "" ? 1 : 0
-                            }
+                        // Pinned badge
+                        Text {
+                            text: "󰐃 Pinned"
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: window.s(11.5)
+                            color: window.mauve
+                            visible: window.isPinned
+                            opacity: window.currentNoteId !== "" ? 1 : 0
+                        }
 
-                            // Saving indicator
-                            Text {
-                                text: window.isSaving ? "Saving..." : "Saved"
-                                font.family: "JetBrains Mono"
-                                font.pixelSize: 12
-                                color: window.surface2
-                                opacity: window.currentNoteId !== "" ? 1 : 0
-                            }
+                        // Saving indicator
+                        Text {
+                            text: window.isSaving ? "Saving..." : "Saved"
+                            font.family: "JetBrains Mono"
+                            font.pixelSize: window.s(11.5)
+                            color: window.surface2
+                            opacity: window.currentNoteId !== "" ? 1 : 0
                         }
                     }
                 }
             }
         }
+    }
 }
