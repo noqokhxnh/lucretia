@@ -60,120 +60,103 @@ Item {
             antialiasing: true
         }
 
-        // Soft center glow
-        Rectangle {
-            anchors.centerIn: parent
-            width: parent.width * 0.46
-            height: width
-            radius: width / 2
-            color: root.accentColor
-            opacity: 0.06
-            antialiasing: true
-        }
-
-        // Concentric Content Stack (strictly bounded within safe circle area)
+        // Concentric Content Stack
         ColumnLayout {
             anchors.centerIn: parent
             width: parent.width * 0.72
             height: parent.height * 0.72
             spacing: 0
 
-            // 1. Top Section: Solar Date & Day of Week Badge
+            // 1. Top Section: Solar Day of Week & Month Tag
             RowLayout {
                 Layout.alignment: Qt.AlignHCenter
                 spacing: 4
 
                 Rectangle {
                     implicitHeight: Math.max(14, Math.min(22, roundBody.width * 0.09))
-                    implicitWidth: topDateText.implicitWidth + Math.max(8, roundBody.width * 0.05)
+                    implicitWidth: topDateText.implicitWidth + Math.max(10, roundBody.width * 0.06)
                     radius: height / 2
                     color: Qt.alpha(ThemeBackend.surface1, 0.7)
 
                     Text {
                         id: topDateText
                         anchors.centerIn: parent
-                        text: DateTime.shortDate + " " + DateTime.dayNameShort
+                        text: DateTime.dayNameShort.toUpperCase() + ", " + Qt.formatDateTime(DateTime.now, "MMM yyyy").toUpperCase()
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(7.5, Math.min(11, roundBody.width * 0.055))
-                        font.weight: Font.Bold
+                        font.pixelSize: Math.max(7.5, Math.min(10.5, roundBody.width * 0.052))
+                        font.weight: Font.Black
+                        font.letterSpacing: 0.4
                         color: ThemeBackend.subtext0
                     }
                 }
             }
 
-            // 2. Center Section: Moon Phase & Massive Lunar Numeral
+            // 2. Center Hero: Solar Day Number (Primary)
             Item {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
 
-                ColumnLayout {
+                Text {
                     anchors.centerIn: parent
-                    spacing: 0
-
-                    // Moon Phase Icon
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: Lunar.moonPhaseIcon
-                        font.family: "Iosevka Nerd Font"
-                        font.pixelSize: Math.max(12, Math.min(26, roundBody.width * 0.12))
-                        color: root.accentColor
-                    }
-
-                    // Bold Lunar Day
-                    Text {
-                        Layout.alignment: Qt.AlignHCenter
-                        text: Lunar.lunarDay < 10 ? ("0" + Lunar.lunarDay) : String(Lunar.lunarDay)
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(18, Math.min(64, roundBody.width * 0.32))
-                        font.weight: Font.Black
-                        color: root.accentColor
-                        horizontalAlignment: Text.AlignHCenter
-                        verticalAlignment: Text.AlignVCenter
-                    }
+                    text: DateTime.day
+                    font.family: ThemeBackend.fontFamily
+                    font.pixelSize: Math.max(22, Math.min(74, roundBody.width * 0.36))
+                    font.weight: Font.Black
+                    color: ThemeBackend.text
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
                 }
             }
 
-            // 3. Bottom Section: Lunar Month & Can Chi Year
+            // 3. Bottom Section: Lunar Date (Secondary, subtle & elegant)
             ColumnLayout {
                 Layout.alignment: Qt.AlignHCenter
                 Layout.fillWidth: true
                 spacing: 2
 
-                // Special day badge (e.g. "MÙNG 1", "RẰM", hoặc Festival)
+                // Lunar Date Badge (e.g. 󰽢 Âm: 23/7 hoặc MÙNG 1 / RẰM)
                 Rectangle {
-                    visible: root.isSpecialDay
                     Layout.alignment: Qt.AlignHCenter
-                    implicitHeight: Math.max(13, Math.min(20, roundBody.width * 0.08))
-                    implicitWidth: statusText.implicitWidth + Math.max(8, roundBody.width * 0.05)
+                    implicitHeight: Math.max(14, Math.min(22, roundBody.width * 0.09))
+                    implicitWidth: lunarPillText.implicitWidth + Math.max(10, roundBody.width * 0.06)
                     radius: height / 2
-                    color: Qt.alpha(root.accentColor, 0.2)
-                    border.color: Qt.alpha(root.accentColor, 0.4)
+                    color: Qt.alpha(root.accentColor, 0.15)
+                    border.color: Qt.alpha(root.accentColor, 0.35)
                     border.width: 1
 
-                    Text {
-                        id: statusText
+                    RowLayout {
+                        id: lunarPillText
                         anchors.centerIn: parent
-                        text: {
-                            if (Lunar.lunarDay === 15) return "RẰM";
-                            if (Lunar.lunarDay === 1) return "MÙNG 1";
-                            if (Lunar.festival !== "") return Lunar.festival;
-                            return "";
+                        spacing: 4
+
+                        Text {
+                            text: Lunar.moonPhaseIcon
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: Math.max(8, Math.min(12, roundBody.width * 0.055))
+                            color: root.accentColor
                         }
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(7, Math.min(10, roundBody.width * 0.048))
-                        font.weight: Font.Black
-                        color: root.accentColor
-                        elide: Text.ElideRight
+
+                        Text {
+                            text: {
+                                if (Lunar.lunarDay === 15) return "RẰM 15 ÂM";
+                                if (Lunar.lunarDay === 1) return "MÙNG 1 ÂM";
+                                return "ÂM " + Lunar.lunarDay + "/" + Lunar.lunarMonth;
+                            }
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Math.max(7.5, Math.min(10.5, roundBody.width * 0.052))
+                            font.weight: Font.Black
+                            color: root.accentColor
+                        }
                     }
                 }
 
-                // Month Name & Can Chi Year
+                // Can Chi Year
                 Text {
                     Layout.fillWidth: true
-                    text: Lunar.monthName + (Lunar.canChiYear !== "" ? (" • " + Lunar.canChiYear) : "")
+                    text: "Năm " + Lunar.canChiYear + (Lunar.animal !== "" ? (" (" + Lunar.animal + ")") : "")
                     font.family: ThemeBackend.fontFamily
-                    font.pixelSize: Math.max(7, Math.min(10.5, roundBody.width * 0.05))
-                    font.weight: Font.Bold
+                    font.pixelSize: Math.max(7, Math.min(10, roundBody.width * 0.046))
+                    font.weight: Font.Medium
                     color: ThemeBackend.subtext0
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight

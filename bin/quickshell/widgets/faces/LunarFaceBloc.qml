@@ -124,18 +124,18 @@ Item {
                 Layout.margins: Math.max(10, Math.min(20, 14 * root.sMin))
                 spacing: Math.max(6, Math.min(14, 10 * root.sH))
 
-                // 2. Hero Solar Day (Large central numeral)
+                // 2. Hero Solar Day (Large central numeral - Primary)
                 Item {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    Layout.minimumHeight: Math.max(65, 95 * root.sH)
+                    Layout.minimumHeight: Math.max(75, 110 * root.sH)
 
                     Text {
                         id: solarDayNumber
                         anchors.centerIn: parent
                         text: DateTime.day
                         font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.min(parent.width * 0.78, parent.height * 0.95)
+                        font.pixelSize: Math.min(parent.width * 0.82, parent.height * 0.96)
                         font.weight: Font.Black
                         color: root.isSpecialDay ? root.accentColor : ThemeBackend.text
                         horizontalAlignment: Text.AlignHCenter
@@ -147,7 +147,7 @@ Item {
                 Rectangle {
                     visible: Lunar.festival !== ""
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(22, 26 * root.sH)
+                    implicitHeight: Math.max(20, 24 * root.sH)
                     radius: Math.max(4, ThemeBackend.borderRadius - 2)
                     color: Qt.alpha(root.accentColor, 0.16)
                     border.color: Qt.alpha(root.accentColor, 0.45)
@@ -179,23 +179,23 @@ Item {
                     }
                 }
 
-                // 4. Lunar Date Core Card (Elevated Focus Area)
+                // 4. Lunar Date Card (Secondary - Nhỏ & Tinh Tế)
                 Rectangle {
                     Layout.fillWidth: true
-                    implicitHeight: Math.max(56, Math.min(84, 68 * root.sH))
+                    implicitHeight: Math.max(50, Math.min(76, 62 * root.sH))
                     radius: Math.max(6, ThemeBackend.borderRadius - 2)
                     color: ThemeBackend.surface1
-                    border.color: Qt.alpha(root.accentColor, 0.28)
+                    border.color: Qt.alpha(root.accentColor, 0.25)
                     border.width: 1
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.margins: Math.max(8, 10 * root.sMin)
-                        spacing: Math.max(8, 12 * root.sW)
+                        anchors.margins: Math.max(6, 8 * root.sMin)
+                        spacing: Math.max(8, 10 * root.sW)
 
                         // Moon Phase Icon Badge
                         Rectangle {
-                            implicitWidth: Math.max(34, Math.min(46, 40 * root.sMin))
+                            implicitWidth: Math.max(30, Math.min(40, 34 * root.sMin))
                             implicitHeight: implicitWidth
                             radius: implicitWidth / 2
                             color: Qt.alpha(root.accentColor, 0.15)
@@ -206,7 +206,7 @@ Item {
                                 anchors.centerIn: parent
                                 text: Lunar.moonPhaseIcon
                                 font.family: "Iosevka Nerd Font"
-                                font.pixelSize: Math.max(16, Math.min(22, 19 * root.sMin))
+                                font.pixelSize: Math.max(13, Math.min(18, 16 * root.sMin))
                                 color: root.accentColor
                             }
                         }
@@ -214,21 +214,17 @@ Item {
                         // Lunar Date & Can Chi Information
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 2
+                            spacing: 1
 
                             // Lunar day & month name
                             RowLayout {
                                 Layout.fillWidth: true
-                                spacing: 6
+                                spacing: 4
 
                                 Text {
-                                    text: {
-                                        if (Lunar.lunarDay === 1) return "MÙNG 1";
-                                        if (Lunar.lunarDay === 15) return "RẰM 15";
-                                        return "NGÀY " + Lunar.lunarDay;
-                                    }
+                                    text: "ÂM: " + (Lunar.lunarDay === 1 ? "MÙNG 1" : (Lunar.lunarDay === 15 ? "RẰM 15" : "NGÀY " + Lunar.lunarDay))
                                     font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Math.max(12, Math.min(16, 14 * root.sMin))
+                                    font.pixelSize: Math.max(10.5, Math.min(14, 12 * root.sMin))
                                     font.weight: Font.Black
                                     color: root.isSpecialDay ? root.accentColor : ThemeBackend.text
                                 }
@@ -236,9 +232,9 @@ Item {
                                 Text {
                                     text: "• " + Lunar.monthName.toUpperCase() + (Lunar.isLeap ? " (NHUẬN)" : "")
                                     font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: Math.max(10.5, Math.min(14, 12.5 * root.sMin))
+                                    font.pixelSize: Math.max(9.5, Math.min(12.5, 11 * root.sMin))
                                     font.weight: Font.Bold
-                                    color: ThemeBackend.text
+                                    color: ThemeBackend.subtext0
                                     elide: Text.ElideRight
                                     Layout.fillWidth: true
                                 }

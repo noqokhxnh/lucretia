@@ -57,13 +57,13 @@ Item {
                 anchors.fill: parent
                 spacing: Math.max(8, Math.min(16, 12 * root.sW))
 
-                // Left Hero Tile: Lunar Day + Moon Phase
+                // Left Hero Tile: Solar Day (Primary)
                 Rectangle {
                     Layout.fillHeight: true
                     Layout.preferredWidth: Math.max(parent.height * 0.85, 68 * root.sMin)
                     radius: Math.max(6, ThemeBackend.borderRadius - 2)
                     color: ThemeBackend.surface1
-                    border.color: Qt.alpha(root.accentColor, 0.35)
+                    border.color: Qt.alpha(ThemeBackend.surface2, 0.6)
                     border.width: 1
 
                     ColumnLayout {
@@ -71,49 +71,50 @@ Item {
                         anchors.margins: Math.max(4, 6 * root.sMin)
                         spacing: 1
 
-                        // Moon Phase Icon at top of tile
+                        // Day of week at top of tile
                         Text {
                             Layout.alignment: Qt.AlignHCenter
-                            text: Lunar.moonPhaseIcon
-                            font.family: "Iosevka Nerd Font"
-                            font.pixelSize: Math.max(11, Math.min(16, 13 * root.sMin))
-                            color: root.accentColor
+                            text: DateTime.dayNameShort.toUpperCase()
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Math.max(8.5, Math.min(12, 10 * root.sMin))
+                            font.weight: Font.Black
+                            color: {
+                                let dayOfWeek = DateTime.now.getDay();
+                                if (dayOfWeek === 0) return ThemeBackend.peach; // Sunday
+                                return ThemeBackend.subtext0;
+                            }
                         }
 
-                        // Hero Lunar Day
+                        // Hero Solar Day
                         Text {
                             Layout.fillWidth: true
                             Layout.fillHeight: true
-                            text: Lunar.lunarDay < 10 ? ("0" + Lunar.lunarDay) : String(Lunar.lunarDay)
+                            text: DateTime.day
                             font.family: ThemeBackend.fontFamily
-                            font.pixelSize: Math.min(parent.width * 0.7, parent.height * 0.52)
+                            font.pixelSize: Math.min(parent.width * 0.72, parent.height * 0.54)
                             font.weight: Font.Black
-                            color: root.accentColor
+                            color: ThemeBackend.text
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
 
-                        // Day label (e.g. MÙNG 1 / RẰM / NGÀY 23)
+                        // Month pill at bottom of tile
                         Rectangle {
                             Layout.alignment: Qt.AlignHCenter
                             implicitHeight: Math.max(14, Math.min(20, 16 * root.sH))
-                            implicitWidth: Math.min(parent.width - 4, tileLabelText.implicitWidth + 10)
+                            implicitWidth: Math.min(parent.width - 4, tileMonthText.implicitWidth + 10)
                             radius: height / 2
-                            color: root.isSpecialDay ? Qt.alpha(root.accentColor, 0.2) : Qt.alpha(ThemeBackend.surface2, 0.7)
+                            color: Qt.alpha(ThemeBackend.surface2, 0.7)
 
                             Text {
-                                id: tileLabelText
+                                id: tileMonthText
                                 anchors.centerIn: parent
                                 width: parent.width - 4
-                                text: {
-                                    if (Lunar.lunarDay === 15) return "RẰM";
-                                    if (Lunar.lunarDay === 1) return "MÙNG 1";
-                                    return "NGÀY " + Lunar.lunarDay;
-                                }
+                                text: "THG " + (DateTime.now.getMonth() + 1)
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: Math.max(7.5, Math.min(10, 8.5 * root.sMin))
                                 font.weight: Font.Black
-                                color: root.isSpecialDay ? root.accentColor : ThemeBackend.text
+                                color: ThemeBackend.text
                                 horizontalAlignment: Text.AlignHCenter
                                 elide: Text.ElideRight
                             }
@@ -121,13 +122,13 @@ Item {
                     }
                 }
 
-                // Right Panel: Solar Info, Can Chi & Badges
+                // Right Panel: Solar Full Date, Lunar Date & Can Chi Badges
                 ColumnLayout {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     spacing: Math.max(2, Math.min(6, 4 * root.sH))
 
-                    // Row 1: Solar Date formatted cleanly
+                    // Row 1: Solar Date (Primary)
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 5
@@ -142,7 +143,7 @@ Item {
 
                         Text {
                             Layout.fillWidth: true
-                            text: DateTime.dayName + ", " + DateTime.shortDate + "/" + DateTime.year
+                            text: DateTime.dayName + ", " + Qt.formatDateTime(DateTime.now, "dd/MM/yyyy")
                             font.family: ThemeBackend.fontFamily
                             font.pixelSize: Math.max(11, Math.min(14.5, 12.5 * root.sMin))
                             font.weight: Font.Black
@@ -152,35 +153,48 @@ Item {
                         }
                     }
 
-                    // Row 2: Lunar Month Name & Year Can Chi
-                    Text {
+                    // Row 2: Lunar Date (Secondary, prominent but smaller)
+                    RowLayout {
                         Layout.fillWidth: true
-                        text: Lunar.monthName + (Lunar.canChiYear !== "" ? (" • Năm " + Lunar.canChiYear) : "")
-                        font.family: ThemeBackend.fontFamily
-                        font.pixelSize: Math.max(9.5, Math.min(12.5, 11 * root.sMin))
-                        font.weight: Font.DemiBold
-                        color: ThemeBackend.subtext0
-                        elide: Text.ElideRight
+                        spacing: 5
+
+                        Text {
+                            text: Lunar.moonPhaseIcon
+                            font.family: "Iosevka Nerd Font"
+                            font.pixelSize: Math.max(10, Math.min(13, 11 * root.sMin))
+                            color: root.accentColor
+                            Layout.alignment: Qt.AlignVCenter
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: "Âm lịch: " + (Lunar.lunarDay === 1 ? "Mùng 1" : (Lunar.lunarDay === 15 ? "Rằm (15)" : "Ngày " + Lunar.lunarDay)) + " " + Lunar.monthName + (Lunar.isLeap ? " (Nhuận)" : "")
+                            font.family: ThemeBackend.fontFamily
+                            font.pixelSize: Math.max(9.5, Math.min(12.5, 11 * root.sMin))
+                            font.weight: Font.Bold
+                            color: root.isSpecialDay ? root.accentColor : ThemeBackend.mauve
+                            elide: Text.ElideRight
+                        }
                     }
 
-                    // Row 3: Badges Row (Can Chi Day, Giờ Can Chi, Moon Phase / Festival)
+                    // Row 3: Can Chi Badges (Năm, Ngày, Giờ)
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 4
 
-                        // Can Chi Day badge
+                        // Can Chi Năm badge
                         Rectangle {
                             implicitHeight: Math.max(16, Math.min(22, 19 * root.sH))
-                            implicitWidth: dayCanChiText.implicitWidth + 12
+                            implicitWidth: yearCanChiText.implicitWidth + 12
                             radius: height / 2
                             color: Qt.alpha(ThemeBackend.surface1, 0.9)
                             border.color: Qt.alpha(ThemeBackend.surface2, 0.6)
                             border.width: 1
 
                             Text {
-                                id: dayCanChiText
+                                id: yearCanChiText
                                 anchors.centerIn: parent
-                                text: "Ngày " + Lunar.canChiDay
+                                text: "Năm " + Lunar.canChiYear
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: Math.max(8, Math.min(10, 9 * root.sMin))
                                 font.weight: Font.Bold
@@ -188,20 +202,19 @@ Item {
                             }
                         }
 
-                        // Can Chi Giờ badge
+                        // Can Chi Day badge
                         Rectangle {
-                            visible: Lunar.canChiHour !== ""
                             implicitHeight: Math.max(16, Math.min(22, 19 * root.sH))
-                            implicitWidth: hourCanChiText.implicitWidth + 12
+                            implicitWidth: dayCanChiText.implicitWidth + 12
                             radius: height / 2
                             color: Qt.alpha(ThemeBackend.surface1, 0.7)
                             border.color: Qt.alpha(ThemeBackend.surface2, 0.4)
                             border.width: 1
 
                             Text {
-                                id: hourCanChiText
+                                id: dayCanChiText
                                 anchors.centerIn: parent
-                                text: "Giờ " + Lunar.canChiHour
+                                text: "Ngày " + Lunar.canChiDay
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: Math.max(8, Math.min(10, 9 * root.sMin))
                                 font.weight: Font.DemiBold
