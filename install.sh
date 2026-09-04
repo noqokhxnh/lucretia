@@ -1483,6 +1483,10 @@ jq -n --slurpfile local "$OLD_JSON" --slurpfile up "$UPSTREAM_JSON" \
 
 printf "  -> Configuration merged %-23s ${C_GREEN}[ OK ]${RESET}\n" ""
 
+# Ensure ~/.config/lucretia/settings.json is synchronized via symlink
+mkdir -p "$HOME/.config/lucretia"
+ln -sf "$SETTINGS_FILE" "$HOME/.config/lucretia/settings.json"
+
 # ------------------------------------------------------------------------------
 # 5.5. WEATHER ENVIRONMENT PERSISTENCE
 # ------------------------------------------------------------------------------
@@ -1906,6 +1910,14 @@ ENABLE_TELEMETRY="$ENABLE_TELEMETRY"
 EOF
 
 printf "  → Configuration and version state saved %-7s ${C_GREEN}[ OK ]${RESET}\n" ""
+
+# Set flag to open welcome / guide once on first install or update
+mkdir -p "$HOME/.local/state"
+touch "$HOME/.local/state/lucretia_show_welcome"
+
+if pgrep -x quickshell >/dev/null 2>&1; then
+    (sleep 1 && bash "$TARGET_CONFIG_DIR/bin/qs_manager.sh" open guide welcome) &
+fi
 
 # ==============================================================================
 # Final Output & Success Summary

@@ -64,9 +64,9 @@ Item {
     }
 
     property var defaultModuleSettings: {
-        "left": ["left", "workspaces", "focus"],
-        "center": ["timedate", "info", "weather", "media", "vis"],
-        "right": ["tray", "sysmon", "kb", "wifi", "bt", "vol", "bat"]
+        "left": ["left", "vis", "workspaces", "media"],
+        "center": ["timedate", "info", "weather"],
+        "right": [["tray", "wifi", "bt", "vol", "bat"]]
     }
 
     function parseModuleSettings(ms) {
@@ -125,10 +125,18 @@ Item {
             return out;
         }
 
+        let fl = filterCenter(l);
+        let fc = filterCenter(c);
+        let fr = filterCenter(r);
+
+        if (!fl.length && !fc.length && !fr.length) {
+            return defaultModuleSettings;
+        }
+
         return {
-            "left": filterCenter(l),
-            "center": filterCenter(c),
-            "right": filterCenter(r)
+            "left": fl,
+            "center": fc,
+            "right": fr
         };
     }
 
