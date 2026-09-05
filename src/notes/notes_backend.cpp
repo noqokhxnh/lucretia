@@ -104,6 +104,24 @@ int main(int argc, char* argv[]) {
             save_notes(path, notes);
         }
 
+    } else if (op == "update_stdin") {
+        if (argc < 3) return 1;
+        std::string note_id = argv[2];
+        std::string content((std::istreambuf_iterator<char>(std::cin)), std::istreambuf_iterator<char>());
+
+        bool found = false;
+        for (auto& n : notes) {
+            if (n["id"] == note_id) {
+                n["content"] = content;
+                n["updated_at"] = get_now();
+                found = true;
+                break;
+            }
+        }
+        if (found) {
+            save_notes(path, notes);
+        }
+
     } else if (op == "delete") {
         if (argc < 3) return 1;
         std::string note_id = argv[2];

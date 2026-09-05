@@ -33,8 +33,9 @@ PanelWindow {
 
     function s(val) { return (typeof Scaler !== "undefined") ? Scaler.s(val) : val; }
 
-    readonly property color briColor: Qt.lighter(ThemeBackend.mauve, 1.1)
-    readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.5)
+    readonly property color themeColor: ThemeBackend.accent ?? ThemeBackend.mauve
+    readonly property color briColor: themeColor
+    readonly property color volColor: themeColor
 
     property bool isVisible: OsdController.isVisible
     property string kind: OsdController.kind

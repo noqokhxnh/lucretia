@@ -12,6 +12,72 @@
   "critBatteryShutdown": 2,
   "bluetoothPowerSave": true,
   "boostPowerSave": true,
+  "idleLockTimeout": 5,
+  "idleScreenOffTimeout": 6,
+  "idleSleepTimeout": 10,
+  "idle": {
+    "enabled": true,
+    "manualInhibit": false,
+    "actions": {
+      "dim": {
+        "id": "dim",
+        "name": "Dim Screen",
+        "timeout": 120,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": false,
+        "warningTimeout": 0,
+        "warningCommand": "",
+        "beforeCommand": "",
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      },
+      "lock": {
+        "id": "lock",
+        "name": "Lock Session",
+        "timeout": 300,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": false,
+        "warningTimeout": 10,
+        "warningCommand": "",
+        "beforeCommand": "",
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      },
+      "dpms": {
+        "id": "dpms",
+        "name": "Display Off (DPMS)",
+        "timeout": 360,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": false,
+        "warningTimeout": 0,
+        "warningCommand": "",
+        "beforeCommand": "",
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      },
+      "suspend": {
+        "id": "suspend",
+        "name": "System Suspend",
+        "timeout": 600,
+        "enabled": false,
+        "respectInhibitors": true,
+        "mprisInhibit": false,
+        "warningTimeout": 30,
+        "warningCommand": "",
+        "beforeCommand": "",
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      }
+    },
+    "customActions": []
+  },
   "monitors": [],
   "enabledModules": {
     "music": true,

@@ -21,7 +21,9 @@ cleanup() {
 trap cleanup INT TERM EXIT
 
 # Config and state files
-SETTINGS_FILE="$HOME/.config/lucretia/settings.json"
+SETTINGS_FILE="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
+[ -e "$SETTINGS_FILE" ] && SETTINGS_FILE="$(readlink -f "$SETTINGS_FILE" 2>/dev/null || echo "$SETTINGS_FILE")"
+[ ! -f "$SETTINGS_FILE" ] && SETTINGS_FILE="$HOME/.config/niri/settings.json"
 PREV_AUTO_POWER_FILE="/tmp/battery_saver_prev_auto_power_mode"
 
 CRIT_LEVEL_FILE="/tmp/battery_crit_level"          # "warn"|"suspend"|"shutdown" — latch cảnh báo
@@ -56,7 +58,7 @@ update_setting_bool() {
     local val="$2"
     local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        ( flock 9; jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" ) 9>"$lock_path"
+        ( flock 9; jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && cp "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "${SETTINGS_FILE}.tmp" ) 9>"$lock_path"
     fi
 }
 
@@ -65,7 +67,7 @@ update_setting_str() {
     local val="$2"
     local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        ( flock 9; jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && mv "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" ) 9>"$lock_path"
+        ( flock 9; jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && cp "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "${SETTINGS_FILE}.tmp" ) 9>"$lock_path"
     fi
 }
 

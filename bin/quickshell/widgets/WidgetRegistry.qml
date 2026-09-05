@@ -151,6 +151,29 @@ QtObject {
                 "round":   { file: "faces/LunarFaceRound.qml",   icon: "4", label: I18n.t("widgets.variants.round")   }
             },
             additionalSettings: []
+        },
+        "note": {
+            name: I18n.t("widgets.types.note"),
+            icon: "󰠮",
+            iconOffsetX: 0,
+            defaultWidth: 280,
+            defaultHeight: 260,
+            defaultVariant: "checklist",
+            variants: {
+                "checklist": { file: "faces/NoteFaceChecklist.qml", icon: "1", label: I18n.t("widgets.variants.checklist") },
+                "compact":   { file: "faces/NoteFaceCompact.qml",   icon: "2", label: I18n.t("widgets.variants.compact") }
+            },
+            additionalSettings: [
+                {
+                    id: "openNotes",
+                    icon: "󰠮",
+                    iconFontSize: 16,
+                    action: "openNotes",
+                    row: "top",
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                }
+            ]
         }
     })
 

@@ -506,6 +506,8 @@ PanelWindow {
             } else if (action === "pickApp") {
                 let curApp = activeWidgetsModel.get(itemIndex) ? (activeWidgetsModel.get(itemIndex).wImagePath || "") : "";
                 openAppPicker(itemIndex, itemId, curApp);
+            } else if (action === "openNotes") {
+                Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle notes"]);
             }
         }
 

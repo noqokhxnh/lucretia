@@ -33,10 +33,11 @@ PanelWindow {
 
     WlrLayershell.namespace: "qs-widget-" + wType + "-" + wId
     WlrLayershell.layer: WlrLayer.Bottom
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    readonly property bool hasKeyboardFocusDemand: (wType === "note" && wVariant !== "compact") || (faceLoader.item && faceLoader.item.wantsKeyboardFocus)
+    WlrLayershell.keyboardFocus: hasKeyboardFocusDemand ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     exclusionMode: ExclusionMode.Ignore
-    focusable: false
+    focusable: hasKeyboardFocusDemand ? true : false
 
     anchors.top: true
     anchors.left: true

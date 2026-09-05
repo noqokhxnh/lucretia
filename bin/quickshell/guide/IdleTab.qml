@@ -30,7 +30,7 @@ Item {
     }
 
     property var defaultIdleSettings: ({
-        "enabled": false,
+        "enabled": true,
         "manualInhibit": false,
         "actions": {
             "dim": {

@@ -187,7 +187,7 @@
         "desc": "Thời gian chờ trước khi đưa máy vào chế độ ngủ"
       },
       "hooks": {
-        "title": "Hooks (Lệnh Shell)"
+        "title": "Hooks"
       }
     },
     "welcome": {
@@ -815,11 +815,15 @@
       "clock": "Đồng hồ",
       "music": "Âm nhạc",
       "weather": "Thời tiết",
-      "image": "Hình ảnh"
+      "image": "Hình ảnh",
+      "app_shortcut": "Lối tắt ứng dụng",
+      "lunar": "Lịch Âm",
+      "note": "Ghi chú & Công việc"
     },
     "variants": {
-      "digital": "Điện tử",
-      "analog": "Kim",
+      "checklist": "Danh sách kiểm tra",
+      "digital": "Kỹ thuật số",
+      "analog": "Kim đồng hồ",
       "full": "Đầy đủ",
       "minimal": "Tối giản",
       "round": "Tròn",
@@ -827,6 +831,11 @@
       "rect": "Chữ nhật",
       "rounded": "Bo góc"
     }
+  },
+  "notes": {
+    "add_task": "Thêm công việc...",
+    "no_tasks": "Chưa có công việc nào",
+    "all_done": "Đã hoàn thành tất cả!"
   },
   "cli": {
     "usage": "Cách dùng: Lucretia [lệnh] [tùy chọn...]",

@@ -335,10 +335,10 @@ Item {
 
                 Item { Layout.fillWidth: true }
 
-                // Today Lunar Summary Badge
+                // Bottom Lunar pill badge
                 Rectangle {
                     implicitHeight: Math.max(18, Math.min(24, 21 * root.sH))
-                    implicitWidth: todayLunarText.implicitWidth + 18
+                    implicitWidth: todayLunarText.implicitWidth + 14
                     radius: height / 2
                     color: Qt.alpha(ThemeBackend.surface1, 0.7)
                     border.color: Qt.alpha(ThemeBackend.surface2, 0.5)
@@ -346,14 +346,7 @@ Item {
 
                     RowLayout {
                         anchors.centerIn: parent
-                        spacing: 5
-
-                        Text {
-                            text: Lunar.moonPhaseIcon
-                            font.family: "Iosevka Nerd Font"
-                            font.pixelSize: Math.max(9, Math.min(12, 10.5 * root.sMin))
-                            color: ThemeBackend.mauve
-                        }
+                        spacing: 0
 
                         Text {
                             id: todayLunarText
