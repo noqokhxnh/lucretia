@@ -36,8 +36,9 @@ Item {
     readonly property real boxRadius: Math.min(ThemeBackend.borderRadius, root.s(20))
     readonly property real cardRadius: Math.min(ThemeBackend.borderRadius, root.s(14))
 
-    readonly property color briColor: Qt.lighter(ThemeBackend.mauve, 1.1)
-    readonly property color volColor: Qt.lighter(ThemeBackend.sapphire, 1.5)
+    readonly property color themeColor: ThemeBackend.accent ?? ThemeBackend.mauve
+    readonly property color briColor: themeColor
+    readonly property color volColor: themeColor
     readonly property color profileColor: Qt.lighter(ThemeBackend.blue, 1.55)
     readonly property int batCapacity: UPower.displayDevice.ready ? Math.round(UPower.displayDevice.percentage * 100) : 0
 

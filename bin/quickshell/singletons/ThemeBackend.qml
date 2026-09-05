@@ -40,6 +40,8 @@ Item {
     property color yellow: "#f9e2af"
     property color maroon: "#eba0ac"
     property color teal: "#94e2d5"
+    property color primary: mauve
+    property color accent: mauve
 
     property string configPath: (typeof Caching !== "undefined" && Caching.stateDir ? Caching.stateDir : ((Quickshell.env("HOME") ?? "") + "/.local/state/lucretia")) + "/qs_colors.json"
     property string matugenConfigPath: (typeof Caching !== "undefined" && Caching.stateDir ? Caching.stateDir : ((Quickshell.env("HOME") ?? "") + "/.local/state/lucretia")) + "/qs_matugen_colors.json"
@@ -296,6 +298,8 @@ Item {
         safeAssign("yellow",    c.yellow);
         safeAssign("maroon",    c.maroon);
         safeAssign("teal",      c.teal);
+        safeAssign("primary",   c.primary || c.mauve);
+        safeAssign("accent",    c.accent || c.primary || c.mauve);
 
         if (!root.isMatugenTheme()) {
             let fullObj = {
