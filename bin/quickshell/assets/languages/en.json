@@ -147,6 +147,7 @@
       },
       "pipeline_notice": "Order: Dim screen < lock session < display off < suspend. Actions violating this order are excluded.",
       "order_violation": "Excluded",
+      "invalid_badge": "Order",
       "actions_header": {
         "title": "Idle timeout objects",
         "desc": "Configure timeouts, built-in triggers, and custom commands"

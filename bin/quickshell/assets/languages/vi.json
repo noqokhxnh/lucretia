@@ -130,64 +130,65 @@
     },
     "idle": {
       "enabled": {
-        "title": "Kích hoạt hệ thống Idle",
+        "title": "Kích hoạt hệ thống nghỉ (Idle)",
         "desc": "Kích hoạt tính năng quản lý nguồn điện và tự động khóa màn hình"
       },
       "manual_inhibit": {
-        "title": "Keep Awake",
+        "title": "Không làm phiền (Keep Awake)",
         "desc": "Thủ công ngăn hệ thống rơi vào trạng thái nghỉ/ngủ"
       },
       "mpris_inhibit": {
-        "title": "Tự động chống ngủ khi nghe nhạc/xem phim",
-        "desc": "Tự động ngăn màn hình tắt hoặc khóa khi đang phát đa phương tiện"
+        "title": "Chống nghỉ khi phát đa phương tiện",
+        "desc": "Tự động ngăn màn hình tắt hoặc khóa khi đang phát đa phương tiện (MPRIS)"
       },
       "respect_inhibitors": {
-        "title": "Respect app inhibitors",
-        "desc": "Honor Wayland idle inhibitor locks from applications"
+        "title": "Tôn trọng trình chặn từ ứng dụng",
+        "desc": "Cho phép các ứng dụng (họp, xem video...) tạm hoãn tự động tắt/khóa máy"
       },
       "pipeline_notice": "Thứ tự: Giảm độ sáng < Khóa phiên < Tắt màn hình < Tạm dừng (Suspend). Các hành động vi phạm thứ tự này sẽ bị loại trừ.",
-      "order_violation": "Excluded",
+      "order_violation": "Bị loại trừ",
+      "invalid_badge": "Sai thứ tự",
       "actions_header": {
-        "title": "Idle timeout objects",
+        "title": "Các mốc thời gian nghỉ",
         "desc": "Tùy chỉnh thời gian chờ, các kích hoạt tích hợp và lệnh tùy chỉnh"
       },
-      "action_name_placeholder": "Action name",
-      "command_placeholder": "Command to execute",
+      "action_name_placeholder": "Tên hành động",
+      "command_placeholder": "Lệnh cần thực thi",
       "custom_action_default": "Hành động nghỉ tùy chỉnh",
-      "custom_action_fallback": "Idle action",
+      "custom_action_fallback": "Hành động nghỉ",
       "warning_command": {
-        "title": "Warning command",
-        "desc": "Offset and command to execute before action",
-        "placeholder": "e.g. notify-send 'Warning'"
+        "title": "Lệnh cảnh báo",
+        "desc": "Thời gian báo trước và lệnh thực thi trước khi hành động diễn ra",
+        "placeholder": "vd: notify-send 'Cảnh báo sắp khóa máy'"
       },
       "before_command": {
-        "title": "Before command",
-        "desc": "Executed right before the action triggers",
-        "placeholder": "e.g. playerctl pause"
+        "title": "Lệnh trước khi thực thi",
+        "desc": "Được thực thi ngay trước khi hành động kích hoạt",
+        "placeholder": "vd: playerctl pause"
       },
       "resume_command": {
-        "title": "Resume command",
-        "desc": "Executed when user activity resumes",
-        "placeholder": "e.g. notify-send 'Resumed'"
+        "title": "Lệnh khi hoạt động trở lại",
+        "desc": "Được thực thi khi người dùng tương tác lại với máy",
+        "placeholder": "vd: notify-send 'Đã hoạt động trở lại'"
       },
       "dim": {
-        "title": "Dim screen",
-        "desc": "Time before dimming output"
+        "title": "Giảm độ sáng màn hình",
+        "desc": "Thời gian chờ trước khi giảm độ sáng màn hình"
       },
       "dpms": {
-        "title": "Tắt màn hình",
-        "desc": "Time before turning screen completely off"
+        "title": "Tắt màn hình (DPMS)",
+        "desc": "Thời gian chờ trước khi tắt màn hình hoàn toàn"
       },
       "lock": {
-        "title": "Lock session",
-        "desc": "Time before demanding password"
+        "title": "Khóa phiên làm việc",
+        "desc": "Thời gian chờ trước khi khóa màn hình và yêu cầu mật khẩu"
       },
       "suspend": {
-        "title": "System suspend",
-        "desc": "Time before putting machine to sleep"
+        "title": "Tạm dừng hệ thống (Suspend)",
+        "desc": "Thời gian chờ trước khi đưa máy tính vào chế độ ngủ"
       },
       "hooks": {
-        "title": "Hooks (shell commands)"
+        "title": "Hooks (lệnh shell)"
       }
     },
     "welcome": {

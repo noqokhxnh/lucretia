@@ -229,12 +229,16 @@ Scope {
             Quickshell.execDetached(["bash", "-c", "rm -f " + Caching.getRunDir("screenshot") + "/lock_freeze_*_" + root.freezeTimestamp + ".png"]);
             root.freezeTimestamp = "";
         }
+        Quickshell.execDetached(["loginctl", "unlock-session"]);
     }
 
     IpcHandler {
         target: "lock"
         function activate() {
             root.lock();
+        }
+        function deactivate() {
+            root.completeUnlock();
         }
     }
 
