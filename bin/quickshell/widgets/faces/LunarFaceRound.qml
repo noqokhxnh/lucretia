@@ -127,14 +127,7 @@ Item {
                     RowLayout {
                         id: lunarPillText
                         anchors.centerIn: parent
-                        spacing: 4
-
-                        Text {
-                            text: Lunar.moonPhaseIcon
-                            font.family: "Iosevka Nerd Font"
-                            font.pixelSize: Math.max(8, Math.min(12, roundBody.width * 0.055))
-                            color: root.accentColor
-                        }
+                        spacing: 0
 
                         Text {
                             text: {

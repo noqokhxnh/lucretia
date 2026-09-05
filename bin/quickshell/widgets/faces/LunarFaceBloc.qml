@@ -191,25 +191,9 @@ Item {
                     RowLayout {
                         anchors.fill: parent
                         anchors.margins: Math.max(6, 8 * root.sMin)
-                        spacing: Math.max(8, 10 * root.sW)
-
-                        // Moon Phase Icon Badge
-                        Rectangle {
-                            implicitWidth: Math.max(30, Math.min(40, 34 * root.sMin))
-                            implicitHeight: implicitWidth
-                            radius: implicitWidth / 2
-                            color: Qt.alpha(root.accentColor, 0.15)
-                            border.color: Qt.alpha(root.accentColor, 0.3)
-                            border.width: 1
-
-                            Text {
-                                anchors.centerIn: parent
-                                text: Lunar.moonPhaseIcon
-                                font.family: "Iosevka Nerd Font"
-                                font.pixelSize: Math.max(13, Math.min(18, 16 * root.sMin))
-                                color: root.accentColor
-                            }
-                        }
+                        anchors.leftMargin: Math.max(10, 14 * root.sW)
+                        anchors.rightMargin: Math.max(10, 14 * root.sW)
+                        spacing: 0
 
                         // Lunar Date & Can Chi Information
                         ColumnLayout {

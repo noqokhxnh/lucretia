@@ -156,15 +156,7 @@ Item {
                     // Row 2: Lunar Date (Secondary, prominent but smaller)
                     RowLayout {
                         Layout.fillWidth: true
-                        spacing: 5
-
-                        Text {
-                            text: Lunar.moonPhaseIcon
-                            font.family: "Iosevka Nerd Font"
-                            font.pixelSize: Math.max(10, Math.min(13, 11 * root.sMin))
-                            color: root.accentColor
-                            Layout.alignment: Qt.AlignVCenter
-                        }
+                        spacing: 0
 
                         Text {
                             Layout.fillWidth: true
