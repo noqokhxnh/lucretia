@@ -867,9 +867,11 @@
       "weather": "Weather",
       "image": "Image",
       "app_shortcut": "App Shortcut",
-      "lunar": "Lunar Calendar"
+      "lunar": "Lunar Calendar",
+      "note": "Notes & Tasks"
     },
     "variants": {
+      "checklist": "Checklist",
       "digital": "Digital",
       "analog": "Analog",
       "full": "Full",
@@ -886,6 +888,11 @@
     "picker": {
       "select_app": "Select Application"
     }
+  },
+  "notes": {
+    "add_task": "Add a task...",
+    "no_tasks": "No tasks yet",
+    "all_done": "All tasks completed!"
   },
   "cli": {
     "usage": "Usage: lucretia [command] [options...]",

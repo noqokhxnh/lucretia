@@ -6,3 +6,4 @@ singleton ThemeBackend 1.0 ThemeBackend.qml
 singleton Weather 1.0 Weather.qml
 singleton Cava 1.0 Cava.qml
 singleton Scaler 1.0 Scaler.qml
+singleton Notes 1.0 Notes.qml

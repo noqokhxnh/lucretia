@@ -13,4 +13,6 @@ LunarFaceCompact 1.0 LunarFaceCompact.qml
 LunarFaceFull 1.0 LunarFaceFull.qml
 LunarFaceBloc 1.0 LunarFaceBloc.qml
 LunarFaceRound 1.0 LunarFaceRound.qml
+NoteFaceChecklist 1.0 NoteFaceChecklist.qml
+NoteFaceCompact 1.0 NoteFaceCompact.qml
 

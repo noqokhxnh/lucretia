@@ -90,6 +90,7 @@ Item {
             onStreamFinished: {
                 try {
                     let items = JSON.parse(this.text);
+                    let savedY = listView.contentY;
                     notesModel.clear();
                     for (let i = 0; i < items.length; i++) {
                         notesModel.append(items[i]);
@@ -100,6 +101,10 @@ Item {
                     } else if (items.length === 0) {
                         textArea.text = "";
                         window.currentNoteId = "";
+                    } else {
+                        Qt.callLater(() => {
+                            listView.contentY = Math.min(Math.max(0, listView.contentHeight - listView.height), Math.max(0, savedY));
+                        });
                     }
                 } catch(e) {
                     console.log("Error parsing notes:", e);

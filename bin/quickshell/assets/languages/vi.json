@@ -813,9 +813,11 @@
       "weather": "Thời tiết",
       "image": "Hình ảnh",
       "app_shortcut": "Lối tắt ứng dụng",
-      "lunar": "Lịch Âm"
+      "lunar": "Lịch Âm",
+      "note": "Ghi chú & Công việc"
     },
     "variants": {
+      "checklist": "Danh sách kiểm tra",
       "digital": "Kỹ thuật số",
       "analog": "Kim đồng hồ",
       "full": "Đầy đủ",
@@ -832,6 +834,11 @@
     "picker": {
       "select_app": "Chọn ứng dụng"
     }
+  },
+  "notes": {
+    "add_task": "Thêm công việc...",
+    "no_tasks": "Chưa có công việc nào",
+    "all_done": "Đã hoàn thành tất cả!"
   },
   "cli": {
     "usage": "Cách dùng: lucretia [lệnh] [tùy chọn...]",
