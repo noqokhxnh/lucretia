@@ -11,13 +11,13 @@
         "graphics": "GPU",
         "memory": "RAM",
         "disk_capacity": "Dung lượng ổ đĩa",
-        "integrated_graphics": "Đồ họa tích hợp"
+        "integrated_graphics": "Card đồ họa tích hợp"
       },
       "system": {
         "os_name": "Hệ điều hành",
         "kernel_version": "Phiên bản Kernel",
-        "desktop": "Môi trường Desktop",
-        "shell": "Giao diện Shell",
+        "desktop": "Môi trường máy tính",
+        "shell": "Shell",
         "uptime": "Thời gian hoạt động",
         "default_os": "Linux"
       },
@@ -87,11 +87,11 @@
         "right": "Phải"
       },
       "width": {
-        "title": "Chiều rộng Launcher",
+        "title": "Chiều rộng",
         "desc": "Độ rộng tổng thể của cửa sổ launcher (pixel)"
       },
       "items": {
-        "title": "Số lượng mục hiển thị",
+        "title": "Số lượng mục",
         "desc": "Số lượng kết quả tìm kiếm hiển thị đồng thời"
       },
       "terminal": {
@@ -102,103 +102,102 @@
         "title": "Sắp xếp thông minh",
         "desc": "Sắp xếp ứng dụng dựa trên tần suất sử dụng và thời gian mở"
       },
-      "test": "Mở Launcher"
+      "test": "Mở thử Launcher"
     },
     "notifications": {
       "dnd": {
-        "title": "DND",
-        "desc": "Tắt âm thanh và popups thông báo ngoại trừ cảnh báo quan trọng"
+        "title": "Không làm phiền",
+        "desc": "Tắt âm thanh và thông báo nổi, ngoại trừ cảnh báo quan trọng"
       },
       "position": {
-        "title": "Vị trí thông báo",
-        "desc": "Chọn vị trí hiển thị popups thông báo trên màn hình",
-        "top_right": "Trên cùng bên phải",
-        "top_left": "Trên cùng bên trái",
-        "bottom_right": "Dưới cùng bên phải",
-        "bottom_left": "Dưới cùng bên trái",
-        "top_center": "Trên cùng ở giữa",
-        "bottom_center": "Dưới cùng ở giữa"
+        "title": "Vị trí",
+        "desc": "Chọn vị trí hiển thị thông báo trên màn hình",
+        "top_right": "Góc trên phải",
+        "top_left": "Góc trên trái",
+        "bottom_right": "Góc dưới phải",
+        "bottom_left": "Góc dưới trái",
+        "top_center": "Trên ở giữa",
+        "bottom_center": "Dưới ở giữa"
       },
       "sound": {
-        "title": "Âm thanh thông báo",
-        "desc": "Phát âm thanh khi có thông báo mới đến"
+        "title": "Âm thanh",
+        "desc": "Phát âm thanh khi nhận được thông báo"
       },
       "sound_file": {
-        "title": "Hiệu ứng âm thanh",
-        "desc": "Chọn âm thanh phát cho các thông báo đến"
+        "title": "Tệp âm thanh",
+        "desc": "Chọn tệp âm thanh phát khi có thông báo"
       }
     },
     "idle": {
       "enabled": {
-        "title": "Kích hoạt hệ thống nghỉ (Idle)",
-        "desc": "Kích hoạt tính năng quản lý nguồn điện và tự động khóa màn hình"
+        "title": "Bật quản lý trạng thái nghỉ",
+        "desc": "Kích hoạt quản lý nguồn điện, làm mờ và tự động khóa màn hình"
       },
       "manual_inhibit": {
-        "title": "Không làm phiền (Keep Awake)",
-        "desc": "Thủ công ngăn hệ thống rơi vào trạng thái nghỉ/ngủ"
+        "title": "Giữ hệ thống luôn thức",
+        "desc": "Thủ công ngăn hệ thống rơi vào trạng thái nghỉ hoặc tắt màn hình"
       },
       "mpris_inhibit": {
-        "title": "Chống nghỉ khi phát đa phương tiện",
-        "desc": "Tự động ngăn màn hình tắt hoặc khóa khi đang phát đa phương tiện (MPRIS)"
+        "title": "Chống ngủ khi phát media",
+        "desc": "Tự động ngăn tắt/khóa màn hình khi đang phát âm thanh hoặc video"
       },
       "respect_inhibitors": {
-        "title": "Tôn trọng trình chặn từ ứng dụng",
-        "desc": "Cho phép các ứng dụng (họp, xem video...) tạm hoãn tự động tắt/khóa máy"
+        "title": "Tôn trọng yêu cầu từ ứng dụng",
+        "desc": "Tuân theo các khóa ngăn nghỉ (idle inhibitor) từ các ứng dụng Wayland"
       },
-      "pipeline_notice": "Thứ tự: Giảm độ sáng < Khóa phiên < Tắt màn hình < Tạm dừng (Suspend). Các hành động vi phạm thứ tự này sẽ bị loại trừ.",
+      "pipeline_notice": "Thứ tự: Giảm độ sáng < Khóa phiên < Tắt màn hình < Tạm dừng (Suspend). Các hành động vi phạm thứ tự này sẽ bị bỏ qua.",
       "order_violation": "Bị loại trừ",
-      "invalid_badge": "Sai thứ tự",
       "actions_header": {
-        "title": "Các mốc thời gian nghỉ",
-        "desc": "Tùy chỉnh thời gian chờ, các kích hoạt tích hợp và lệnh tùy chỉnh"
+        "title": "Thời gian chờ & Hành động",
+        "desc": "Tùy chỉnh thời gian chờ, các trigger tích hợp và lệnh tùy chỉnh"
       },
       "action_name_placeholder": "Tên hành động",
       "command_placeholder": "Lệnh cần thực thi",
       "custom_action_default": "Hành động nghỉ tùy chỉnh",
-      "custom_action_fallback": "Hành động nghỉ",
+      "custom_action_fallback": "Hành động khi nghỉ",
       "warning_command": {
         "title": "Lệnh cảnh báo",
-        "desc": "Thời gian báo trước và lệnh thực thi trước khi hành động diễn ra",
-        "placeholder": "vd: notify-send 'Cảnh báo sắp khóa máy'"
+        "desc": "Thời gian đệm và lệnh thực thi trước khi hành động diễn ra",
+        "placeholder": "vd: notify-send 'Cảnh báo'"
       },
       "before_command": {
         "title": "Lệnh trước khi thực thi",
-        "desc": "Được thực thi ngay trước khi hành động kích hoạt",
+        "desc": "Thực thi ngay trước khi hành động kích hoạt",
         "placeholder": "vd: playerctl pause"
       },
       "resume_command": {
-        "title": "Lệnh khi hoạt động trở lại",
-        "desc": "Được thực thi khi người dùng tương tác lại với máy",
+        "title": "Lệnh khi hoạt động lại",
+        "desc": "Thực thi khi người dùng tương tác trở lại",
         "placeholder": "vd: notify-send 'Đã hoạt động trở lại'"
       },
       "dim": {
-        "title": "Giảm độ sáng màn hình",
+        "title": "Giảm độ sáng",
         "desc": "Thời gian chờ trước khi giảm độ sáng màn hình"
       },
       "dpms": {
-        "title": "Tắt màn hình (DPMS)",
+        "title": "Tắt màn hình",
         "desc": "Thời gian chờ trước khi tắt màn hình hoàn toàn"
       },
       "lock": {
         "title": "Khóa phiên làm việc",
-        "desc": "Thời gian chờ trước khi khóa màn hình và yêu cầu mật khẩu"
+        "desc": "Thời gian chờ trước khi yêu cầu mật khẩu để mở khóa"
       },
       "suspend": {
-        "title": "Tạm dừng hệ thống (Suspend)",
-        "desc": "Thời gian chờ trước khi đưa máy tính vào chế độ ngủ"
+        "title": "Tạm dừng hệ thống",
+        "desc": "Thời gian chờ trước khi đưa máy vào chế độ ngủ"
       },
       "hooks": {
-        "title": "Hooks (lệnh shell)"
+        "title": "Hooks"
       }
     },
     "welcome": {
-      "by_author": "by @{author}",
+      "by_author": "bởi @{author}",
       "about": "Thông tin",
       "hold_for_tutorial": "Nhấn giữ để xem hướng dẫn",
       "start_tutorial": "Bắt đầu hướng dẫn"
     },
     "tutorial": {
-      "section_title": "{section} tutorial",
+      "section_title": "Hướng dẫn {section}",
       "default_desc": "Nhấn để bắt đầu hướng dẫn",
       "start": "Bắt đầu"
     },
@@ -212,27 +211,27 @@
         "desc": "Đặt tỷ lệ thu phóng tổng thể cho giao diện người dùng"
       },
       "avatar": {
-        "title": "Ảnh đại diện người dùng",
+        "title": "Ảnh đại diện",
         "desc": "Chọn ảnh đại diện",
         "select": "Chọn ảnh",
         "select_image_path": "Chọn đường dẫn hình ảnh..."
       },
       "mutesfx": {
         "title": "Tắt âm thanh hiệu ứng",
-        "desc": "Tắt hiệu ứng âm thanh giao diện người dùng"
+        "desc": "Tắt toàn bộ hiệu ứng âm thanh giao diện"
       },
       "sfxvolume": {
-        "title": "Âm lượng hiệu ứng âm thanh",
-        "desc": "Không làm ảnh hưởng đến âm lượng đầu ra của các ứng dụng phát âm thanh"
+        "title": "Âm lượng hiệu ứng",
+        "desc": "Điều chỉnh âm lượng hiệu ứng UI (không ảnh hưởng đến âm thanh ứng dụng)"
       },
       "quickactions": {
         "title": "Nút tác vụ nổi",
-        "desc": "Bật các nút tác vụ nổi nhanh trên màn hình desktop"
+        "desc": "Bật các nút tác vụ nổi nhanh trên màn hình"
       },
       "location": {
-        "title": "Vị trí địa lý",
-        "desc": "Cấu hình vị trí địa lý để tự động tính chu kỳ mặt trời và thời tiết",
-        "popup_title": "Chi tiết vị trí địa lý",
+        "title": "Vị trí",
+        "desc": "Cấu hình vị trí để tự động tính chu kỳ mặt trời và thời tiết",
+        "popup_title": "Chi tiết vị trí",
         "autodetect": "Tự động nhận diện",
         "latitude": "Vĩ độ",
         "longitude": "Kinh độ",
@@ -240,7 +239,7 @@
       },
       "weatherinterval": {
         "title": "Chu kỳ cập nhật thời tiết",
-        "desc": "Khoảng thời gian tự động lấy dữ liệu thời tiết (phút)"
+        "desc": "Khoảng thời gian tự động làm mới dữ liệu thời tiết (phút)"
       },
       "weatherunit": {
         "title": "Đơn vị nhiệt độ",
@@ -251,7 +250,7 @@
       },
       "copysettings": {
         "title": "Sao chép cài đặt",
-        "desc": "Sao chép nội dung cấu hình JSON vào bộ nhớ tạm (clipboard)",
+        "desc": "Sao chép nội dung cấu hình JSON vào bộ nhớ tạm",
         "button": "Sao chép cài đặt"
       }
     },
@@ -273,18 +272,18 @@
         "desc": "Điều chỉnh cường độ ấm của ánh sáng màn hình"
       },
       "uiscale": {
-        "title": "UI scale",
-        "desc": "Đặt tỷ lệ thu phóng giao diện (UI Scale) cho màn hình này"
+        "title": "Tỷ lệ UI",
+        "desc": "Đặt tỷ lệ thu phóng giao diện cho màn hình này"
       },
       "widgets": {
-        "title": "Desktop Widgets",
-        "desc": "Chỉnh sửa, kéo thả các widget tiện ích trên màn hình desktop",
+        "title": "Tiện ích màn hình",
+        "desc": "Chỉnh sửa, kéo thả các tiện ích trên màn hình",
         "open": "Mở chỉnh sửa"
       }
     },
     "bar": {
       "modules": {
-        "vis": "Phân tích âm thanh (Cava)",
+        "vis": "Trực quan hoá âm thanh (Cava)",
         "actions": "Tác vụ",
         "workspaces": "Không gian làm việc",
         "media": "Trình phát nhạc",
@@ -314,7 +313,7 @@
       },
       "workspaces": {
         "title": "Chọn số lượng không gian làm việc hiển thị",
-        "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
+        "desc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
       },
       "opacity": {
         "title": "Độ mờ / trong suốt",
@@ -333,7 +332,7 @@
       },
       "guide_button": {
         "title": "Nút Cài đặt",
-        "desc": "Hiển thị nút mở Trung tâm Cài đặt trên thanh bar"
+        "desc": "Hiển thị nút mở Cài đặt trên thanh bar"
       },
       "autohide": {
         "title": "Tự động ẩn",
@@ -356,12 +355,12 @@
     "theme": {
       "font": "Phông chữ hệ thống",
       "radius": {
-        "title": "Bo góc viền (Border Radius)",
+        "title": "Bo góc viền",
         "desc": "Bán kính bo tròn góc cho các cửa sổ và thẻ giao diện"
       },
       "colors": {
-        "title": "Chủ đề màu sắc (Color Themes)",
-        "desc": "Chọn bảng màu có sẵn hoặc tạo chủ đề màu tùy chỉnh của riêng bạn.",
+        "title": "Chủ đề màu sắc",
+        "desc": "Chọn bảng màu có sẵn hoặc tạo chủ đề màu tùy chỉnh.",
         "search": "Tìm kiếm chủ đề màu..."
       },
       "delete_theme": "Xóa Theme",
@@ -380,9 +379,9 @@
       "no_file_selected": "Chưa có tệp nào được chọn",
       "root": "Thư mục gốc",
       "places": {
-        "home": "Thư mục cá nhân (Home)",
-        "downloads": "Tệp tải về (Downloads)",
-        "pictures": "Hình ảnh (Pictures)"
+        "home": "Thư mục cá nhân",
+        "downloads": "Tệp tải về",
+        "pictures": "Hình ảnh"
       }
     },
     "font_picker": {
@@ -476,7 +475,7 @@
         "sunday": "Chủ Nhật"
       },
       "settings": {
-        "title": "Cài đặt sức khỏe kỹ thuật số",
+        "title": "Cài đặt sức khỏe số",
         "overall_limit": "Giới hạn sử dụng tổng thể hàng ngày",
         "off": "Tắt",
         "app_limits": "Giới hạn thời lượng ứng dụng",
@@ -489,7 +488,7 @@
   },
   "sysnotif": {
     "battery": {
-      "app_name": "System",
+      "app_name": "Hệ thống",
       "full_title": "Pin đã đầy",
       "full_body": "Pin đã được sạc đầy (100%).",
       "low_title": "Pin yếu",
@@ -500,15 +499,15 @@
   },
   "updater": {
     "notification": {
-      "app_name": "Update",
-      "action_open_guide": "Mở Trung tâm Cài đặt",
+      "app_name": "Cập nhật",
+      "action_open_guide": "Mở Cài đặt",
       "update_available_title": "Có bản cập nhật mới: v{remote}",
       "update_available_body": "Phiên bản hiện tại: v{local}. Nhấn để xem lịch sử thay đổi và cập nhật."
     }
   },
   "polkit": {
     "title": "Yêu cầu xác thực quyền quản trị",
-    "default_message": "Một ứng dụng đang yêu cầu quyền quản trị viên (root).",
+    "default_message": "Một ứng dụng đang yêu cầu quyền quản trị viên.",
     "default_description": "Cần xác thực để thực hiện hành động này dưới quyền quản trị.",
     "password_placeholder": "Mật khẩu người dùng",
     "error_failed": "Xác thực không thành công. Vui lòng thử lại."
@@ -549,7 +548,7 @@
       "enter_pin": "Nhập mã PIN"
     },
     "power": {
-      "suspend": "Tạm dừng (Sleep)",
+      "suspend": "Tạm dừng",
       "reboot": "Khởi động lại",
       "power_off": "Tắt máy"
     },
@@ -557,41 +556,41 @@
     "unknown": "Không xác định"
   },
   "music": {
-    "nothing_playing": "Không có nội dung đang phát",
+    "nothing_playing": "Không có gì đang phát",
     "loading": "Đang tải...",
     "by_artist": "Bởi {artist}",
     "unknown_artist": "Nghệ sĩ không xác định",
     "speaker": "Loa",
     "via_source": "Qua {source}",
-    "offline": "Offline",
-    "equalizer": "Bộ chỉnh âm (Equalizer)",
+    "offline": "Ngoại tuyến",
+    "equalizer": "Bộ cân bằng âm",
     "eq": {
       "apply": "Áp dụng",
       "saved": "Đã lưu"
     },
     "presets": {
-      "flat": "Mặc định",
-      "bass": "Tăng âm trầm",
-      "treble": "Tăng âm bổng",
+      "flat": "Bằng phẳng",
+      "bass": "Trầm",
+      "treble": "Cao",
       "vocal": "Giọng hát",
-      "pop": "Nhạc Pop",
-      "rock": "Nhạc Rock",
-      "jazz": "Nhạc Jazz",
+      "pop": "Pop",
+      "rock": "Rock",
+      "jazz": "Jazz",
       "classic": "Cổ điển",
       "custom": "Tùy chỉnh"
     }
   },
   "network": {
     "tabs": {
-      "ethernet": "Mạng dây",
-      "wifi": "Mạng không dây",
+      "ethernet": "Ethernet",
+      "wifi": "Wifi",
       "bluetooth": "Bluetooth"
     },
     "status": {
       "no_ip": "Chưa có IP",
       "unknown": "Không rõ",
       "calculating": "Đang tính toán...",
-      "open": "Mạng mở (Không bảo mật)",
+      "open": "Mạng mở",
       "current_device": "Thiết bị hiện tại",
       "powering_on": "Đang bật...",
       "powering_off": "Đang tắt...",
@@ -774,42 +773,47 @@
   },
   "widgets": {
     "wallpaper": {
-      "name": "Trình chọn hình nền",
-      "desc": "Duyệt và cài đặt hình nền desktop"
+      "name": "Chọn hình nền",
+      "desc": "Duyệt và đặt hình nền màn hình"
     },
     "network": {
       "name": "Cài đặt mạng",
-      "desc": "Quản lý kết nối Wi-Fi, Ethernet và mạng"
+      "desc": "Quản lý WiFi, ethernet và kết nối mạng"
     },
     "volume": {
-      "name": "Âm lượng & Âm thanh",
+      "name": "Âm lượng & âm thanh",
       "desc": "Quản lý thiết bị âm thanh và mức âm lượng"
     },
     "guide": {
-      "name": "Cài đặt hệ thống",
-      "desc": "Cài đặt hệ thống Lucretia"
+      "name": "Cài đặt",
+      "desc": "Cài đặt Lucretia"
     },
     "calendar": {
-      "name": "Lịch & Đồng hồ",
-      "desc": "Xem ngày giờ và lịch trình"
+      "name": "Lịch & đồng hồ",
+      "desc": "Xem ngày, giờ và lịch trình"
     },
-    "music": "Trình phát nhạc",
+    "music": {
+      "name": "Trình phát media",
+      "desc": "Điều khiển phát nhạc và media"
+    },
     "notifications": {
       "name": "Trung tâm thông báo",
-      "desc": "Xem các thông báo và lịch sử gần đây"
+      "desc": "Xem thông báo gần đây và lịch sử"
     },
     "system": {
       "name": "Điều khiển hệ thống",
-      "desc": "Theo dõi hiệu năng, nguồn điện và cài đặt nhanh"
+      "desc": "Giám sát hiệu năng, nguồn điện và cài đặt nhanh"
     },
     "redactor": {
-      "no_widgets_active": "Không có widget nào đang hoạt động",
-      "click_to_add": "Nhấn vào biểu tượng widget ở thanh công cụ dưới cùng để thêm",
-      "done": "Hoàn tất"
+      "no_widgets_active": "Không có tiện ích nào đang hoạt động",
+      "click_to_add": "Nhấp vào biểu tượng tiện ích trên thanh công cụ bên dưới để thêm",
+      "done": "Xong",
+      "widget_singular": "tiện ích",
+      "widgets_plural": "tiện ích"
     },
     "types": {
       "clock": "Đồng hồ",
-      "music": "Nhạc",
+      "music": "Âm nhạc",
       "weather": "Thời tiết",
       "image": "Hình ảnh",
       "app_shortcut": "Lối tắt ứng dụng",
@@ -823,16 +827,9 @@
       "full": "Đầy đủ",
       "minimal": "Tối giản",
       "round": "Tròn",
-      "compact": "Nhỏ gọn",
+      "compact": "Gọn",
       "rect": "Chữ nhật",
-      "rounded": "Bo góc",
-      "icon": "Biểu tượng",
-      "card": "Thẻ",
-      "badge": "Huy hiệu",
-      "bloc": "Lịch Bloc"
-    },
-    "picker": {
-      "select_app": "Chọn ứng dụng"
+      "rounded": "Bo góc"
     }
   },
   "notes": {
@@ -841,168 +838,169 @@
     "all_done": "Đã hoàn thành tất cả!"
   },
   "cli": {
-    "usage": "Cách dùng: lucretia [lệnh] [tùy chọn...]",
-    "description": "Giao diện desktop shell dành cho Wayland.",
-    "commands": "Các lệnh:",
-    "script_commands": "Các lệnh script:",
+    "usage": "Cách dùng: Lucretia [lệnh] [tùy chọn...]",
+    "description": "Một desktop shell dành cho các trình quản lý cửa sổ Wayland.",
+    "commands": "Lệnh:",
+    "script_commands": "Lệnh script:",
     "launch_desc": "Khởi chạy các thành phần độc lập (start, widgetredactor)",
-    "msg_desc": "Gửi lệnh hoặc chuyển đổi không gian làm việc tới trình quản lý UI",
-    "ipc_desc": "Chuyển tiếp trực tiếp cuộc gọi IPC tới shell",
-    "kill_desc": "Dừng tiến trình daemon đang chạy",
+    "msg_desc": "Gửi lệnh hoặc chuyển không gian làm việc đến trình quản lý giao diện",
+    "ipc_desc": "Chuyển tiếp lệnh gọi IPC trực tiếp đến shell",
+    "kill_desc": "Dừng daemon đang chạy một cách an toàn",
     "options": "Tùy chọn:",
-    "verbose_desc": "Bật ghi nhật ký chi tiết",
-    "version_desc": "Hiển thị thông tin phiên bản và thoát",
-    "help_desc": "Hiển thị trợ giúp và thoát",
+    "verbose_desc": "Bật ghi log chi tiết",
+    "version_desc": "Hiển thị thông tin phiên bản rồi thoát",
+    "help_desc": "Hiển thị thông báo trợ giúp này rồi thoát",
     "examples": "Ví dụ:",
-    "daemon_stopped": "Đã dừng daemon Lucretia.",
-    "starting_daemon": "Daemon chưa chạy. Đang khởi động lucretiad trong nền...",
-    "error_missing_qml": "Error: missing target to launch.",
-    "launch_usage": "Usage: lucretia launch <start|widgetredactor> [args...]",
-    "error_qml_not_found": "Error: could not resolve {NAME}.qml in {DIR}",
-    "error_shell_qml_not_found": "Error: could not resolve path to shell.qml in {DIR}",
-    "error_unknown_command": "Error: unknown command '{CMD}'.",
-    "error_unknown_target": "Error: unknown target '{TARGET}'.",
+    "daemon_stopped": "Daemon Lucretia đã dừng.",
+    "starting_daemon": "Daemon chưa chạy. Đang khởi động Lucretiad ở chế độ nền...",
+    "error_missing_qml": "Lỗi: thiếu mục tiêu để khởi chạy.",
+    "launch_usage": "Cách dùng: Lucretia launch <start|widgetredactor> [tham số...]",
+    "error_qml_not_found": "Lỗi: không thể tìm thấy {NAME}.qml trong {DIR}",
+    "error_shell_qml_not_found": "Lỗi: không thể tìm thấy đường dẫn đến shell.qml trong {DIR}",
+    "error_unknown_command": "Lỗi: lệnh không xác định '{CMD}'.",
+    "error_unknown_target": "Lỗi: mục tiêu không xác định '{TARGET}'.",
     "launch_help": {
-      "usage": "Usage: lucretia launch <start|widgetredactor> [arguments...]",
-      "description": "Launch standalone components directly in runner mode.",
-      "available_targets": "Các mục tiêu khả dụng:",
+      "usage": "Cách dùng: Lucretia launch <start|widgetredactor> [tham số...]",
+      "description": "Khởi chạy trực tiếp các thành phần độc lập ở chế độ runner.",
+      "available_targets": "Mục tiêu khả dụng:",
       "target_start": "Khởi chạy giao diện thiết lập ban đầu",
-      "target_widgetredactor": "Khởi chạy trình chỉnh sửa widget desktop"
+      "target_widgetredactor": "Khởi chạy giao diện chỉnh sửa widget trên desktop"
     },
     "msg_help": {
-      "usage": "Usage: lucretia msg <command|workspace> [arguments...]",
-      "description": "Send layout, workspace, and window management messages directly.",
-      "available_commands": "Các thông điệp khả dụng:",
-      "cmd_workspace": "Chuyển đến không gian làm việc <số> (thêm 'move' để di chuyển cửa sổ hiện tại)",
-      "cmd_open": "Mở bảng điều khiển giao diện (network, guide, wallpaper, applauncher)",
-      "cmd_toggle": "Bật/tắt bảng điều khiển giao diện",
-      "cmd_close": "Đóng mọi lớp phủ giao diện đang hoạt động"
+      "usage": "Cách dùng: Lucretia msg <lệnh|không gian làm việc> [tham số...]",
+      "description": "Gửi trực tiếp các thông điệp quản lý bố cục, không gian làm việc và cửa sổ.",
+      "available_commands": "Thông điệp khả dụng:",
+      "cmd_workspace": "Chuyển sang không gian làm việc <số> (thêm 'move' để gửi kèm cửa sổ đang hoạt động)",
+      "cmd_open": "Mở một bảng giao diện được quản lý (network, guide, wallpaper, applauncher)",
+      "cmd_toggle": "Bật/tắt một bảng giao diện được quản lý",
+      "cmd_close": "Đóng lớp phủ shell đang hoạt động"
     },
     "ipc_help": {
-      "usage": "Usage: lucretia ipc call <target> <method> [arguments...]",
-      "description": "Gửi trực tiếp cuộc gọi IPC tới tiến trình quickshell đang chạy."
+      "usage": "Cách dùng: Lucretia ipc call <mục tiêu> <phương thức> [tham số...]",
+      "description": "Gửi trực tiếp một lệnh gọi IPC đến phiên bản quickshell đang chạy."
     },
     "scripts": {
-      "exit": "Đóng phiên đồ họa và thoát compositor",
-      "lock": "Kích hoạt màn hình khóa",
+      "exit": "Kết thúc phiên đồ họa và thoát trình quản lý cửa sổ",
+      "lock": "Kích hoạt giao diện khóa màn hình",
       "volume": "Điều khiển âm lượng và trạng thái tắt tiếng của thiết bị âm thanh mặc định",
-      "reload": "Buộc nạp lại các thành phần desktop quickshell",
-      "weather": "Tải và quản lý dữ liệu dự báo thời tiết",
-      "location": "Truy vấn và cập nhật tọa độ địa lý",
-      "screenshot": "Chụp ảnh màn hình, quay video hoặc quét mã QR",
-      "brightness": "Điều chỉnh độ sáng đèn nền màn hình",
-      "current_focus": "Theo dõi và ghi nhật ký thay đổi tiêu điểm cửa sổ",
-      "monitors_detect": "Truy vấn các đầu ra màn hình và tần số quét đang hoạt động",
-      "location_manual": "Đặt tọa độ địa lý và múi giờ thủ công",
-      "blue_light_filter": "Điều chỉnh nhiệt độ màu và lịch biểu ngày/đêm tự động"
+      "reload": "Buộc tải lại các thành phần desktop của quickshell",
+      "weather": "Lấy và quản lý dữ liệu dự báo thời tiết cùng bộ nhớ đệm",
+      "location": "Lấy và cập nhật tọa độ địa lý",
+      "screenshot": "Chụp ảnh màn hình, quay video, hoặc quét mã QR",
+      "brightness": "Điều chỉnh độ sáng màn hình",
+      "current_focus": "Theo dõi và ghi log thay đổi cửa sổ đang được focus",
+      "monitors_detect": "Truy vấn màn hình đang hoạt động và tần số quét",
+      "location_manual": "Đặt thủ công tọa độ địa lý và múi giờ",
+      "blue_light_filter": "Điều chỉnh nhiệt độ màu và lịch tự động ngày/đêm",
+      "translate": "Công cụ dịch nhanh văn bản và nội dung đã chọn"
     }
   },
   "daemon": {
     "already_running": "Daemon đã đang chạy. Đang thoát...",
-    "shutting_down": "Đang tắt daemon lucretia...",
-    "launching": "Đang khởi chạy daemon lucretia...",
+    "shutting_down": "Đang tắt daemon Lucretia...",
+    "launching": "Đang khởi chạy daemon Lucretia...",
     "cli": {
-      "usage": "Usage: lucretiad <command> [options...]",
-      "description": "Background service daemon for Lucretia desktop shell.",
-      "commands": "Commands:",
-      "cmd_start": "Khởi động dịch vụ daemon và các worker chạy ngầm",
+      "usage": "Cách dùng: Lucretiad <lệnh> [tùy chọn...]",
+      "description": "Daemon dịch vụ nền cho desktop shell Lucretia.",
+      "commands": "Lệnh:",
+      "cmd_start": "Khởi động dịch vụ daemon và chạy các worker nền",
       "cmd_stop": "Dừng dịch vụ daemon đang chạy",
       "cmd_status": "Kiểm tra trạng thái hoạt động của dịch vụ daemon",
-      "options": "Options:",
-      "opt_verbose": "Bật ghi nhật ký chi tiết",
-      "opt_version": "Hiển thị thông tin phiên bản và thoát",
-      "opt_help": "Hiển thị thông báo trợ giúp và thoát",
-      "stopped": "Lucretia daemon stopped.",
+      "options": "Tùy chọn:",
+      "opt_verbose": "Bật ghi log chi tiết",
+      "opt_version": "Hiển thị thông tin phiên bản rồi thoát",
+      "opt_help": "Hiển thị thông báo trợ giúp này rồi thoát",
+      "stopped": "Daemon Lucretia đã dừng.",
       "status_running": "Daemon Lucretia đang chạy (PID: {PID}).",
       "status_stopped": "Daemon Lucretia hiện không chạy.",
-      "unknown_arg": "Unknown argument: {ARG}"
+      "unknown_arg": "Tham số không xác định: {ARG}"
     }
   },
   "installer": {
     "auth": {
-      "enter_code": "Enter installation access code: ",
-      "error_interactive": "Error: Interactive terminal required for authentication.",
-      "error_empty": "Authentication failed: Access code cannot be empty.",
-      "error_default": "Authentication failed: Invalid or exhausted access code.",
-      "error_failed": "Authentication failed.",
-      "access_granted": "Access granted. ({active}/{max} users activated this code)"
+      "enter_code": "Nhập mã truy cập cài đặt: ",
+      "error_interactive": "Lỗi: Cần terminal tương tác để xác thực.",
+      "error_empty": "Xác thực thất bại: Mã truy cập không được để trống.",
+      "error_default": "Xác thực thất bại: Mã truy cập không hợp lệ hoặc đã hết lượt dùng.",
+      "error_failed": "Xác thực thất bại.",
+      "access_granted": "Đã cấp quyền truy cập. ({active}/{max} người dùng đã kích hoạt mã này)"
     },
     "os": {
-      "error_root": "Error: Do not run this script directly with root/sudo. Run as normal user.",
-      "error_unsupported": "Unsupported OS ({os}). Lucretia strictly supports Arch Linux and derivatives.",
-      "error_not_found": "Cannot detect OS. /etc/os-release not found.",
-      "unknown_cpu": "Unknown CPU",
-      "unknown_gpu": "Unknown / virtual machine",
+      "error_root": "Lỗi: Không được chạy script này trực tiếp với root/sudo. Hãy chạy với tài khoản người dùng bình thường.",
+      "error_unsupported": "Hệ điều hành không được hỗ trợ ({os}). Lucretia chỉ hỗ trợ Arch Linux và các bản phái sinh.",
+      "error_not_found": "Không thể phát hiện hệ điều hành. Không tìm thấy /etc/os-release.",
+      "unknown_cpu": "CPU không xác định",
+      "unknown_gpu": "Máy ảo / không xác định",
       "default_os": "Arch Linux"
     },
     "ui": {
-      "user": "User:",
-      "os": "OS:",
+      "user": "Người dùng:",
+      "os": "Hệ điều hành:",
       "cpu": "CPU:",
       "gpu": "GPU:",
-      "target_version": "Target version:",
-      "install_mode": "Install mode:",
+      "target_version": "Phiên bản mục tiêu:",
+      "install_mode": "Chế độ cài đặt:",
       "github": "GitHub:",
       "twitter": "Twitter:",
       "reddit": "Reddit:",
       "telegram": "Telegram:",
-      "donate": "Donate:",
-      "donate_sub": "(Support the project!)",
-      "packages_prompt": " Packages > ",
-      "packages_header": " Press Esc or Enter to return ",
-      "package_missing": "{pkg} (missing - will be installed)",
-      "package_installed": "{pkg} (installed)",
-      "compositors_title": "=== Select target compositors ===",
-      "installed": " (installed)",
-      "not_installed": " (not installed)",
-      "done": "Done",
-      "compositors_prompt": " Compositor setup > ",
-      "compositors_header": " Toggle supported compositors, then select Done ",
-      "sddm_title": "=== Display manager (SDDM) setup ===",
-      "sddm_detected_active": "Detected active/enabled display manager: {dm}",
-      "sddm_detected_none": "Detected active/enabled display manager: None",
-      "sddm_opt_install": "Install and configure SDDM (Material You theme)",
-      "sddm_opt_disable": "Disable and remove '{dm}'",
-      "sddm_opt_wayland": "Force Wayland backend",
-      "sddm_prompt": " SDDM setup > ",
-      "sddm_header": " Toggle options, then select Done ",
-      "target_compositor_none": "Target compositor [Required - none selected]",
-      "target_compositor_selected": "Target compositor [{comps}]",
-      "target_compositor_req": "Target compositor ({label}) [Required]",
-      "target_compositor_label": "Target compositor ({comps})",
-      "unsupported_compositor": "Unsupported compositor",
-      "menu_overview": "Package installation overview ({count} core packages)",
-      "menu_sddm": "SDDM login manager",
-      "menu_wallpapers": "Wallpaper pack",
-      "menu_telemetry": "Anonymous telemetry",
-      "menu_update": "Update",
-      "menu_reinstall": "Reinstall",
-      "menu_install": "Install",
-      "menu_exit": "Exit",
-      "main_menu_prompt": " Main menu > ",
-      "main_menu_header": " Use arrow keys to navigate, Enter to select ",
-      "error_no_compositor": "You must choose at least one supported compositor before proceeding.",
+      "donate": "Ủng hộ:",
+      "donate_sub": "(Ủng hộ dự án!)",
+      "packages_prompt": " Gói> ",
+      "packages_header": " Nhấn Esc hoặc Enter để quay lại ",
+      "package_missing": "{pkg} (thiếu - sẽ được cài đặt)",
+      "package_installed": "{pkg} (đã cài đặt)",
+      "compositors_title": "=== Chọn compositors mục tiêu ===",
+      "installed": " (đã cài đặt)",
+      "not_installed": " (chưa cài đặt)",
+      "done": "Xong",
+      "compositors_prompt": " Cài đặt compositor > ",
+      "compositors_header": " Bật/tắt các compositor được hỗ trợ, sau đó chọn Done ",
+      "sddm_title": "=== Thiết lập display manager (SDDM) ===",
+      "sddm_detected_active": "Đã phát hiện display manager hoạt động/đã bật: {dm}",
+      "sddm_detected_none": "Đã phát hiện display manager hoạt động/đã bật: Không có",
+      "sddm_opt_install": "Cài đặt và cấu hình SDDM",
+      "sddm_opt_disable": "Xóa '{dm}'",
+      "sddm_opt_wayland": "Buộc sử dụng backend Wayland",
+      "sddm_prompt": " Thiết lập SDDM > ",
+      "sddm_header": " Bật/tắt các tùy chọn, sau đó chọn Done ",
+      "target_compositor_none": "Compositor mục tiêu [Bắt buộc - chưa chọn]",
+      "target_compositor_selected": "Compositor mục tiêu [{comps}]",
+      "target_compositor_req": "Compositor mục tiêu ({label}) [Bắt buộc]",
+      "target_compositor_label": "Compositor mục tiêu ({comps})",
+      "unsupported_compositor": "Compositor không được hỗ trợ",
+      "menu_overview": "Tổng quan cài đặt gói ({count} gói cơ bản)",
+      "menu_sddm": "Quản lý đăng nhập SDDM",
+      "menu_wallpapers": "Bộ hình nền",
+      "menu_telemetry": "Thu thập dữ liệu ẩn danh",
+      "menu_update": "Cập nhật",
+      "menu_reinstall": "Cài đặt lại",
+      "menu_install": "Cài đặt",
+      "menu_exit": "Thoát",
+      "main_menu_prompt": " Menu chính > ",
+      "main_menu_header": " Sử dụng phím mũi tên để di chuyển, Enter để chọn ",
+      "error_no_compositor": "Bạn phải chọn ít nhất một compositor được hỗ trợ trước khi tiếp tục.",
       "tagline": "A desktop shell built for you",
-      "support_creator": "Support the creator:",
-      "buy_coffee": "If you enjoy this project, consider buying me a coffee!",
-      "installed_success": "✔ Lucretia {ver} ({commit}) installed successfully.",
-      "failed_packages": "The following packages encountered errors during installation:",
-      "restart_prompt": "Restart your compositor or run 'lucretiad start' to begin.",
-      "ask_reboot": "Do you want to restart? [y/N] "
+      "support_creator": "Ủng hộ người tạo:",
+      "buy_coffee": "Nếu bạn thích dự án này, hãy mua cho tôi một ly cà phê!",
+      "installed_success": "✔ Lucretia {ver} ({commit}) đã được cài đặt thành công.",
+      "failed_packages": "Các gói sau đã gặp lỗi trong quá trình cài đặt:",
+      "restart_prompt": "Khởi động lại compositor hoặc chạy 'Lucretia start' để bắt đầu.",
+      "ask_reboot": "Bạn có muốn khởi động lại? [y/N] "
     },
     "deps": {
-      "syncing": "Synchronizing and updating system packages (pacman -Syyu)...",
-      "all_installed": "-> All packages are already installed! Skipping package download phase.",
-      "missing_count": "-> Found {count} missing packages to install.",
-      "installing_title": "Installing system packages and dependencies...",
-      "installing_pkg": "Installing {pkg}...",
-      "install_ok": "Successfully installed {pkg}",
-      "install_failed": "Failed to install {pkg}"
+      "syncing": "Đồng bộ hóa và cập nhật gói hệ thống (pacman -Syyu)...",
+      "all_installed": "-> Tất cả gói đã được cài đặt! Bỏ qua giai đoạn tải gói.",
+      "missing_count": "-> Tìm thấy {count} gói còn thiếu cần cài đặt.",
+      "installing_title": "Đang cài đặt gói hệ thống và các dependencies...",
+      "installing_pkg": "Đang cài đặt {pkg}...",
+      "install_ok": "Đã cài đặt thành công {pkg}",
+      "install_failed": "Không thể cài đặt {pkg}"
     },
     "deploy": {
-      "configuring_sddm": "Configuring SDDM display manager...",
-      "disabling_dm": "-> Disabling conflicting display manager: {dm}",
-      "sddm_success": "-> SDDM Material You theme installed and service enabled [ OK ]"
+      "configuring_sddm": "Cấu hình display manager SDDM...",
+      "disabling_dm": "-> Vô hiệu hóa display manager xung đột: {dm}",
+      "sddm_success": "-> Đã cài theme SDDM Material You và kích hoạt dịch vụ [ OK ]"
     }
   }
 }
