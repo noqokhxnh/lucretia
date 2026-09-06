@@ -239,8 +239,6 @@ PanelWindow {
 
     property var widgetCache: ({})
     property var componentCache: ({})
-    property var _allWidgetNames: ["battery", "network", "volume", "guide", "calendar", "wallpaper", "music", "movies", "notifications", "system"]
-    property int _preloadIndex: 0
 
     function widgetNameForItem(item) {
         for (let name in widgetCache) {
@@ -271,14 +269,16 @@ PanelWindow {
         return item;
     }
 
-    function preloadWidget(name) {
-        let t = getLayout(name);
-        if (!t || !t.comp) return;
-        ensureWidgetItem(name, t);
-    }
-
-    Component.onCompleted: {
-        preloadStaggerTimer.start();
+    function evictWidget(name) {
+        if (!name || name === "hidden") return;
+        let item = widgetCache[name];
+        if (item && name !== masterWindow.currentActive) {
+            if (widgetStack.currentItem === item) {
+                widgetStack.clear();
+            }
+            delete widgetCache[name];
+            item.destroy();
+        }
     }
 
     Timer {
@@ -324,22 +324,6 @@ PanelWindow {
         }
     }
 
-    Timer {
-        id: preloadStaggerTimer
-        interval: 150
-        repeat: true
-        onTriggered: {
-            if (masterWindow._preloadIndex >= masterWindow._allWidgetNames.length) {
-                preloadStaggerTimer.stop();
-                return;
-            }
-            if (masterWindow.currentActive !== "hidden") {
-                return;
-            }
-            preloadWidget(masterWindow._allWidgetNames[masterWindow._preloadIndex]);
-            masterWindow._preloadIndex++;
-        }
-    }
 
     property string targetActive: "hidden"
     property string currentActive: "hidden"
@@ -657,6 +641,27 @@ PanelWindow {
         onTriggered: {
             if (masterWindow.currentActive === "hidden" && scheduledGeneration === masterWindow.switchGeneration) {
                 masterWindow.disableMorph = true;
+                widgetStack.clear();
+                // Immediately evict heavy dialogs when closed
+                masterWindow.evictWidget("wallpaper");
+                masterWindow.evictWidget("guide");
+                masterWindow.evictWidget("settings");
+                masterWindow.evictWidget("movies");
+                // Schedule idle cleanup for other cached widgets
+                idleEvictionTimer.restart();
+            }
+        }
+    }
+
+    Timer {
+        id: idleEvictionTimer
+        interval: 180000
+        repeat: false
+        onTriggered: {
+            if (masterWindow.currentActive === "hidden") {
+                for (let name in masterWindow.widgetCache) {
+                    masterWindow.evictWidget(name);
+                }
             }
         }
     }

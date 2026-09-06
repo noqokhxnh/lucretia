@@ -295,6 +295,7 @@ Variants {
             SideBar {
                 id: verticalWrapper
                 barWindow: barWindow
+                visible: barWindow.isVertical
                 property real hideOffsetX: {
                     if (!barWindow || barWindow.isRevealed) return 0;
                     let offset = barWindow.barHeight + barWindow.edgePadding + barWindow.s(10);
@@ -309,6 +310,7 @@ Variants {
             TopBar {
                 id: contentWrapper
                 barWindow: barWindow
+                visible: !barWindow.isVertical
             }
         }
     }
