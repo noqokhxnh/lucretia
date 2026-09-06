@@ -219,6 +219,9 @@ Scope {
         root.isUnlocking = true;
     }
 
+    signal unlocked()
+    readonly property bool isLocked: rootLock.locked
+
     function completeUnlock() {
         if (!rootLock.locked) return;
         rootLock.locked = false;
@@ -230,17 +233,10 @@ Scope {
             root.freezeTimestamp = "";
         }
         Quickshell.execDetached(["loginctl", "unlock-session"]);
+        root.unlocked();
     }
 
-    IpcHandler {
-        target: "lock"
-        function activate() {
-            root.lock();
-        }
-        function deactivate() {
-            root.completeUnlock();
-        }
-    }
+    // IpcHandler moved to Shell.qml for lazy loading
 
     Settings {
         id: lockSettings
