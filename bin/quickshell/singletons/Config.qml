@@ -43,6 +43,10 @@ Item {
         setSetting("uiScale", val);
     }
 
+    readonly property bool autoPowerMode: Boolean(getSetting("autoPowerMode", false))
+    readonly property bool autoBatterySaver: Boolean(getSetting("autoBatterySaver", false))
+    readonly property bool autoPowerNotify: Boolean(getSetting("autoPowerNotify", false))
+
     signal settingsLoaded()
 
     function sh(cmd) {

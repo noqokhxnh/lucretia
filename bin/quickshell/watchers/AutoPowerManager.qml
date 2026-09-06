@@ -96,13 +96,11 @@ Item {
 
     Connections {
         target: Config
-        function onAutoPowerModeChanged() {
+        function onSettingsLoaded() {
             if (!Config.autoPowerMode) {
                 manager.lastAppliedProfile = "";
                 manager.lowLoadTicks = 0;
             }
-        }
-        function onAutoPowerNotifyChanged() {
             if (!Config.autoPowerNotify) {
                 Quickshell.execDetached([
                     "dbus-send", 

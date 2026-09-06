@@ -270,7 +270,7 @@ ShellRoot {
                 }
 
                 Loader {
-                    active: true
+                    active: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.general && Config.rawSettings.general.quickactions !== undefined) ? Config.rawSettings.general.quickactions : true
                     sourceComponent: Floating {}
                 }
             }
