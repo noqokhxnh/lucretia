@@ -822,12 +822,7 @@ Item {
                                         }
                                         opacity: 0.40 + (parent.level * 0.60)
 
-                                        Behavior on height {
-                                            NumberAnimation {
-                                                duration: 70
-                                                easing.type: Easing.OutCubic
-                                            }
-                                        }
+
                                     }
                                 }
                             }

@@ -2181,12 +2181,7 @@ Scope {
                                                     opacity: 0.22 + (level * 0.18)
                                                     anchors.bottom: parent.bottom
 
-                                                    Behavior on height {
-                                                        NumberAnimation { duration: 75; easing.type: Easing.OutCubic }
-                                                    }
-                                                    Behavior on opacity {
-                                                        NumberAnimation { duration: 75; easing.type: Easing.OutQuad }
-                                                    }
+
 
                                                     property real level: (parent.barLevels && index < parent.barLevels.length) ? parent.barLevels[index] : 0.0
                                                 }

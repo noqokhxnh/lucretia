@@ -33,10 +33,19 @@ Item {
     property bool showBars: true
 
     property bool isVisVisible: visible && showBars
+    property bool isSubscribed: false
+    readonly property bool shouldSubscribe: isVisVisible && MprisController.isPlaying
 
-    onIsVisVisibleChanged: {
-        if (isVisVisible) Cava.registerConsumer();
-        else Cava.unregisterConsumer();
+    onShouldSubscribeChanged: updateSubscription()
+
+    function updateSubscription() {
+        if (shouldSubscribe && !isSubscribed) {
+            isSubscribed = true;
+            Cava.registerConsumer();
+        } else if (!shouldSubscribe && isSubscribed) {
+            isSubscribed = false;
+            Cava.unregisterConsumer();
+        }
     }
 
     function updateVisibility() {
@@ -55,11 +64,14 @@ Item {
 
     Component.onCompleted: {
         updateVisibility();
-        if (isVisVisible) Cava.registerConsumer();
+        updateSubscription();
     }
 
     Component.onDestruction: {
-        if (isVisVisible) Cava.unregisterConsumer();
+        if (isSubscribed) {
+            isSubscribed = false;
+            Cava.unregisterConsumer();
+        }
     }
 
     onHeightChanged: updateVisibility()
@@ -158,19 +170,7 @@ Item {
                         opacity: 0.22 + (level * 0.18)
                         anchors.bottom: parent.bottom
 
-                        Behavior on height {
-                            NumberAnimation {
-                                duration: 75
-                                easing.type: Easing.OutCubic
-                            }
-                        }
 
-                        Behavior on opacity {
-                            NumberAnimation {
-                                duration: 75
-                                easing.type: Easing.OutQuad
-                            }
-                        }
 
                         property real level: (root.barLevels && index < root.barLevels.length) ? root.barLevels[index] : 0.0
                     }
