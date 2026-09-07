@@ -84,7 +84,8 @@
         "top": "Top",
         "bottom": "Bottom",
         "left": "Left",
-        "right": "Right"
+        "right": "Right",
+        "center": "Center"
       },
       "width": {
         "title": "Launcher width",
@@ -307,6 +308,10 @@
         "bottom": "Bottom",
         "left": "Left",
         "right": "Right"
+      },
+      "launcher_position": {
+        "title": "App Launcher position",
+        "desc": "Select where the app launcher appears on screen"
       },
       "width": {
         "title": "Bar width",

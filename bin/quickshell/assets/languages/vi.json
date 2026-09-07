@@ -84,7 +84,8 @@
         "top": "Trên",
         "bottom": "Dưới",
         "left": "Trái",
-        "right": "Phải"
+        "right": "Phải",
+        "center": "Ở giữa"
       },
       "width": {
         "title": "Chiều rộng",
@@ -306,6 +307,10 @@
         "bottom": "Dưới cùng",
         "left": "Bên trái",
         "right": "Bên phải"
+      },
+      "launcher_position": {
+        "title": "Vị trí App Launcher",
+        "desc": "Chọn vị trí hiển thị của trình khởi chạy trên màn hình"
       },
       "width": {
         "title": "Chiều rộng thanh Bar",

@@ -26,8 +26,33 @@ Item {
             loadModuleModels();
         } else {
             clearPendingGroup();
-            if (barPosDropdown.isOpen) barPosDropdown.closePopup();
+            if (barPosDropdown && barPosDropdown.isOpen) barPosDropdown.closePopup();
+            if (launcherPosDropdown && launcherPosDropdown.isOpen) launcherPosDropdown.closePopup();
         }
+    }
+
+    property var defaultLauncherSettings: ({
+        "position": "top",
+        "width": 600,
+        "itemCount": 6,
+        "terminalCommand": "kitty -e",
+        "smartRanking": true
+    })
+    property string launcherPosition: {
+        let s = (typeof Config !== "undefined" && Config.rawSettings) ? Config.rawSettings["launcher"] : undefined;
+        if (s && s.position !== undefined) return s.position;
+        if (typeof Config !== "undefined" && typeof Config.getSetting === "function") {
+            let ls = Config.getSetting("launcher", defaultLauncherSettings);
+            if (ls && ls.position !== undefined) return ls.position;
+        }
+        return "top";
+    }
+
+    function updateLauncherPosition(pos) {
+        let current = JSON.parse(JSON.stringify(Config.getSetting("launcher", defaultLauncherSettings) || defaultLauncherSettings));
+        current["position"] = pos;
+        Config.setSetting("launcher", current);
+        barTabRoot.launcherPosition = pos;
     }
 
     property var defaultBarSettings: {
@@ -720,6 +745,9 @@ Item {
             barTabRoot.assignedGroupColors = ts.groupColors;
         }
         barTabRoot.barSettings = ts;
+
+        let ls = Config.getSetting("launcher", barTabRoot.defaultLauncherSettings);
+        barTabRoot.launcherPosition = (ls && ls.position !== undefined) ? ls.position : "top";
     }
 
     Component.onCompleted: {
@@ -1120,6 +1148,79 @@ Item {
                                 else if (index === 2) barTabRoot.barPosition = "left";
                                 else if (index === 3) barTabRoot.barPosition = "right";
                                 barTabRoot.updateBarSettings();
+                            }
+                        }
+                    }
+                }
+
+                Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.2); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: rowLauncherPosLayout.implicitHeight + rootObj.s(18)
+                    color: "transparent"
+
+                    RowLayout {
+                        id: rowLauncherPosLayout
+                        anchors.left: parent.left
+                        anchors.leftMargin: rootObj.s(12)
+                        anchors.right: parent.right
+                        anchors.rightMargin: rootObj.s(12)
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: rootObj.s(16)
+
+                        ColumnLayout {
+                            Layout.fillWidth: true
+                            spacing: rootObj.s(2)
+                            Text {
+                                text: I18n.t("guide.bar.launcher_position.title", "App Launcher Position")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(13)
+                                color: ThemeBackend.text
+                            }
+                            Text {
+                                text: I18n.t("guide.bar.launcher_position.desc", "Select where the app launcher appears on screen")
+                                font.family: ThemeBackend.fontFamily
+                                font.pixelSize: rootObj.s(11)
+                                color: ThemeBackend.subtext0
+                            }
+                        }
+
+                        Dropdown {
+                            id: launcherPosDropdown
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            implicitWidth: rootObj.s(180)
+                            implicitHeight: rootObj.s(32)
+                            options: [
+                                I18n.t("guide.launcher.position.top", "Top"),
+                                I18n.t("guide.launcher.position.bottom", "Bottom"),
+                                I18n.t("guide.launcher.position.left", "Left"),
+                                I18n.t("guide.launcher.position.right", "Right"),
+                                I18n.t("guide.launcher.position.center", "Center")
+                            ]
+                            currentIndex: {
+                                if (barTabRoot.launcherPosition === "bottom") return 1;
+                                if (barTabRoot.launcherPosition === "left") return 2;
+                                if (barTabRoot.launcherPosition === "right") return 3;
+                                if (barTabRoot.launcherPosition === "center") return 4;
+                                return 0;
+                            }
+                            accentColor: ThemeBackend.mauve
+                            baseColor: ThemeBackend.surface0
+                            hoverColor: ThemeBackend.surface1
+                            dropdownColor: ThemeBackend.surface0
+                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                            textColor: ThemeBackend.text
+                            activeTextColor: ThemeBackend.crust
+                            cornerRadius: ThemeBackend.borderRadius
+                            fontPixelSize: rootObj.s(11)
+                            onValueChanged: function(index, value) {
+                                let pos = "top";
+                                if (index === 1) pos = "bottom";
+                                else if (index === 2) pos = "left";
+                                else if (index === 3) pos = "right";
+                                else if (index === 4) pos = "center";
+                                barTabRoot.updateLauncherPosition(pos);
                             }
                         }
                     }
