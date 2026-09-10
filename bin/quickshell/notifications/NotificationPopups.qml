@@ -252,8 +252,14 @@ PanelWindow {
                     width: parent.width
                     source: {
                         let app = (model.appName || "").toLowerCase();
+                        let summary = (model.summary || "").toLowerCase();
                         if (app === "weather") return "types/Weather.qml";
                         if (app === "screenshot" || app === "screen recorder") return "types/Screenshot.qml";
+                        if (app === "updater" || app === "lucretia updater" || app === "update" || app === "cập nhật" ||
+                            summary.includes("update available") || summary.includes("cập nhật") ||
+                            (app === "lucretia" && summary.includes("update"))) {
+                            return "types/Update.qml";
+                        }
                         return "types/Default.qml";
                     }
                     onLoaded: {

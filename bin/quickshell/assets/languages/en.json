@@ -510,7 +510,8 @@
   "updater": {
     "notification": {
       "app_name": "Update",
-      "action_open_guide": "Open guide",
+      "action_open_guide": "Open updater",
+      "action_open_updater": "Open updater",
       "update_available_title": "Update available: v{remote}",
       "update_available_body": "Current version: v{local}. Click to view changelog and update."
     }
