@@ -6,7 +6,9 @@ import "../"
 Item {
     id: root
 
-    property var now: new Date()
+    property var timeNow: new Date()
+    property var dateNow: new Date()
+    property alias now: root.timeNow
 
     readonly property string timeFormat: {
         if (typeof Config !== "undefined" && Config.rawSettings) {
@@ -49,29 +51,29 @@ Item {
 
     readonly property bool is12Hour: amPmFormat !== "" || hourFormat === "hh" || hourFormat === "h"
 
-    readonly property string time: Qt.formatDateTime(now, timeFormat)
-    readonly property string timeShort: Qt.formatDateTime(now, hourFormat + ":" + minuteFormat + (amPmFormat !== "" ? " " + amPmFormat : ""))
-    readonly property string timeLong: Qt.formatDateTime(now, "HH:mm:ss")
-    readonly property string timeOnly: Qt.formatDateTime(now, timeFormat)
+    readonly property string time: Qt.formatDateTime(timeNow, timeFormat)
+    readonly property string timeShort: Qt.formatDateTime(timeNow, hourFormat + ":" + minuteFormat + (amPmFormat !== "" ? " " + amPmFormat : ""))
+    readonly property string timeLong: Qt.formatDateTime(timeNow, "HH:mm:ss")
+    readonly property string timeOnly: Qt.formatDateTime(timeNow, timeFormat)
 
-    readonly property string hour: Qt.formatDateTime(now, hourFormat)
-    readonly property string minute: Qt.formatDateTime(now, minuteFormat)
-    readonly property string second: secondFormat !== "" ? Qt.formatDateTime(now, secondFormat) : ""
-    readonly property string amPm: amPmFormat !== "" ? Qt.formatDateTime(now, amPmFormat) : ""
+    readonly property string hour: Qt.formatDateTime(timeNow, hourFormat)
+    readonly property string minute: Qt.formatDateTime(timeNow, minuteFormat)
+    readonly property string second: secondFormat !== "" ? Qt.formatDateTime(timeNow, secondFormat) : ""
+    readonly property string amPm: amPmFormat !== "" ? Qt.formatDateTime(timeNow, amPmFormat) : ""
 
-    readonly property string fullDate: Qt.formatDateTime(now, "dddd, MMMM dd")
-    readonly property string shortDate: Qt.formatDateTime(now, "d MMM")
-    readonly property string dateBadge: Qt.formatDateTime(now, "d MMM").toUpperCase()
-    readonly property string day: Qt.formatDateTime(now, "dd")
-    readonly property string dayShort: Qt.formatDateTime(now, "d")
-    readonly property string dayName: Qt.formatDateTime(now, "dddd")
-    readonly property string dayNameShort: Qt.formatDateTime(now, "ddd")
-    readonly property string month: Qt.formatDateTime(now, "MMMM")
-    readonly property string monthShort: Qt.formatDateTime(now, "MMM")
-    readonly property string year: Qt.formatDateTime(now, "yyyy")
+    readonly property string fullDate: Qt.formatDateTime(dateNow, "dddd, MMMM dd")
+    readonly property string shortDate: Qt.formatDateTime(dateNow, "d MMM")
+    readonly property string dateBadge: Qt.formatDateTime(dateNow, "d MMM").toUpperCase()
+    readonly property string day: Qt.formatDateTime(dateNow, "dd")
+    readonly property string dayShort: Qt.formatDateTime(dateNow, "d")
+    readonly property string dayName: Qt.formatDateTime(dateNow, "dddd")
+    readonly property string dayNameShort: Qt.formatDateTime(dateNow, "ddd")
+    readonly property string month: Qt.formatDateTime(dateNow, "MMMM")
+    readonly property string monthShort: Qt.formatDateTime(dateNow, "MMM")
+    readonly property string year: Qt.formatDateTime(dateNow, "yyyy")
 
     function format(pattern, dateObj) {
-        return Qt.formatDateTime(dateObj || now, pattern);
+        return Qt.formatDateTime(dateObj || timeNow, pattern);
     }
 
     Timer {
@@ -79,13 +81,21 @@ Item {
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: root.now = new Date()
+        onTriggered: {
+            let d = new Date();
+            root.timeNow = d;
+            if (d.getDate() !== root.dateNow.getDate() || d.getMonth() !== root.dateNow.getMonth() || d.getFullYear() !== root.dateNow.getFullYear()) {
+                root.dateNow = d;
+            }
+        }
     }
 
     Connections {
         target: typeof Config !== "undefined" ? Config : null
         function onSettingsLoaded() {
-            root.now = new Date();
+            let d = new Date();
+            root.timeNow = d;
+            root.dateNow = d;
         }
     }
 }

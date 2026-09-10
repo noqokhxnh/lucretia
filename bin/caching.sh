@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+[ -n "$_QS_CACHING_INIT_DONE" ] && { return 0 2>/dev/null || exit 0; }
+
 export QS_CACHE_DIR="$HOME/.cache/lucretia"
 export QS_STATE_DIR="$HOME/.local/state/lucretia"
 export QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/lucretia"
@@ -42,3 +44,6 @@ if [ -d "$QS_DIR" ]; then
         qs_ensure_cache "$WIDGET_NAME"
     done
 fi
+
+export _QS_CACHING_INIT_DONE=1
+

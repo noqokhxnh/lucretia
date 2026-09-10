@@ -8,6 +8,26 @@ Item {
     property string lastAppliedProfile: ""
     property int lowLoadTicks: 0
     property double _lastSwitchTime: 0
+    property bool activeSubscriber: false
+
+    function updateSubscription() {
+        let shouldSubscribe = Boolean(Config.autoPowerMode);
+        if (shouldSubscribe && !activeSubscriber) {
+            SysData.subscribe();
+            activeSubscriber = true;
+        } else if (!shouldSubscribe && activeSubscriber) {
+            SysData.unsubscribe();
+            activeSubscriber = false;
+        }
+    }
+
+    Component.onCompleted: updateSubscription()
+    Component.onDestruction: {
+        if (activeSubscriber) {
+            SysData.unsubscribe();
+            activeSubscriber = false;
+        }
+    }
 
     Timer {
         id: monitorTimer
@@ -96,7 +116,11 @@ Item {
 
     Connections {
         target: Config
+        function onAutoPowerModeChanged() {
+            manager.updateSubscription();
+        }
         function onSettingsLoaded() {
+            manager.updateSubscription();
             if (!Config.autoPowerMode) {
                 manager.lastAppliedProfile = "";
                 manager.lowLoadTicks = 0;

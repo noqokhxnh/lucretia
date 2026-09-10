@@ -1,12 +1,26 @@
 cmake_minimum_required(VERSION 3.16)
 project(lucretia_daemons VERSION 1.4.2 LANGUAGES CXX)
 
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build" FORCE)
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
 # Optimization flags
-add_compile_options(-O3 -pthread)
+add_compile_options(
+    -O3
+    -march=native
+    -mtune=native
+    -pipe
+    -fvisibility=hidden
+    -fvisibility-inlines-hidden
+    -ffunction-sections
+    -fdata-sections
+    -pthread
+)
 
 # Find Qt6 components
 find_package(Qt6 REQUIRED COMPONENTS Core Network DBus Gui)
@@ -68,6 +82,14 @@ target_link_libraries(qs_daemon PRIVATE
     ${SQLITE3_LIBRARIES}
     ${ZBAR_LIBRARIES}
 )
+
+target_link_options(qs_daemon PRIVATE -Wl,--gc-sections)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+if(ipo_supported)
+    set_property(TARGET qs_daemon PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+endif()
 
 # Output qs_daemon binary to bin/quickshell/
 set_target_properties(qs_daemon PROPERTIES
