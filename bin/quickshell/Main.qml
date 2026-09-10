@@ -207,23 +207,6 @@ PanelWindow {
             if (overlapBottomRight && bp === "right") h -= animContainer.height;
             return Math.max(0, h);
         }
-
-        Behavior on x {
-            enabled: masterWindow.currentActive !== "hidden" && !masterWindow.disableMorph
-            NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.OutCubic }
-        }
-        Behavior on y {
-            enabled: masterWindow.currentActive !== "hidden" && !masterWindow.disableMorph
-            NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.OutCubic }
-        }
-        Behavior on width {
-            enabled: masterWindow.currentActive !== "hidden" && !masterWindow.disableMorph
-            NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.OutCubic }
-        }
-        Behavior on height {
-            enabled: masterWindow.currentActive !== "hidden" && !masterWindow.disableMorph
-            NumberAnimation { duration: masterWindow.morphDuration; easing.type: Easing.OutCubic }
-        }
     }
 
     MouseArea {

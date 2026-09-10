@@ -1099,6 +1099,7 @@ Variants {
                                 anchors.leftMargin: floatingWidget.s(4)
                                 anchors.rightMargin: floatingWidget.s(4)
 
+                                active: (floatingWidget.isExpanded || floatingWidget.expandProgress > 0.01) && (index === floatingWidget.activeIndex)
                                 visible: index === floatingWidget.activeIndex && floatingWidget.expandProgress > 0.01
                                 source: modelData
                                 asynchronous: false
