@@ -306,9 +306,11 @@ public:
 
         if (action == "subscribe") {
             spec->addSubscriber();
+            server->addSpectrumSubscriber(client);
             server->sendResponse(client, reqId, "subscribed");
         } else if (action == "unsubscribe") {
             spec->removeSubscriber();
+            server->removeSpectrumSubscriber(client);
             server->sendResponse(client, reqId, "unsubscribed");
         } else if (action == "set_bars") {
             int bars = req["bars"].toInt(32);
@@ -359,15 +361,15 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
     widgetManager = new WidgetManager(this);
 
     connect(audioSpectrum, &AudioSpectrumService::spectrumUpdated, this, [this](const QJsonArray& levels) {
+        if (spectrumSubscribers.isEmpty()) return;
         QJsonObject eventObj;
         eventObj["event"] = "spectrum";
         eventObj["data"] = levels;
         QJsonDocument doc(eventObj);
         QByteArray payload = doc.toJson(QJsonDocument::Compact) + "\n";
-        for (QLocalSocket* client : clients) {
+        for (QLocalSocket* client : spectrumSubscribers) {
             if (client && client->state() == QLocalSocket::ConnectedState) {
                 client->write(payload);
-                client->flush();
             }
         }
     });
@@ -502,6 +504,7 @@ void DaemonServer::onClientDisconnected(QLocalSocket* client) {
     clients.removeAll(client);
     sysSubscribers.removeAll(client);
     musicSubscribers.removeAll(client);
+    spectrumSubscribers.removeAll(client);
     client->deleteLater();
 }
 

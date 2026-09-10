@@ -60,26 +60,7 @@ PanelWindow {
     property string cachedMode: "false"
     property bool isVideoMode: false
 
-    IpcHandler {
-        target: "screenshotOverlay"
-
-        function toggle(img: string, editMode: string, audioPrefs: string, cGeom: string, cGeomVideo: string, cMode: string, cBackend: string, targetMon: string): void {
-            if (root.isActive) {
-                if (img && img !== "") Quickshell.execDetached(["bash", "-c", "rm -f " + img]);
-                root.deactivate();
-            } else {
-                root.activate(img, editMode, audioPrefs, cGeom, cGeomVideo, cMode, cBackend, targetMon);
-            }
-        }
-
-        function activate(img: string, editMode: string, audioPrefs: string, cGeom: string, cGeomVideo: string, cMode: string, cBackend: string, targetMon: string): void {
-            root.activate(img, editMode, audioPrefs, cGeom, cGeomVideo, cMode, cBackend, targetMon);
-        }
-
-        function deactivate(): void {
-            root.deactivate();
-        }
-    }
+// IpcHandler moved to Shell.qml for lazy loading
 
     onIsActiveChanged: {
         if (!root.isActive) {

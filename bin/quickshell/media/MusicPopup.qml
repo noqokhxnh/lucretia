@@ -48,7 +48,7 @@ Item {
             forceActiveFocus();
             resetAndPlayIntro();
             Cava.registerConsumer();
-            if (!eqProc.running) eqProc.running = true;
+            if (typeof eqStateWatcher !== "undefined" && eqStateWatcher.path) eqStateWatcher.reload();
             if (titleTextMain.implicitWidth > titleClipRect.width) {
                 marqueeContainer.x = 0;
                 titleAnim.restart();
@@ -410,15 +410,7 @@ Item {
     }
 
     function execCmd(cmdStr) {
-        var safeCmd = cmdStr.replace(/`/g, "\\`");
-        var p = Qt.createQmlObject(`
-            import Quickshell.Io
-            Process {
-                command: ["bash", "-c", \`${safeCmd}\`]
-                running: true
-                onExited: (exitCode) => destroy()
-            }
-        `, root);
+        Quickshell.execDetached(["bash", "-c", cmdStr]);
     }
 
     function applyPresetOptimistically(presetName) {
@@ -448,31 +440,19 @@ Item {
         }
     }
 
-    Timer {
-        interval: 1000
-        running: root.visible
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: {
-            if (!eqProc.running) eqProc.running = true;
-        }
-    }
-
-    Process {
-        id: eqProc
-        running: true
-        command: ["bash", "-c", Caching.qsDir + "/media/equalizer.sh get"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                if (this.text) {
-                    if (Date.now() - root.lastEqUpdate < 2000) return;
-
-                    var outStr = this.text.trim();
-                    if (outStr.length > 0) {
-                        try { root.eqData = JSON.parse(outStr); } catch(e) {}
-                    }
+    FileView {
+        id: eqStateWatcher
+        path: Caching.runDir ? (Caching.runDir + "/music/eq_state.json") : ""
+        watchChanges: root.visible
+        onFileChanged: reload()
+        onLoaded: {
+            if (Date.now() - root.lastEqUpdate < 2000) return;
+            try {
+                let raw = typeof text === "function" ? text() : text;
+                if (typeof raw === "string" && raw.trim().length > 0) {
+                    root.eqData = JSON.parse(raw.trim());
                 }
-            }
+            } catch(e) {}
         }
     }
 
@@ -822,12 +802,7 @@ Item {
                                         }
                                         opacity: 0.40 + (parent.level * 0.60)
 
-                                        Behavior on height {
-                                            NumberAnimation {
-                                                duration: 70
-                                                easing.type: Easing.OutCubic
-                                            }
-                                        }
+
                                     }
                                 }
                             }

@@ -73,15 +73,192 @@ ShellRoot {
         sourceComponent: Component {
             Item {
                 Watchers.AutoPowerManager {}
-                ScreenshotOverlay {}
                 Main {}
                 Bar {}
-                Lock {}
-                Launcher {}
-                Clipboard {}
-                Polkit {}
                 PopoutManager {}
                 Keycast {}
+
+                // --- Lazy-Loaded Overlays ---
+
+                // 1. ScreenshotOverlay
+                property bool screenshotActive: false
+                property var pendingScreenshotArgs: null
+
+                IpcHandler {
+                    target: "screenshotOverlay"
+
+                    function toggle(img: string, editMode: string, audioPrefs: string, cGeom: string, cGeomVideo: string, cMode: string, cBackend: string, targetMon: string): void {
+                        if (screenshotLoader.item && screenshotLoader.item.isActive) {
+                            if (img && img !== "") Quickshell.execDetached(["bash", "-c", "rm -f " + img]);
+                            screenshotLoader.item.deactivate();
+                        } else {
+                            activate(img, editMode, audioPrefs, cGeom, cGeomVideo, cMode, cBackend, targetMon);
+                        }
+                    }
+
+                    function activate(img: string, editMode: string, audioPrefs: string, cGeom: string, cGeomVideo: string, cMode: string, cBackend: string, targetMon: string): void {
+                        if (screenshotLoader.item) {
+                            screenshotLoader.item.activate(img, editMode, audioPrefs, cGeom, cGeomVideo, cMode, cBackend, targetMon);
+                        } else {
+                            pendingScreenshotArgs = [img, editMode, audioPrefs, cGeom, cGeomVideo, cMode, cBackend, targetMon];
+                            screenshotActive = true;
+                        }
+                    }
+
+                    function deactivate(): void {
+                        if (screenshotLoader.item) {
+                            screenshotLoader.item.deactivate();
+                        }
+                    }
+                }
+
+                Loader {
+                    id: screenshotLoader
+                    active: screenshotActive
+                    sourceComponent: ScreenshotOverlay {
+                        onIsActiveChanged: {
+                            if (!isActive) {
+                                screenshotUnloadTimer.restart();
+                            }
+                        }
+                        Component.onCompleted: {
+                            if (pendingScreenshotArgs) {
+                                let a = pendingScreenshotArgs;
+                                pendingScreenshotArgs = null;
+                                activate(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7]);
+                            }
+                        }
+                    }
+                }
+
+                Timer {
+                    id: screenshotUnloadTimer
+                    interval: 1000
+                    repeat: false
+                    onTriggered: {
+                        if (!screenshotLoader.item || !screenshotLoader.item.isActive) {
+                            screenshotActive = false;
+                        }
+                    }
+                }
+
+                // 2. Lock Screen
+                property bool lockActive: false
+                property bool pendingLock: false
+
+                IpcHandler {
+                    target: "lock"
+                    function activate(): void {
+                        if (lockLoader.item) {
+                            lockLoader.item.lock();
+                        } else {
+                            pendingLock = true;
+                            lockActive = true;
+                        }
+                    }
+                    function deactivate(): void {
+                        if (lockLoader.item) {
+                            lockLoader.item.completeUnlock();
+                        }
+                    }
+                }
+
+                Loader {
+                    id: lockLoader
+                    active: lockActive
+                    sourceComponent: Lock {
+                        onUnlocked: {
+                            lockUnloadTimer.restart();
+                        }
+                        Component.onCompleted: {
+                            if (pendingLock) {
+                                pendingLock = false;
+                                lock();
+                            }
+                        }
+                    }
+                }
+
+                Timer {
+                    id: lockUnloadTimer
+                    interval: 1000
+                    repeat: false
+                    onTriggered: {
+                        if (lockLoader.item && !lockLoader.item.isLocked) {
+                            lockActive = false;
+                        }
+                    }
+                }
+
+                // 3. App Launcher
+                property bool launcherLoaded: false
+
+                Connections {
+                    target: LauncherController
+                    function onIsVisibleChanged() {
+                        if (LauncherController.isVisible) {
+                            launcherUnloadTimer.stop();
+                            launcherLoaded = true;
+                        } else {
+                            launcherUnloadTimer.restart();
+                        }
+                    }
+                }
+
+                Timer {
+                    id: launcherUnloadTimer
+                    interval: 300000
+                    repeat: false
+                    onTriggered: {
+                        if (!LauncherController.isVisible) {
+                            launcherLoaded = false;
+                        }
+                    }
+                }
+
+                Loader {
+                    id: launcherLoader
+                    active: launcherLoaded
+                    sourceComponent: Launcher {}
+                }
+
+                // 4. Clipboard History
+                property bool clipboardLoaded: false
+
+                Connections {
+                    target: ClipboardController
+                    function onIsVisibleChanged() {
+                        if (ClipboardController.isVisible) {
+                            clipboardUnloadTimer.stop();
+                            clipboardLoaded = true;
+                        } else {
+                            clipboardUnloadTimer.restart();
+                        }
+                    }
+                }
+
+                Timer {
+                    id: clipboardUnloadTimer
+                    interval: 300000
+                    repeat: false
+                    onTriggered: {
+                        if (!ClipboardController.isVisible) {
+                            clipboardLoaded = false;
+                        }
+                    }
+                }
+
+                Loader {
+                    id: clipboardLoader
+                    active: clipboardLoaded
+                    sourceComponent: Clipboard {}
+                }
+
+                // 5. Polkit Agent
+                Loader {
+                    active: PolkitService.isActive
+                    sourceComponent: Polkit {}
+                }
 
                 Variants {
                     model: Quickshell.screens
@@ -93,7 +270,7 @@ ShellRoot {
                 }
 
                 Loader {
-                    active: true
+                    active: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.general && Config.rawSettings.general.quickactions !== undefined) ? Config.rawSettings.general.quickactions : true
                     sourceComponent: Floating {}
                 }
             }

@@ -86,13 +86,6 @@ Item {
     FontLoader {
         id: staticFontLoader
         source: (root.activeFontPath && root.activeFontPath !== "") ? ("file://" + root.activeFontPath) : ""
-        onStatusChanged: {
-            if (status === FontLoader.Ready) {
-                let cur = root.fontFamily;
-                root.fontFamily = "";
-                root.fontFamily = cur;
-            }
-        }
     }
 
     Process {
@@ -153,11 +146,6 @@ Item {
                 root.availableFontPaths = newPaths;
                 root.bundledNames = names;
                 root.updateActiveFontLoader();
-                if (staticFontLoader.status === FontLoader.Ready) {
-                    let cur = root.fontFamily;
-                    root.fontFamily = "";
-                    root.fontFamily = cur;
-                }
             }
         }
     }

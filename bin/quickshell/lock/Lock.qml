@@ -212,6 +212,7 @@ Scope {
         rootLock.locked = true;
         pamActionTimer.start();
         kbPollerRestartTimer.restart();
+        Quickshell.execDetached(["touch", Caching.runDir + "/lock.active"]);
     }
 
     function finishUnlock() {
@@ -219,8 +220,12 @@ Scope {
         root.isUnlocking = true;
     }
 
+    signal unlocked()
+    readonly property bool isLocked: rootLock.locked
+
     function completeUnlock() {
         if (!rootLock.locked) return;
+        Quickshell.execDetached(["rm", "-f", Caching.runDir + "/lock.active"]);
         rootLock.locked = false;
         root.isUnlocking = false;
         kbWaiter.running = false;
@@ -230,17 +235,14 @@ Scope {
             root.freezeTimestamp = "";
         }
         Quickshell.execDetached(["loginctl", "unlock-session"]);
+        root.unlocked();
     }
 
-    IpcHandler {
-        target: "lock"
-        function activate() {
-            root.lock();
-        }
-        function deactivate() {
-            root.completeUnlock();
-        }
+    Component.onDestruction: {
+        Quickshell.execDetached(["rm", "-f", Caching.runDir + "/lock.active"]);
     }
+
+    // IpcHandler moved to Shell.qml for lazy loading
 
     Settings {
         id: lockSettings
@@ -2181,12 +2183,7 @@ Scope {
                                                     opacity: 0.22 + (level * 0.18)
                                                     anchors.bottom: parent.bottom
 
-                                                    Behavior on height {
-                                                        NumberAnimation { duration: 75; easing.type: Easing.OutCubic }
-                                                    }
-                                                    Behavior on opacity {
-                                                        NumberAnimation { duration: 75; easing.type: Easing.OutQuad }
-                                                    }
+
 
                                                     property real level: (parent.barLevels && index < parent.barLevels.length) ? parent.barLevels[index] : 0.0
                                                 }

@@ -250,6 +250,13 @@ void MusicService::processImage(const QString &input, const QString &outputBlur,
 }
 
 void MusicService::fetchDeviceInfo(MusicState *data) {
+    qint64 now = QDateTime::currentMSecsSinceEpoch();
+    if (now - lastDeviceFetchTime < 15000 && !cachedDeviceName.isEmpty()) {
+        data->deviceIcon = cachedDeviceIcon;
+        data->deviceName = cachedDeviceName;
+        return;
+    }
+
     QProcess proc;
     proc.start("wpctl", QStringList() << "inspect" << "@DEFAULT_AUDIO_SINK@");
     if (proc.waitForFinished(500)) {
@@ -278,6 +285,10 @@ void MusicService::fetchDeviceInfo(MusicState *data) {
         } else if (!desc.isEmpty()) {
             data->deviceName = desc;
         }
+
+        cachedDeviceIcon = data->deviceIcon;
+        cachedDeviceName = data->deviceName;
+        lastDeviceFetchTime = now;
     }
 }
 

@@ -21,6 +21,7 @@
 #include <QCryptographicHash>
 #include <QMap>
 #include <QRegularExpression>
+#include <QDateTime>
 
 struct MusicState {
     QString title = "Not Playing";
@@ -62,4 +63,8 @@ private:
     void processImage(const QString &input, const QString &outputBlur, const QString &outputGrad, const QString &outputText, MusicState *data);
     void fetchDeviceInfo(MusicState *data);
     MusicState fetchDataInternal();
+
+    QString cachedDeviceIcon;
+    QString cachedDeviceName;
+    qint64 lastDeviceFetchTime = 0;
 };

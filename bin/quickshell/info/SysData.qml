@@ -19,23 +19,40 @@ Item {
     property real diskTotalGb: 0.0
     
     property int subscribers: 0
-    
-    function subscribe() { 
-        subscribers++; 
+    property bool prewarming: false
+
+    Timer {
+        id: prewarmTimer
+        interval: 5000
+        repeat: false
+        onTriggered: {
+            if (root.prewarming) {
+                root.prewarming = false;
+                root.unsubscribe();
+            }
+        }
+    }
+
+    function subscribe() {
+        subscribers++;
         if (subscribers === 1) {
             QsDaemonClient.sendRequest("sys", "subscribe", {});
         }
     }
-    
-    function unsubscribe() { 
-        subscribers = Math.max(0, subscribers - 1); 
+
+    function unsubscribe() {
+        subscribers = Math.max(0, subscribers - 1);
         if (subscribers === 0) {
             QsDaemonClient.sendRequest("sys", "unsubscribe", {});
         }
     }
 
     function prewarm() {
-        subscribe();
+        if (!prewarming) {
+            prewarming = true;
+            subscribe();
+        }
+        prewarmTimer.restart();
     }
 
     Connections {
@@ -52,9 +69,5 @@ Item {
             if (data.diskGb !== undefined) root.diskGb = data.diskGb;
             if (data.diskTotalGb !== undefined) root.diskTotalGb = data.diskTotalGb;
         }
-    }
-
-    Component.onCompleted: {
-        subscribe();
     }
 }

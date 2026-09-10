@@ -144,7 +144,8 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
                 "left": { anchor: "center" }, 
-                "right": { anchor: "center" } 
+                "right": { anchor: "center" },
+                "center": { anchor: "center" }
             } 
         },
         "clipboard": { 

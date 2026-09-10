@@ -43,11 +43,14 @@ PanelWindow {
 
     property bool isVisible: LauncherController.isVisible
     property int configRevision: 0
+    property bool isComponentReady: false
 
     Connections {
         target: (typeof Config !== "undefined") ? Config : null
         function onSettingsLoaded() {
-            LauncherController.hide();
+            if (isComponentReady && isVisible) {
+                LauncherController.hide();
+            }
             launcherWindow.configRevision++;
         }
     }
@@ -69,8 +72,19 @@ PanelWindow {
     }
 
     Component.onCompleted: {
+        isComponentReady = true;
         loadApps();
         executeFilter("");
+        if (isVisible) {
+            if (launcherWindow.smartRanking) {
+                rankFetcher.running = false;
+                rankFetcher.running = true;
+            }
+            launcherWindow.grabInputFocus();
+            focusTimer.restart();
+            focusRetryTimer.restart();
+            focusFinalTimer.restart();
+        }
     }
 
     property var defaultLauncherSettings: ({
@@ -132,15 +146,21 @@ PanelWindow {
     property string attachEdge: launcherPosition
 
     onAttachEdgeChanged: {
-        LauncherController.hide();
+        if (isComponentReady && isVisible) {
+            LauncherController.hide();
+        }
     }
 
     onBarStyleChanged: {
-        LauncherController.hide();
+        if (isComponentReady && isVisible) {
+            LauncherController.hide();
+        }
     }
 
     onBarPositionChanged: {
-        LauncherController.hide();
+        if (isComponentReady && isVisible) {
+            LauncherController.hide();
+        }
     }
 
     property bool isSideAttached: attachEdge === "left" || attachEdge === "right"
@@ -932,11 +952,18 @@ PanelWindow {
         width: launcherWindow.isSideAttached
                ? (launcherWindow.baseLauncherWidth * animProgress)
                : launcherWindow.baseLauncherWidth
-        height: !launcherWindow.isSideAttached
-                ? (launcherWindow.baseLauncherHeight * animProgress)
-                : launcherWindow.baseLauncherHeight
+        height: launcherWindow.attachEdge === "center"
+                ? launcherWindow.baseLauncherHeight
+                : (!launcherWindow.isSideAttached
+                    ? (launcherWindow.baseLauncherHeight * animProgress)
+                    : launcherWindow.baseLauncherHeight)
 
-        opacity: (launcherWindow.isVisible || animProgress > 0.001) ? 1.0 : 0.0
+        scale: launcherWindow.attachEdge === "center" ? (0.94 + 0.06 * animProgress) : 1.0
+        transformOrigin: Item.Center
+
+        opacity: launcherWindow.attachEdge === "center"
+                 ? Math.min(1.0, Math.max(0.0, animProgress))
+                 : ((launcherWindow.isVisible || animProgress > 0.001) ? 1.0 : 0.0)
 
         Shape {
             visible: launcherWindow.attachEdge === "top" && container.dynamicCornerRadius > 0.5
@@ -1135,8 +1162,8 @@ PanelWindow {
             anchors.fill: parent
             radius: container.dynamicCornerRadius
             color: ThemeBackend.base
-            border.width: 0
-            border.color: "transparent"
+            border.width: launcherWindow.attachEdge === "center" ? 1 : 0
+            border.color: launcherWindow.attachEdge === "center" ? Qt.alpha(ThemeBackend.surface1, 0.8) : "transparent"
             clip: true
 
             MouseArea {

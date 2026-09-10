@@ -43,11 +43,14 @@ PanelWindow {
 
     property bool isVisible: ClipboardController.isVisible
     property int configRevision: 0
+    property bool isComponentReady: false
 
     Connections {
         target: (typeof Config !== "undefined") ? Config : null
         function onSettingsLoaded() {
-            ClipboardController.hide();
+            if (isComponentReady && isVisible) {
+                ClipboardController.hide();
+            }
             clipboardWindow.configRevision++;
         }
     }
@@ -66,7 +69,9 @@ PanelWindow {
     }
 
     onBarPositionChanged: {
-        ClipboardController.hide();
+        if (isComponentReady && isVisible) {
+            ClipboardController.hide();
+        }
     }
 
     property bool isSideAttached: attachEdge === "left" || attachEdge === "right"
@@ -546,7 +551,17 @@ PanelWindow {
     }
 
     Component.onCompleted: {
+        isComponentReady = true;
         refreshClips();
+        if (isVisible) {
+            searchInput.clear();
+            filterDebounceTimer.stop();
+            executeClipFilter("");
+            clipboardWindow.grabInputFocus();
+            focusTimer.restart();
+            focusRetryTimer.restart();
+            focusFinalTimer.restart();
+        }
     }
 
     function handleWheelScroll(wheel) {

@@ -131,16 +131,7 @@ Rectangle {
                 opacity: 0.45 + (level * 0.55)
                 anchors.verticalCenter: parent.verticalCenter
 
-                Behavior on height {
-                    NumberAnimation {
-                        duration: 55
-                        easing.type: Easing.OutQuad
-                    }
-                }
 
-                Behavior on opacity {
-                    NumberAnimation { duration: 55 }
-                }
             }
         }
     }

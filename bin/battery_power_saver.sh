@@ -3,7 +3,7 @@
 # Prevent duplicate instances of this script
 LOCKFILE="/tmp/battery_power_saver.lock"
 if [ -e "$LOCKFILE" ]; then
-    PID=$(cat "$LOCKFILE" 2>/dev/null)
+    read -r PID < "$LOCKFILE" 2>/dev/null
     if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null; then
         echo "battery_power_saver.sh is already running with PID $PID"
         exit 0
@@ -41,12 +41,29 @@ else
     fi
 fi
 
+# Resolve battery capacity path
+BAT_PATH=""
+for b in /sys/class/power_supply/BAT*/capacity; do
+    if [ -f "$b" ]; then
+        BAT_PATH="$b"
+        break
+    fi
+done
+
 get_battery_capacity() {
     if [ -f "/tmp/mock_battery_capacity" ]; then
-        LC_ALL=C cat "/tmp/mock_battery_capacity" 2>/dev/null
+        local mock_cap=""
+        read -r mock_cap < "/tmp/mock_battery_capacity" 2>/dev/null
+        echo "$mock_cap"
         return
     fi
-    LC_ALL=C cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1
+    if [ -n "$BAT_PATH" ] && [ -f "$BAT_PATH" ]; then
+        local bat_cap=""
+        read -r bat_cap < "$BAT_PATH" 2>/dev/null
+        echo "$bat_cap"
+        return
+    fi
+    cat /sys/class/power_supply/BAT*/capacity 2>/dev/null | head -n1
 }
 
 # Track current state
@@ -58,7 +75,13 @@ update_setting_bool() {
     local val="$2"
     local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        ( flock 9; jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && cp "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "${SETTINGS_FILE}.tmp" ) 9>"$lock_path"
+        ( flock 9
+          if jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
+              mv -f "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+          else
+              rm -f "${SETTINGS_FILE}.tmp"
+          fi
+        ) 9>"$lock_path"
     fi
 }
 
@@ -67,7 +90,13 @@ update_setting_str() {
     local val="$2"
     local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        ( flock 9; jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp" && cp "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "${SETTINGS_FILE}.tmp" ) 9>"$lock_path"
+        ( flock 9
+          if jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
+              mv -f "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+          else
+              rm -f "${SETTINGS_FILE}.tmp"
+          fi
+        ) 9>"$lock_path"
     fi
 }
 
@@ -149,7 +178,8 @@ apply_performance() {
 
     # 1. Restore Quickshell's autoPowerMode
     if [ -f "$PREV_AUTO_POWER_FILE" ]; then
-        local prev_auto=$(cat "$PREV_AUTO_POWER_FILE" 2>/dev/null)
+        local prev_auto=""
+        read -r prev_auto < "$PREV_AUTO_POWER_FILE" 2>/dev/null
         [ "$prev_auto" != "true" ] && [ "$prev_auto" != "false" ] && prev_auto="true"
         update_setting_bool "autoPowerMode" "$prev_auto"
         rm -f "$PREV_AUTO_POWER_FILE"
@@ -197,7 +227,9 @@ check_critical_battery() {
 
     # 1. Shutdown khẩn cấp — vô điều kiện, override latch
     if [ "$cap" -le "$CRIT_SHUTDOWN" ]; then
-        if [ "$(cat "$CRIT_LEVEL_FILE" 2>/dev/null)" != "shutdown" ]; then
+        local cur_crit=""
+        [ -f "$CRIT_LEVEL_FILE" ] && read -r cur_crit < "$CRIT_LEVEL_FILE" 2>/dev/null
+        if [ "$cur_crit" != "shutdown" ]; then
             echo "shutdown" > "$CRIT_LEVEL_FILE"
             notify-send -r 99112 -u critical "Pin cạn kiệt" "Máy sẽ tắt trong 3 giây..."
         fi
@@ -208,10 +240,12 @@ check_critical_battery() {
 
     # 2. Suspend khi pin cạn — ratchet: chỉ suspend lại khi tụt dưới latch − 1
     if [ "$cap" -le "$CRIT_SUSPEND" ]; then
-        local latch
-        latch=$(cat "$SUSPEND_LATCH_FILE" 2>/dev/null)
+        local latch=""
+        [ -f "$SUSPEND_LATCH_FILE" ] && read -r latch < "$SUSPEND_LATCH_FILE" 2>/dev/null
         if [ -z "$latch" ] || [ "$cap" -le $((latch - 1)) ]; then
-            if [ "$(cat "$CRIT_LEVEL_FILE" 2>/dev/null)" != "suspend" ]; then
+            local cur_crit=""
+            [ -f "$CRIT_LEVEL_FILE" ] && read -r cur_crit < "$CRIT_LEVEL_FILE" 2>/dev/null
+            if [ "$cur_crit" != "suspend" ]; then
                 echo "suspend" > "$CRIT_LEVEL_FILE"
                 notify-send -r 99111 -u critical "Pin yếu" "Pin còn ${cap}%. Máy sẽ tự ngủ để bảo vệ dữ liệu."
             fi
@@ -223,57 +257,68 @@ check_critical_battery() {
 
     # 3. Cảnh báo pin yếu — 1 lần mỗi mức
     if [ "$cap" -le "$CRIT_WARN" ]; then
-        if [ "$(cat "$CRIT_LEVEL_FILE" 2>/dev/null)" != "warn" ]; then
+        local cur_crit=""
+        [ -f "$CRIT_LEVEL_FILE" ] && read -r cur_crit < "$CRIT_LEVEL_FILE" 2>/dev/null
+        if [ "$cur_crit" != "warn" ]; then
             echo "warn" > "$CRIT_LEVEL_FILE"
             notify-send -r 99110 -u normal "Pin yếu" "Pin còn ${cap}%. Hãy cắm sạc."
         fi
     fi
 }
 
+LAST_SETTINGS_MTIME=0
+AUTO_SAVER="true"
+CRIT_PROTECT="true"
+CRIT_WARN=15
+CRIT_SUSPEND=5
+CRIT_SHUTDOWN=2
+BOOST_SAVE="true"
+
+read_settings() {
+    [ -f "$SETTINGS_FILE" ] || return 0
+    local cur_mtime
+    cur_mtime=$(stat -c %Y "$SETTINGS_FILE" 2>/dev/null || echo 0)
+    if [ "$cur_mtime" != "$LAST_SETTINGS_MTIME" ]; then
+        LAST_SETTINGS_MTIME="$cur_mtime"
+        local raw
+        raw=$(jq -r '[
+            (.autoBatterySaver // true),
+            (.critProtect // true),
+            (.critBatteryWarn // 15),
+            (.critBatterySuspend // 5),
+            (.critBatteryShutdown // 2),
+            (.boostPowerSave // true)
+        ] | @tsv' "$SETTINGS_FILE" 2>/dev/null)
+
+        if [ -n "$raw" ]; then
+            local val_auto val_crit val_warn val_susp val_shut val_boost
+            read -r val_auto val_crit val_warn val_susp val_shut val_boost <<< "$raw"
+
+            [ "$val_auto" = "false" ] && AUTO_SAVER="false" || AUTO_SAVER="true"
+            [ "$val_crit" = "false" ] && CRIT_PROTECT="false" || CRIT_PROTECT="true"
+
+            [[ "$val_warn" =~ ^[0-9]+$ ]] && CRIT_WARN="$val_warn" || CRIT_WARN=15
+            [[ "$val_susp" =~ ^[0-9]+$ ]] && CRIT_SUSPEND="$val_susp" || CRIT_SUSPEND=5
+            [[ "$val_shut" =~ ^[0-9]+$ ]] && CRIT_SHUTDOWN="$val_shut" || CRIT_SHUTDOWN=2
+            [ "$CRIT_WARN" -gt 100 ] && CRIT_WARN=15
+            [ "$CRIT_SUSPEND" -gt 100 ] && CRIT_SUSPEND=5
+            [ "$CRIT_SHUTDOWN" -gt 100 ] && CRIT_SHUTDOWN=2
+
+            [ "$val_boost" = "false" ] && BOOST_SAVE="false" || BOOST_SAVE="true"
+        fi
+    fi
+}
+
 echo "[Battery Saver] Daemon started. Monitoring AC power state & settings..."
+
+# Initial settings load
+read_settings
 
 # Main monitoring loop
 while true; do
-    # Read autoBatterySaver setting (default to true)
-    AUTO_SAVER="true"
-    if [ -f "$SETTINGS_FILE" ]; then
-        AUTO_SAVER=$(jq -r '.autoBatterySaver // true' "$SETTINGS_FILE" 2>/dev/null)
-        if [ "$AUTO_SAVER" != "true" ] && [ "$AUTO_SAVER" != "false" ]; then
-            AUTO_SAVER="true"
-        fi
-    fi
-
-
-
-    # Read critical-battery protection setting + thresholds (default 15/5/2)
-    CRIT_PROTECT="true"
-    if [ -f "$SETTINGS_FILE" ]; then
-        CRIT_PROTECT=$(jq -r '.critProtect // true' "$SETTINGS_FILE" 2>/dev/null)
-        if [ "$CRIT_PROTECT" != "true" ] && [ "$CRIT_PROTECT" != "false" ]; then
-            CRIT_PROTECT="true"
-        fi
-    fi
-    CRIT_WARN=15; CRIT_SUSPEND=5; CRIT_SHUTDOWN=2
-    if [ -f "$SETTINGS_FILE" ]; then
-        CRIT_WARN=$(jq -r '.critBatteryWarn // 15' "$SETTINGS_FILE" 2>/dev/null)
-        CRIT_SUSPEND=$(jq -r '.critBatterySuspend // 5' "$SETTINGS_FILE" 2>/dev/null)
-        CRIT_SHUTDOWN=$(jq -r '.critBatteryShutdown // 2' "$SETTINGS_FILE" 2>/dev/null)
-        [[ "$CRIT_WARN" =~ ^[0-9]+$ ]] || CRIT_WARN=15
-        [[ "$CRIT_SUSPEND" =~ ^[0-9]+$ ]] || CRIT_SUSPEND=5
-        [[ "$CRIT_SHUTDOWN" =~ ^[0-9]+$ ]] || CRIT_SHUTDOWN=2
-        [ "$CRIT_WARN" -gt 100 ] && CRIT_WARN=15
-        [ "$CRIT_SUSPEND" -gt 100 ] && CRIT_SUSPEND=5
-        [ "$CRIT_SHUTDOWN" -gt 100 ] && CRIT_SHUTDOWN=2
-    fi
+    read_settings
 
     # Turbo boost toggle — khi đổi, re-trigger udev để rule cài sẵn áp dụng ngay
-    BOOST_SAVE="true"
-    if [ -f "$SETTINGS_FILE" ]; then
-        BOOST_SAVE=$(jq -r '.boostPowerSave // true' "$SETTINGS_FILE" 2>/dev/null)
-        if [ "$BOOST_SAVE" != "true" ] && [ "$BOOST_SAVE" != "false" ]; then
-            BOOST_SAVE="true"
-        fi
-    fi
     if [ -n "$PREV_BOOST_SAVE" ] && [ "$BOOST_SAVE" != "$PREV_BOOST_SAVE" ]; then
         udevadm trigger --subsystem-match=power_supply 2>/dev/null || true
     fi
@@ -282,7 +327,7 @@ while true; do
     # Read AC status (1 = AC plugged, 0 = on battery)
     AC_STATUS="1"
     if [ -f "$AC_PATH" ]; then
-        AC_STATUS=$(cat "$AC_PATH" 2>/dev/null || echo 1)
+        read -r AC_STATUS < "$AC_PATH" 2>/dev/null || AC_STATUS="1"
     fi
 
     # Reset latch bảo vệ pin khi cắm sạc
@@ -309,9 +354,17 @@ while true; do
     fi
 
     # Bảo vệ pin cạn — chạy bất kể autoBatterySaver (an toàn, không phải tùy chọn)
+    local sleep_interval=10
     if [ "$AC_STATUS" = "0" ]; then
         check_critical_battery
+        local cap
+        cap=$(get_battery_capacity)
+        if [[ "$cap" =~ ^[0-9]+$ ]] && [ "$cap" -le "$CRIT_WARN" ]; then
+            sleep_interval=3
+        else
+            sleep_interval=8
+        fi
     fi
 
-    sleep 3
+    sleep "$sleep_interval"
 done

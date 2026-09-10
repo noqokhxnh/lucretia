@@ -23,18 +23,30 @@ Item {
     property bool isRound: true
 
     property bool isVisVisible: visible
+    property bool isSubscribed: false
+    readonly property bool shouldSubscribe: isVisVisible && MprisController.isPlaying
 
-    onIsVisVisibleChanged: {
-        if (isVisVisible) Cava.registerConsumer();
-        else Cava.unregisterConsumer();
+    onShouldSubscribeChanged: updateSubscription()
+
+    function updateSubscription() {
+        if (shouldSubscribe && !isSubscribed) {
+            isSubscribed = true;
+            Cava.registerConsumer();
+        } else if (!shouldSubscribe && isSubscribed) {
+            isSubscribed = false;
+            Cava.unregisterConsumer();
+        }
     }
 
     Component.onCompleted: {
-        if (isVisVisible) Cava.registerConsumer();
+        updateSubscription();
     }
 
     Component.onDestruction: {
-        if (isVisVisible) Cava.unregisterConsumer();
+        if (isSubscribed) {
+            isSubscribed = false;
+            Cava.unregisterConsumer();
+        }
     }
 
     property int barCount: 64
@@ -172,12 +184,7 @@ Item {
                     }
                     opacity: 0.40 + (parent.level * 0.60)
 
-                    Behavior on height {
-                        NumberAnimation {
-                            duration: 70
-                            easing.type: Easing.OutCubic
-                        }
-                    }
+
                 }
             }
         }
