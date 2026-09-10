@@ -43,11 +43,14 @@ PanelWindow {
 
     property bool isVisible: LauncherController.isVisible
     property int configRevision: 0
+    property bool isComponentReady: false
 
     Connections {
         target: (typeof Config !== "undefined") ? Config : null
         function onSettingsLoaded() {
-            LauncherController.hide();
+            if (isComponentReady && isVisible) {
+                LauncherController.hide();
+            }
             launcherWindow.configRevision++;
         }
     }
@@ -69,8 +72,19 @@ PanelWindow {
     }
 
     Component.onCompleted: {
+        isComponentReady = true;
         loadApps();
         executeFilter("");
+        if (isVisible) {
+            if (launcherWindow.smartRanking) {
+                rankFetcher.running = false;
+                rankFetcher.running = true;
+            }
+            launcherWindow.grabInputFocus();
+            focusTimer.restart();
+            focusRetryTimer.restart();
+            focusFinalTimer.restart();
+        }
     }
 
     property var defaultLauncherSettings: ({
@@ -132,15 +146,21 @@ PanelWindow {
     property string attachEdge: launcherPosition
 
     onAttachEdgeChanged: {
-        LauncherController.hide();
+        if (isComponentReady && isVisible) {
+            LauncherController.hide();
+        }
     }
 
     onBarStyleChanged: {
-        LauncherController.hide();
+        if (isComponentReady && isVisible) {
+            LauncherController.hide();
+        }
     }
 
     onBarPositionChanged: {
-        LauncherController.hide();
+        if (isComponentReady && isVisible) {
+            LauncherController.hide();
+        }
     }
 
     property bool isSideAttached: attachEdge === "left" || attachEdge === "right"
