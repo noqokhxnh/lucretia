@@ -63,6 +63,8 @@ public:
     void removeSysSubscriber(QLocalSocket* client) { sysSubscribers.removeAll(client); }
     void addMusicSubscriber(QLocalSocket* client) { if (!musicSubscribers.contains(client)) musicSubscribers.append(client); }
     void removeMusicSubscriber(QLocalSocket* client) { musicSubscribers.removeAll(client); }
+    void addSpectrumSubscriber(QLocalSocket* client) { if (!spectrumSubscribers.contains(client)) spectrumSubscribers.append(client); }
+    void removeSpectrumSubscriber(QLocalSocket* client) { spectrumSubscribers.removeAll(client); }
 
     void handleToolsRequest(QLocalSocket* client, const QString& reqId, const QString& mode, const QString& query, const QString& extra);
     QString handlePhotoboothBurst(const QStringList& inputs, const QString& output, bool mirror);
@@ -87,6 +89,7 @@ private:
     QList<QLocalSocket*> clients;
     QList<QLocalSocket*> sysSubscribers;
     QList<QLocalSocket*> musicSubscribers;
+    QList<QLocalSocket*> spectrumSubscribers;
 
     SysDataService* sysDataSvc;
     MusicService* musicSvc;

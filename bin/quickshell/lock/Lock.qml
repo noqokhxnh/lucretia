@@ -212,6 +212,7 @@ Scope {
         rootLock.locked = true;
         pamActionTimer.start();
         kbPollerRestartTimer.restart();
+        Quickshell.execDetached(["touch", Caching.runDir + "/lock.active"]);
     }
 
     function finishUnlock() {
@@ -224,6 +225,7 @@ Scope {
 
     function completeUnlock() {
         if (!rootLock.locked) return;
+        Quickshell.execDetached(["rm", "-f", Caching.runDir + "/lock.active"]);
         rootLock.locked = false;
         root.isUnlocking = false;
         kbWaiter.running = false;
@@ -234,6 +236,10 @@ Scope {
         }
         Quickshell.execDetached(["loginctl", "unlock-session"]);
         root.unlocked();
+    }
+
+    Component.onDestruction: {
+        Quickshell.execDetached(["rm", "-f", Caching.runDir + "/lock.active"]);
     }
 
     // IpcHandler moved to Shell.qml for lazy loading

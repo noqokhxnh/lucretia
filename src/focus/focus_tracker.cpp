@@ -90,7 +90,9 @@ std::string FocusService::getNiriSocketPath() {
 }
 
 bool FocusService::isLocked() {
-    return system("pgrep -f '[L]ock.qml' > /dev/null") == 0;
+    const char* xdg = std::getenv("XDG_RUNTIME_DIR");
+    std::string lock_file = (xdg ? std::string(xdg) : "/tmp") + "/lucretia/lock.active";
+    return ::access(lock_file.c_str(), F_OK) == 0;
 }
 
 void FocusService::updateActiveWindow() {

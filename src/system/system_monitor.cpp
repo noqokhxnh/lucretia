@@ -121,6 +121,16 @@ void SysDataService::get_mem_stats(int &percent, double &used_gb) {
 }
 
 int SysDataService::get_temp() {
+    static std::string cached_temp_path;
+    if (!cached_temp_path.empty()) {
+        std::ifstream temp_file(cached_temp_path);
+        int temp;
+        if (temp_file >> temp) {
+            return (temp > 1000) ? temp / 1000 : temp;
+        }
+        cached_temp_path.clear();
+    }
+
     const char* hwmon_base = "/sys/class/hwmon/";
     DIR* dir = opendir(hwmon_base);
     if (dir) {
@@ -132,9 +142,11 @@ int SysDataService::get_temp() {
             std::string name;
             std::getline(name_file, name);
             if (name == "coretemp" || name == "k10temp" || name == "zenpower" || name == "cpu_thermal" || name == "bcm2835_thermal") {
-                std::ifstream temp_file(path + "temp1_input");
+                std::string target_path = path + "temp1_input";
+                std::ifstream temp_file(target_path);
                 int temp;
                 if (temp_file >> temp) {
+                    cached_temp_path = target_path;
                     closedir(dir);
                     return (temp > 1000) ? temp / 1000 : temp;
                 }
