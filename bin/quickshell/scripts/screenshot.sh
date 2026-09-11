@@ -34,35 +34,32 @@ done
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 source "$SCRIPT_DIR/caching.sh"
-source "$SCRIPT_DIR/i18n.sh"
 qs_ensure_cache "screenshot"
-qs_ensure_cache "recording"
 
-CACHE_DIR="$QS_CACHE_RECORDING"
+CACHE_DIR="${QS_CACHE_RECORDING:-$HOME/.cache/lucretia/recording}"
 SAVE_DIR="${XDG_PICTURES_DIR:-$HOME/Pictures}/Screenshots"
 RECORD_DIR="${XDG_VIDEOS_DIR:-$HOME/Videos}/Recordings"
-mkdir -p "$SAVE_DIR" "$RECORD_DIR"
 
-REQUIRED_CMDS=("grim" "satty" "wl-copy" "pactl" "quickshell" "zbarimg" "python3")
-MISSING_CMDS=()
-for cmd in "${REQUIRED_CMDS[@]}"; do
-    if ! command -v "$cmd" &> /dev/null; then
-        MISSING_CMDS+=("$cmd")
+check_missing_deps() {
+    local missing=()
+    for cmd in "$@"; do
+        command -v "$cmd" &>/dev/null || missing+=("$cmd")
+    done
+    if [ ${#missing[@]} -ne 0 ]; then
+        source "$SCRIPT_DIR/i18n.sh" 2>/dev/null
+        local notif_app notif_title notif_body
+        notif_app="$(t "screenshot.notifications.system_app_name" 2>/dev/null || echo "Screenshot")"
+        notif_title="$(t "screenshot.notifications.missing_deps_title" 2>/dev/null || echo "Missing Dependencies")"
+        notif_body="$(t "screenshot.notifications.missing_deps_body" "cmds=${missing[*]}" 2>/dev/null || echo "Missing commands: ${missing[*]}")"
+        notify-send -u critical -a "$notif_app" "$notif_title" "$notif_body"
+        exit 1
     fi
-done
+}
 
 if [ "$RECORD_MODE" = true ]; then
-    if ! command -v "$VIDEO_BACKEND" &> /dev/null; then
-        MISSING_CMDS+=("$VIDEO_BACKEND")
-    fi
-fi
-
-if [ ${#MISSING_CMDS[@]} -ne 0 ]; then
-    notif_app="$(t "screenshot.notifications.system_app_name")"
-    notif_title="$(t "screenshot.notifications.missing_deps_title")"
-    notif_body="$(t "screenshot.notifications.missing_deps_body" "cmds=${MISSING_CMDS[*]}")"
-    notify-send -u critical -a "$notif_app" "$notif_title" "$notif_body"
-    exit 1
+    qs_ensure_cache "recording"
+    mkdir -p "$RECORD_DIR"
+    command -v "$VIDEO_BACKEND" &>/dev/null || check_missing_deps "$VIDEO_BACKEND"
 fi
 
 if [ -f "$CACHE_DIR/rec_pid" ]; then
@@ -90,11 +87,12 @@ if [ -f "$CACHE_DIR/rec_pid" ]; then
                 else
                     NOTIF_ICON=""
                 fi
-                notif_app="$(t "screenshot.notifications.recorder_app_name")"
-                notif_action="$(t "screenshot.notifications.open_folder")"
-                notif_title="$(t "screenshot.notifications.recording_saved_title")"
-                notif_body="$(t "screenshot.notifications.recording_saved_body" "file=$(basename "$FINAL_FILE")" "folder=$RECORD_DIR")"
-                ACTION=$(notify-send -a "$notif_app" -i "$NOTIF_ICON" -h "string:image-path:$NOTIF_ICON" -A "default=$notif_action" "$notif_title" "$notif_body")
+                source "$SCRIPT_DIR/i18n.sh" 2>/dev/null
+                notif_app="$(t "screenshot.notifications.recorder_app_name" 2>/dev/null || echo "Recorder")"
+                notif_action="$(t "screenshot.notifications.open_folder" 2>/dev/null || echo "Open folder")"
+                notif_title="$(t "screenshot.notifications.recording_saved_title" 2>/dev/null || echo "Recording saved")"
+                notif_body="$(t "screenshot.notifications.recording_saved_body" "file=$(basename "$FINAL_FILE")" "folder=$RECORD_DIR" 2>/dev/null || echo "Saved to $RECORD_DIR")"
+                ACTION=$(timeout 30 notify-send -a "$notif_app" -i "$NOTIF_ICON" -h "string:image-path:$NOTIF_ICON" -A "default=$notif_action" "$notif_title" "$notif_body" 2>/dev/null)
                 rm -f "$VIDEO_THUMB"
                 if [ "$ACTION" = "default" ]; then
                     if command -v nautilus &> /dev/null; then
@@ -119,30 +117,28 @@ fi
 
 get_active_monitor() {
     local mon=""
-    if command -v hyprctl &>/dev/null; then
+    if [ -n "$NIRI_SOCKET" ] || [ "$XDG_CURRENT_DESKTOP" = "niri" ] || command -v niri &>/dev/null; then
+        mon=$(niri msg -j focused-output 2>/dev/null | grep -oP '"name":\s*"\K[^"]+')
+        if [ -z "$mon" ]; then
+            mon=$(niri msg -j outputs 2>/dev/null | grep -oP '"name":\s*"\K[^"]+' | head -n 1)
+        fi
+    fi
+    if [ -z "$mon" ] && [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl &>/dev/null; then
         mon=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused == true) | .name' 2>/dev/null)
         if [ -z "$mon" ] || [ "$mon" = "null" ]; then
             mon=$(hyprctl activeworkspace -j 2>/dev/null | jq -r '.monitor // empty' 2>/dev/null)
         fi
     fi
-    if [ -z "$mon" ] && command -v niri &>/dev/null; then
-        mon=$(niri msg -j focused-output 2>/dev/null | jq -r '.name // empty' 2>/dev/null)
-        if [ -z "$mon" ] || [ "$mon" = "null" ]; then
-            mon=$(niri msg -j outputs 2>/dev/null | jq -r 'to_entries[]? | select(.value.is_focused == true) | .value.name // .key' 2>/dev/null)
-        fi
-    fi
-    if [ -z "$mon" ] && command -v swaymsg &>/dev/null; then
+    if [ -z "$mon" ] && [ -n "$SWAYSOCK" ] && command -v swaymsg &>/dev/null; then
         mon=$(swaymsg -t get_outputs 2>/dev/null | jq -r '.[] | select(.focused == true) | .name' 2>/dev/null)
     fi
-    if [ -z "$mon" ] || [ "$mon" = "null" ]; then
-        if [ -f "$SCRIPT_DIR/monitors_detect.sh" ]; then
-            mon=$(bash "$SCRIPT_DIR/monitors_detect.sh" 2>/dev/null | head -n 1)
-        fi
+    if [ -z "$mon" ] && [ -f "$SCRIPT_DIR/monitors_detect.sh" ]; then
+        mon=$(bash "$SCRIPT_DIR/monitors_detect.sh" 2>/dev/null | head -n 1)
     fi
     echo "$mon"
 }
 
-if [ -z "$TARGET_MON" ]; then
+if [ -z "$TARGET_MON" ] && [ -z "$GEOMETRY" ]; then
     TARGET_MON=$(get_active_monitor)
 fi
 
@@ -180,7 +176,8 @@ if [ "$SCAN_QR_MODE" = false ] && [ "$RECORD_MODE" = false ] && [ "$FULL_MODE" =
 
     QS_AUDIO_PREFS="${QS_DESK_VOL},${QS_DESK_MUTE},${QS_MIC_VOL},${QS_MIC_MUTE},${QS_MIC_DEV}"
 
-    exec quickshell ${MAIN_QML:+-p "$MAIN_QML"} ipc call screenshotOverlay toggle "$FREEZE_IMG" "$EDIT_MODE" "$QS_AUDIO_PREFS" "$QS_CACHED_GEOM" "$QS_CACHED_VIDEO_GEOM" "$QS_CACHED_MODE" "$QS_CACHED_BACKEND" "$TARGET_MON"
+    [ -n "$MAIN_QML" ] || MAIN_QML="${LUCRETIA_DIR:-$HOME/.config/niri/bin/quickshell}/Shell.qml"
+    exec quickshell -p "$MAIN_QML" ipc call screenshotOverlay toggle "$FREEZE_IMG" "$EDIT_MODE" "$QS_AUDIO_PREFS" "$QS_CACHED_GEOM" "$QS_CACHED_VIDEO_GEOM" "$QS_CACHED_MODE" "$QS_CACHED_BACKEND" "$TARGET_MON"
 fi
 
 if [ "$SCAN_QR_MODE" = true ]; then
@@ -316,30 +313,66 @@ if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
         exit 0
     fi
 
-    TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
+    mkdir -p "$SAVE_DIR"
     if [ -n "$GEOMETRY" ]; then
-        grim -l 0 -g "$GEOMETRY" "$TMP_SCREENSHOT"
+        if [ "$EDIT_MODE" = true ]; then
+            TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
+            grim -l 0 -g "$GEOMETRY" "$TMP_SCREENSHOT"
+            GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
+            rm -f "$TMP_SCREENSHOT"
+        else
+            grim -l 0 -g "$GEOMETRY" "$FILENAME"
+        fi
     elif [ -n "$TARGET_MON" ]; then
-        grim -o "$TARGET_MON" -l 0 "$TMP_SCREENSHOT" 2>/dev/null || grim -l 0 "$TMP_SCREENSHOT"
+        if [ "$EDIT_MODE" = true ]; then
+            TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
+            grim -o "$TARGET_MON" -l 0 "$TMP_SCREENSHOT" 2>/dev/null || grim -l 0 "$TMP_SCREENSHOT"
+            GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
+            rm -f "$TMP_SCREENSHOT"
+        else
+            grim -o "$TARGET_MON" -l 0 "$FILENAME" 2>/dev/null || grim -l 0 "$FILENAME"
+        fi
     else
-        grim -l 0 "$TMP_SCREENSHOT"
+        if [ "$EDIT_MODE" = true ]; then
+            TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
+            grim -l 0 "$TMP_SCREENSHOT"
+            GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
+            rm -f "$TMP_SCREENSHOT"
+        else
+            grim -l 0 "$FILENAME"
+        fi
     fi
-
-    if [ "$EDIT_MODE" = true ]; then
-        GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
-    else
-        cp "$TMP_SCREENSHOT" "$FILENAME"
-    fi
-    rm -f "$TMP_SCREENSHOT"
 
     if [ -s "$FILENAME" ]; then
         wl-copy --type image/png < "$FILENAME"
         (
-            notif_app="$(t "screenshot.notifications.screenshot_app_name")"
-            notif_action="$(t "screenshot.notifications.open_folder")"
-            notif_title="$(t "screenshot.notifications.screenshot_saved_title")"
-            notif_body="$(t "screenshot.notifications.screenshot_saved_body" "file=Screenshot_$time.png" "folder=$SAVE_DIR")"
-            ACTION=$(notify-send -a "$notif_app" -i "$FILENAME" -h "string:image-path:$FILENAME" -A "default=$notif_action" "$notif_title" "$notif_body")
+            source "$SCRIPT_DIR/i18n.sh" 2>/dev/null
+            lang="$(get_current_language)"
+            i18n_file="${I18N_DIR}/${lang}.json"
+            [ -f "$i18n_file" ] || i18n_file="${I18N_DIR}/en.json"
+
+            notif_app="Screenshot"
+            notif_action="Open folder"
+            notif_title="Screenshot saved"
+            notif_body_template="File: {file}\nFolder: {folder}"
+
+            if [ -f "$i18n_file" ]; then
+                mapfile -t _NOTIF_STRINGS < <(jq -r '
+                    .screenshot.notifications.screenshot_app_name // "Screenshot",
+                    .screenshot.notifications.open_folder // "Open folder",
+                    .screenshot.notifications.screenshot_saved_title // "Screenshot saved",
+                    .screenshot.notifications.screenshot_saved_body // "File: {file}\nFolder: {folder}"
+                ' "$i18n_file" 2>/dev/null)
+                [ -n "${_NOTIF_STRINGS[0]}" ] && notif_app="${_NOTIF_STRINGS[0]}"
+                [ -n "${_NOTIF_STRINGS[1]}" ] && notif_action="${_NOTIF_STRINGS[1]}"
+                [ -n "${_NOTIF_STRINGS[2]}" ] && notif_title="${_NOTIF_STRINGS[2]}"
+                [ -n "${_NOTIF_STRINGS[3]}" ] && notif_body_template="${_NOTIF_STRINGS[3]}"
+            fi
+
+            notif_body="${notif_body_template//\{file\}/Screenshot_$time.png}"
+            notif_body="${notif_body//\{folder\}/$SAVE_DIR}"
+
+            ACTION=$(timeout 30 notify-send -a "$notif_app" -i "$FILENAME" -h "string:image-path:$FILENAME" -A "default=$notif_action" "$notif_title" "$notif_body" 2>/dev/null)
             if [ "$ACTION" = "default" ]; then
                 if command -v nautilus &> /dev/null; then
                     nautilus "$SAVE_DIR"

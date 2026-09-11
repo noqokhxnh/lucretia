@@ -6,21 +6,25 @@ source "$(dirname "$(realpath "${BASH_SOURCE[0]}")")/config.sh" 2>/dev/null || t
 I18N_DIR="${I18N_DIR:-"${LUCRETIA_DIR:-"${SERPANTINUM_DIR:-"$(dirname "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"}"}/assets/languages"}"
 
 get_current_language() {
-    if command -v get_setting &>/dev/null; then
+    if [[ -n "$_CACHED_CURRENT_LANG" ]]; then
+        printf '%s' "$_CACHED_CURRENT_LANG"
+        return
+    fi
+    local lang=""
+    local sfile="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
+    if [[ -f "$sfile" ]]; then
+        lang=$(grep -oP '"language":\s*"\K[^"]+' "$sfile" 2>/dev/null)
+    fi
+    if [[ -z "$lang" ]] && command -v get_setting &>/dev/null; then
         local lang_settings
         lang_settings="$(get_setting "general" '{"language": "en"}')"
-        
-        local lang
         lang="$(printf '%s' "$lang_settings" | jq -r '.language // "en"' 2>/dev/null)"
-        
-        if [[ "$lang" == "null" || -z "$lang" ]]; then
-            printf 'en'
-        else
-            printf '%s' "$lang"
-        fi
-    else
-        printf 'en'
     fi
+    if [[ "$lang" == "null" || -z "$lang" ]]; then
+        lang="en"
+    fi
+    export _CACHED_CURRENT_LANG="$lang"
+    printf '%s' "$lang"
 }
 
 t() {

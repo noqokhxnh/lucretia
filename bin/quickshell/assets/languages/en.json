@@ -554,7 +554,10 @@
     "clear": "Clear",
     "empty": "Nothing found",
     "recent": "Recent",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "all": "All",
+    "text": "Text",
+    "images": "Images"
   },
   "lock": {
     "status": {

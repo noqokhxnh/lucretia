@@ -125,8 +125,81 @@ void save_pinned(const std::string& cache_dir, const std::set<std::string>& pinn
     } catch (...) {}
 }
 
+void prune_items(const std::string& cache_dir, int max_text = 2000, int max_images = 50) {
+    int exit_code = -1;
+    std::vector<std::string> all_lines = exec_command("cliphist list", &exit_code);
+    if (exit_code != 0 || all_lines.empty()) return;
+
+    std::set<std::string> pinned_ids = load_pinned(cache_dir);
+    int unpinned_images = 0;
+    int unpinned_text = 0;
+    std::vector<std::string> to_delete;
+    std::vector<std::string> img_ids_to_remove;
+
+    for (const auto& line : all_lines) {
+        size_t tab_pos = line.find('\t');
+        if (tab_pos == std::string::npos) continue;
+        std::string id = line.substr(0, tab_pos);
+        std::string content = line.substr(tab_pos + 1);
+
+        bool is_pinned = (pinned_ids.find(id) != pinned_ids.end());
+        bool is_image = (content.compare(0, 14, "[[ binary data") == 0);
+
+        if (is_image) {
+            if (!is_pinned) {
+                unpinned_images++;
+                if (unpinned_images > max_images) {
+                    to_delete.push_back(line);
+                    img_ids_to_remove.push_back(id);
+                }
+            }
+        } else {
+            if (!is_pinned) {
+                unpinned_text++;
+                if (unpinned_text > max_text) {
+                    to_delete.push_back(line);
+                }
+            }
+        }
+    }
+
+    if (!to_delete.empty()) {
+        FILE* pipe = popen("cliphist delete", "w");
+        if (pipe) {
+            for (const auto& l : to_delete) {
+                fputs((l + "\n").c_str(), pipe);
+            }
+            pclose(pipe);
+        }
+        for (const auto& id : img_ids_to_remove) {
+            std::string img_path = (fs::path(cache_dir) / (id + ".png")).string();
+            try {
+                if (fs::exists(img_path)) fs::remove(img_path);
+            } catch (...) {}
+        }
+    }
+}
+
+int store_item(const std::string& type, const std::string& cache_dir) {
+    FILE* pipe = popen("cliphist -max-items 2500 store", "w");
+    if (!pipe) return 1;
+
+    char buffer[4096];
+    size_t bytes_read;
+    while ((bytes_read = fread(buffer, 1, sizeof(buffer), stdin)) > 0) {
+        fwrite(buffer, 1, bytes_read, pipe);
+    }
+    pclose(pipe);
+
+    // Enforce quotas: only 50 images and 2000 text items
+    prune_items(cache_dir, 2000, 50);
+    return 0;
+}
+
 int main(int argc, char* argv[]) {
     std::string action = "fetch";
+    std::string filter_type = "all";
+    std::string store_type = "text";
     int offset = 0;
     int limit = 24;
     std::string cache_dir;
@@ -135,6 +208,13 @@ int main(int argc, char* argv[]) {
         std::string arg1 = argv[1];
         if (arg1 == "toggle-pin") {
             action = "toggle-pin";
+        } else if (arg1 == "delete") {
+            action = "delete";
+        } else if (arg1 == "store") {
+            action = "store";
+            if (argc > 2) store_type = argv[2];
+        } else if (arg1 == "prune") {
+            action = "prune";
         } else if (std::isdigit(static_cast<unsigned char>(arg1[0]))) {
             offset = parse_int(arg1, 0);
         } else {
@@ -145,6 +225,11 @@ int main(int argc, char* argv[]) {
     if (action == "fetch") {
         if (argc > 2) limit = parse_int(argv[2], limit);
         if (argc > 3) cache_dir = argv[3];
+        if (argc > 4) filter_type = argv[4];
+    } else if (action == "store") {
+        if (argc > 3) cache_dir = argv[3];
+    } else if (action == "prune") {
+        if (argc > 2) cache_dir = argv[2];
     } else if (action == "toggle-pin" || action == "delete") {
         if (argc > 3) cache_dir = argv[3];
     }
@@ -167,7 +252,13 @@ int main(int argc, char* argv[]) {
         fs::create_directories(cache_dir);
     } catch (...) {}
 
-    if (action == "toggle-pin") {
+    if (action == "store") {
+        return store_item(store_type, cache_dir);
+    } else if (action == "prune") {
+        prune_items(cache_dir, 2000, 50);
+        std::cout << "{\"status\":\"ok\"}" << std::endl;
+        return 0;
+    } else if (action == "toggle-pin") {
         if (argc < 3) return 1;
         std::string id = argv[2];
         std::set<std::string> pinned = load_pinned(cache_dir);
@@ -191,12 +282,13 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
-        
+
         if (!line_to_delete.empty()) {
-            std::unique_ptr<FILE, decltype(&pclose)> pipe(popen("cliphist delete", "w"), pclose);
+            FILE* pipe = popen("cliphist delete", "w");
             if (pipe) {
                 line_to_delete += "\n";
-                fputs(line_to_delete.c_str(), pipe.get());
+                fputs(line_to_delete.c_str(), pipe);
+                pclose(pipe);
             }
         }
         std::cout << "{\"status\":\"ok\"}" << std::endl;
@@ -223,13 +315,20 @@ int main(int argc, char* argv[]) {
 
     std::set<std::string> pinned_ids = load_pinned(cache_dir);
 
-    // Separate pinned and unpinned
+    // Separate pinned and unpinned, applying filter_type
     std::vector<std::string> sorted_lines;
     std::vector<std::string> unpinned_lines;
 
     for (const auto& line : all_lines) {
         size_t tab_pos = line.find('\t');
         if (tab_pos == std::string::npos) continue;
+
+        std::string content = line.substr(tab_pos + 1);
+        bool is_image = (content.compare(0, 14, "[[ binary data") == 0);
+
+        if (filter_type == "image" && !is_image) continue;
+        if (filter_type == "text" && is_image) continue;
+
         std::string id = line.substr(0, tab_pos);
         if (pinned_ids.count(id)) {
             sorted_lines.push_back(line);

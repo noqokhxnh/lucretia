@@ -544,7 +544,10 @@
     "clear": "Xóa toàn bộ",
     "empty": "Lịch sử clipboard trống",
     "recent": "Gần đây",
-    "pinned": "Đã ghim"
+    "pinned": "Đã ghim",
+    "all": "Tất cả",
+    "text": "Văn bản",
+    "images": "Hình ảnh"
   },
   "lock": {
     "status": {

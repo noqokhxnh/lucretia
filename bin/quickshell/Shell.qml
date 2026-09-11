@@ -133,12 +133,22 @@ ShellRoot {
 
                 Timer {
                     id: screenshotUnloadTimer
-                    interval: 1000
+                    interval: 300000
                     repeat: false
                     onTriggered: {
                         if (!screenshotLoader.item || !screenshotLoader.item.isActive) {
                             screenshotActive = false;
                         }
+                    }
+                }
+
+                Timer {
+                    id: screenshotPreloadTimer
+                    interval: 2000
+                    repeat: false
+                    running: true
+                    onTriggered: {
+                        screenshotActive = true;
                     }
                 }
 
