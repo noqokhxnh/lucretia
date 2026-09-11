@@ -892,7 +892,8 @@
       "icon": "Icon",
       "card": "Card",
       "badge": "Badge",
-      "bloc": "Daily Almanac"
+      "bloc": "Daily Almanac",
+      "notebook": "Notebook"
     },
     "picker": {
       "select_app": "Select Application"
