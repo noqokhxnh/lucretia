@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+cleanup() {
+    kill $(jobs -p) 2>/dev/null || true
+    exit 0
+}
+trap cleanup SIGTERM SIGINT EXIT
+
 source "$(dirname "${BASH_SOURCE[0]}")/caching.sh"
 
 # Check interval in seconds (600s = 10 minutes)
@@ -47,5 +53,6 @@ while true; do
     fi
 
     # Wait 10 minutes before checking again
-    sleep "$INTERVAL"
+    sleep "$INTERVAL" &
+    wait $!
 done

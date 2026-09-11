@@ -75,9 +75,9 @@ update_setting_bool() {
     local val="$2"
     local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        ( flock 9
+        ( flock -w 2 9
           if jq --arg key "$key" --argjson val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
-              mv -f "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+              cp "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "${SETTINGS_FILE}.tmp"
           else
               rm -f "${SETTINGS_FILE}.tmp"
           fi
@@ -90,9 +90,9 @@ update_setting_str() {
     local val="$2"
     local lock_path="${SETTINGS_FILE}.lock"
     if [ -f "$SETTINGS_FILE" ]; then
-        ( flock 9
+        ( flock -w 2 9
           if jq --arg key "$key" --arg val "$val" '. + {($key): $val}' "$SETTINGS_FILE" > "${SETTINGS_FILE}.tmp"; then
-              mv -f "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE"
+              cp "${SETTINGS_FILE}.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "${SETTINGS_FILE}.tmp"
           else
               rm -f "${SETTINGS_FILE}.tmp"
           fi

@@ -9,7 +9,9 @@
 # Overrides live in settings.json under "wallpaperColorOverrides",
 # keyed by the wallpaper's original path (current_wallpaper.path).
 # -----------------------------------------------------------------------------
-SETTINGS_FILE="$HOME/.config/lucretia/settings.json"
+SETTINGS_FILE="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
+[ -e "$SETTINGS_FILE" ] && SETTINGS_FILE="$(readlink -f "$SETTINGS_FILE" 2>/dev/null || echo "$SETTINGS_FILE")"
+[ ! -f "$SETTINGS_FILE" ] && SETTINGS_FILE="$HOME/.config/niri/settings.json"
 SETTINGS_LOCK="$SETTINGS_FILE.lock"
 WALL_CACHE="$HOME/.cache/lucretia/wallpaper"
 [ -f "$WALL_CACHE/current_wallpaper.path" ] || [ -f "$WALL_CACHE/current_wallpaper.png" ] || WALL_CACHE="$HOME/.cache/lucretia/wallpaper_picker"
@@ -49,21 +51,21 @@ case "${1:-}" in
     KEY="$(get_current_key)"
     [ -n "$KEY" ] || exit 0
 
-    ( flock 9; mkdir -p "$(dirname "$SETTINGS_FILE")"
+    ( flock -w 2 9; mkdir -p "$(dirname "$SETTINGS_FILE")"
       [ ! -s "$SETTINGS_FILE" ] && echo '{}' > "$SETTINGS_FILE"
       jq --arg k "$KEY" --arg h "$HEX" --arg s "$SCHEME" \
          '.wallpaperColorOverrides[$k] = {hex: $h, scheme: $s}' "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" &&
-      mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE" ) 9>"$SETTINGS_LOCK"
+      cp "$SETTINGS_FILE.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "$SETTINGS_FILE.tmp" ) 9>"$SETTINGS_LOCK"
     ;;
 
   clear)
     KEY="$(get_current_key)"
     if [ -n "$KEY" ] && [ -s "$SETTINGS_FILE" ]; then
-        ( flock 9
+        ( flock -w 2 9
           jq --arg k "$KEY" 'del(.wallpaperColorOverrides[$k]) |
               if (.wallpaperColorOverrides | length) == 0 then del(.wallpaperColorOverrides) else . end' \
               "$SETTINGS_FILE" > "$SETTINGS_FILE.tmp" &&
-          mv "$SETTINGS_FILE.tmp" "$SETTINGS_FILE" ) 9>"$SETTINGS_LOCK"
+          cp "$SETTINGS_FILE.tmp" "$SETTINGS_FILE" && sync -d "$SETTINGS_FILE" && rm -f "$SETTINGS_FILE.tmp" ) 9>"$SETTINGS_LOCK"
     fi
 
     TARGET="$(image_target "$KEY")"
@@ -86,6 +88,14 @@ case "${1:-}" in
 
   apply)
     KEY="${2:-}"; TARGET="${3:-}"
+
+    if [ -f "$SETTINGS_FILE" ]; then
+        IS_MATUGEN=$(jq -r 'if .theme.matugen != null then .theme.matugen else true end' "$SETTINGS_FILE" 2>/dev/null || echo "true")
+        if [ "$IS_MATUGEN" = "false" ]; then
+            echo "[matugen_apply] Static theme active (theme.matugen=false), skipping matugen apply."
+            exit 0
+        fi
+    fi
 
     OVERRIDE=""
     if [ -n "$KEY" ] && [ -s "$SETTINGS_FILE" ]; then

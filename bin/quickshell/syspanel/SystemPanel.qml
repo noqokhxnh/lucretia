@@ -1150,8 +1150,8 @@ Item {
                                     if (cmd === "lock") finalCmd = "bash " + Caching.lucretiaDir + "/scripts/lock.sh";
                                     else if (cmd === "sleep") finalCmd = "bash " + Caching.lucretiaDir + "/scripts/lock.sh & systemctl suspend";
                                     else if (cmd === "hibernate") finalCmd = "dbus-send --system --print-reply --dest=org.freedesktop.login1 /org/freedesktop/login1 org.freedesktop.login1.Manager.Hibernate boolean:true";
-                                    else if (cmd === "reboot") finalCmd = "systemctl reboot";
-                                    else if (cmd === "poweroff") finalCmd = "systemctl poweroff -i";
+                                    else if (cmd === "reboot") finalCmd = "sync; systemctl reboot";
+                                    else if (cmd === "poweroff") finalCmd = "sync; systemctl poweroff";
 
                                     Quickshell.execDetached(["sh", "-c", finalCmd]);
                                     Quickshell.execDetached(["sh", "-c", "echo 'close' > " + Caching.runDir + "/widget_state"]);

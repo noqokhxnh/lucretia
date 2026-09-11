@@ -299,12 +299,12 @@ Scope {
 
     Process {
         id: poweroffProcess
-        command: ["systemctl", "poweroff"]
+        command: ["bash", "-c", "sync; systemctl poweroff"]
     }
 
     Process {
         id: reloadProcess
-        command: ["systemctl", "reboot"]
+        command: ["bash", "-c", "sync; systemctl reboot"]
     }
 
     WlSessionLock {
