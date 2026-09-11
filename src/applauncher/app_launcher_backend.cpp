@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <algorithm>
 #include <filesystem>
@@ -15,6 +16,7 @@ struct AppInfo {
     std::string exec;
     std::string icon;
     int score = 0;
+    bool is_favorite = false;
 };
 
 std::string trim(const std::string& s) {
@@ -181,17 +183,57 @@ int main(int argc, char* argv[]) {
         } catch (...) {}
     }
 
+    // Load favorites and hidden apps from settings cache
+    std::set<std::string> favorites;
+    std::set<std::string> hidden;
+    const char* home = std::getenv("HOME");
+    if (home) {
+        fs::path settingsPath = fs::path(home) / ".cache/applauncher_settings.json";
+        if (fs::exists(settingsPath)) {
+            try {
+                std::ifstream sf(settingsPath);
+                if (sf.is_open()) {
+                    json sj;
+                    sf >> sj;
+                    if (sj.contains("favorites") && sj["favorites"].is_array()) {
+                        for (const auto& fav : sj["favorites"]) {
+                            if (fav.is_string()) favorites.insert(fav.get<std::string>());
+                        }
+                    }
+                    if (sj.contains("hidden") && sj["hidden"].is_array()) {
+                        for (const auto& hid : sj["hidden"]) {
+                            if (hid.is_string()) hidden.insert(hid.get<std::string>());
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
     std::vector<AppInfo> allApps;
     for (auto const& [name, info] : apps) {
-        allApps.push_back(info);
+        if (hidden.count(info.name)) continue;
+        AppInfo item = info;
+        item.is_favorite = (favorites.count(info.name) > 0);
+        allApps.push_back(item);
     }
 
     if (argc > 1) {
         std::string query = argv[1];
         if (query == "--list") {
+            std::sort(allApps.begin(), allApps.end(), [](const AppInfo& a, const AppInfo& b) {
+                if (a.is_favorite != b.is_favorite) return a.is_favorite > b.is_favorite;
+                return a.name < b.name;
+            });
             json res = json::array();
             for (const auto& app : allApps) {
-                res.push_back({{"name", app.name}, {"exec", app.exec}, {"icon", app.icon}});
+                res.push_back({
+                    {"name", app.name},
+                    {"exec", app.exec},
+                    {"icon", app.icon},
+                    {"is_favorite", app.is_favorite},
+                    {"pinned", app.is_favorite}
+                });
             }
             std::cout << res.dump() << std::endl;
             return 0;
@@ -202,7 +244,7 @@ int main(int argc, char* argv[]) {
             int score = fuzzy_score(app.name, app.exec, query);
             if (score > 0) {
                 AppInfo res = app;
-                res.score = score;
+                res.score = score + (app.is_favorite ? 10000 : 0);
                 results.push_back(res);
             }
         }
@@ -211,7 +253,14 @@ int main(int argc, char* argv[]) {
         });
         json res = json::array();
         for (const auto& app : results) {
-            res.push_back({{"name", app.name}, {"exec", app.exec}, {"icon", app.icon}, {"score", app.score}});
+            res.push_back({
+                {"name", app.name},
+                {"exec", app.exec},
+                {"icon", app.icon},
+                {"score", app.score},
+                {"is_favorite", app.is_favorite},
+                {"pinned", app.is_favorite}
+            });
         }
         std::cout << res.dump() << std::endl;
         return 0;

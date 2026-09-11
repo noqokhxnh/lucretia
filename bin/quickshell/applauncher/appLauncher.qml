@@ -110,6 +110,7 @@ Item {
     }
 
     function loadSettings() {
+        settingsFile.reload();
         let settingsText = settingsFile.text();
         if (!settingsText) {
             // Default settings if file doesn't exist yet
@@ -152,21 +153,23 @@ Item {
     }
 
     function toggleFavorite(appName) {
-        let s = window.currentSettings;
-        let favorites = s.favorites.slice();
+        if (!appName) return;
+        let s = window.currentSettings || { favorites: [], hidden: [] };
+        let favorites = (s.favorites || []).slice();
         let idx = favorites.indexOf(appName);
         if (idx === -1) favorites.push(appName);
         else favorites.splice(idx, 1);
-        saveSettings({ favorites: favorites, hidden: s.hidden });
+        saveSettings({ favorites: favorites, hidden: s.hidden || [] });
     }
 
     function toggleHidden(appName) {
-        let s = window.currentSettings;
-        let hidden = s.hidden.slice();
+        if (!appName) return;
+        let s = window.currentSettings || { favorites: [], hidden: [] };
+        let hidden = (s.hidden || []).slice();
         let idx = hidden.indexOf(appName);
         if (idx === -1) hidden.push(appName);
         else hidden.splice(idx, 1);
-        saveSettings({ favorites: s.favorites, hidden: hidden });
+        saveSettings({ favorites: s.favorites || [], hidden: hidden });
     }
 
     // --- KEYBOARD NAV TRACKING (For Smart Highlight Morphing) ---
@@ -536,9 +539,9 @@ Item {
                 spacing: window.s(10)
                 
                 Text {
-                    text: menuItem.text === "Mark as Favorite" ? "" : 
-                          menuItem.text === "Unmark Favorite" ? "󰓎" :
-                          menuItem.text === "Hide App" ? "󰈈" : "󰈉"
+                    text: menuItem.text === "Mark as Favorite" ? "󰐃" : 
+                          menuItem.text === "Unmark Favorite" ? "󰐐" :
+                          menuItem.text === "Hide App" ? "󰈉" : "󰈈"
                     font.family: "Iosevka Nerd Font"
                     font.pixelSize: window.s(16)
                     color: menuItem.highlighted ? window.crust : window.mauve
@@ -1129,9 +1132,9 @@ Item {
                             }
 
                             Text {
-                                text: ""
+                                text: "󰐃"
                                 font.family: "Iosevka Nerd Font"
-                                font.pixelSize: window.s(14)
+                                font.pixelSize: window.s(13)
                                 color: index === appList.currentIndex ? window.crust : window.mauve
                                 visible: model.isFavorite
                                 opacity: visible ? 1 : 0

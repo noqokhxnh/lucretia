@@ -222,7 +222,7 @@ Item {
                         iconFontSize: s(13)
                         accentColor: "transparent"
                         textColor: isHoveredOrHighlighted ? ThemeBackend.mauve : ThemeBackend.subtext0
-                        onClicked: Notes.openNotesPopup()
+                        onClicked: Notes.openNotesPopup(root.effectiveNoteId)
                     }
                 }
             }

@@ -25,17 +25,18 @@ Item {
         id: notesFileWatcher
         path: root.notesPath
         watchChanges: true
+        onFileChanged: reload()
         onLoaded: {
             if (Date.now() - root.lastSelfSaveTime < 1500) {
                 root.syncDiskTimestamps();
                 return;
             }
-            root.reload();
+            root.parseFileContent();
         }
     }
 
     Component.onCompleted: {
-        root.reload();
+        root.parseFileContent();
     }
 
     function syncDiskTimestamps() {
@@ -43,7 +44,11 @@ Item {
             let txt = notesFileWatcher.text().trim();
             if (txt && txt.length > 0) {
                 let parsed = JSON.parse(txt);
-                if (Array.isArray(parsed) && root.notes) {
+                if (Array.isArray(parsed)) {
+                    if (!root.notes || parsed.length !== root.notes.length) {
+                        root.parseFileContent();
+                        return;
+                    }
                     for (let i = 0; i < parsed.length; i++) {
                         let item = parsed[i];
                         let local = root.notes.find(n => n.id === item.id);
@@ -57,6 +62,10 @@ Item {
     }
 
     function reload() {
+        notesFileWatcher.reload();
+    }
+
+    function parseFileContent() {
         try {
             let txt = notesFileWatcher.text().trim();
             if (txt && txt.length > 0) {
@@ -304,10 +313,21 @@ Item {
 
     function deleteNote(noteId) {
         if (!noteId) return;
+        if (root.notes) {
+            root.notes = root.notes.filter(n => n.id !== noteId);
+            if (root.activeNoteId === noteId) {
+                root.activeNoteId = root.notes.length > 0 ? root.notes[0].id : "";
+            }
+            root.revision++;
+            root.notesUpdated();
+        }
         Quickshell.execDetached([root.backendScript, "delete", noteId]);
     }
 
-    function openNotesPopup() {
+    function openNotesPopup(noteId) {
+        if (noteId) {
+            root.activeNoteId = noteId;
+        }
         Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle notes"]);
     }
 

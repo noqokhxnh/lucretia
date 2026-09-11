@@ -75,9 +75,40 @@ Item {
                     window.isMinimized = false;
                 }
                 introPhaseAnim.restart();
+                if (Notes.activeNoteId && Notes.activeNoteId !== window.currentNoteId) {
+                    let n = Notes.getNote(Notes.activeNoteId);
+                    if (n) {
+                        selectNote(n.id, n.content);
+                    }
+                }
                 loadNotes();
             } else {
                 saveCurrentNote();
+            }
+        }
+    }
+
+    Connections {
+        target: Notes
+        function onNotesUpdated() {
+            if (!Notes.notes) return;
+            for (let i = 0; i < Notes.notes.length; i++) {
+                let n = Notes.notes[i];
+                for (let j = 0; j < notesModel.count; j++) {
+                    if (notesModel.get(j).id === n.id) {
+                        if (notesModel.get(j).content !== n.content) {
+                            notesModel.setProperty(j, "content", n.content);
+                        }
+                        break;
+                    }
+                }
+                if (n.id === window.currentNoteId && !window.isDirty && (!textArea.activeFocus || !window.visible)) {
+                    if (textArea.text !== n.content) {
+                        window.isProgrammaticTextChange = true;
+                        textArea.text = n.content;
+                        window.isProgrammaticTextChange = false;
+                    }
+                }
             }
         }
     }
@@ -96,7 +127,8 @@ Item {
                         notesModel.append(items[i]);
                     }
                     if (window.isInitialLoad && items.length > 0) {
-                        selectNote(items[0].id, items[0].content);
+                        let targetNote = (Notes.activeNoteId && items.find(n => n.id === Notes.activeNoteId)) || items[0];
+                        selectNote(targetNote.id, targetNote.content);
                         window.isInitialLoad = false;
                     } else if (items.length === 0) {
                         textArea.text = "";
@@ -122,28 +154,13 @@ Item {
                 let newId = this.text.trim();
                 if (newId) {
                     window.currentNoteId = newId;
+                    Notes.activeNoteId = newId;
                     textArea.text = "";
                     loadNotes();
                     textArea.forceActiveFocus();
+                    Notes.reload();
                 }
             }
-        }
-    }
-
-    Process {
-        id: deleteProcess
-        running: false
-        onExited: {
-            loadNotes();
-        }
-    }
-
-    Process {
-        id: updateProcess
-        running: false
-        onExited: {
-            window.isSaving = false;
-            loadNotes(); // Reload the list to update snippets in the sidebar
         }
     }
 
@@ -161,13 +178,22 @@ Item {
             window.currentNoteId = "";
             textArea.text = "";
         }
-        deleteProcess.command = [window.backendScript, "delete", id];
-        deleteProcess.running = true;
+        Notes.deleteNote(id);
+        for (let i = 0; i < notesModel.count; i++) {
+            if (notesModel.get(i).id === id) {
+                notesModel.remove(i);
+                break;
+            }
+        }
+        if (window.currentNoteId === "" && notesModel.count > 0) {
+            selectNote(notesModel.get(0).id, notesModel.get(0).content);
+        }
     }
 
     function selectNote(id, content) {
         saveCurrentNote();
         window.currentNoteId = id;
+        Notes.activeNoteId = id;
         window.isProgrammaticTextChange = true;
         textArea.text = content;
         window.isProgrammaticTextChange = false;
@@ -176,14 +202,27 @@ Item {
         saveTimer.stop();
     }
 
+    Timer {
+        id: saveFeedbackTimer
+        interval: 350
+        repeat: false
+        onTriggered: {
+            window.isSaving = false;
+        }
+    }
+
     function saveCurrentNote() {
         if (window.currentNoteId === "" || !window.isDirty) return;
         window.isSaving = true;
         window.isDirty = false;
-        let escapedText = textArea.text.replace(/'/g, "'\\''");
-        let writeCmd = "echo -n '" + escapedText + "' > " + window.tempFile + " && " + window.backendScript + " update " + window.currentNoteId + " " + window.tempFile;
-        updateProcess.command = ["bash", "-c", writeCmd];
-        updateProcess.running = true;
+        Notes.saveNoteContent(window.currentNoteId, textArea.text);
+        for (let i = 0; i < notesModel.count; i++) {
+            if (notesModel.get(i).id === window.currentNoteId) {
+                notesModel.setProperty(i, "content", textArea.text);
+                break;
+            }
+        }
+        saveFeedbackTimer.restart();
     }
 
     Timer {
@@ -488,6 +527,12 @@ Item {
                                 if (window.currentNoteId !== "" && textArea.focus) {
                                     window.isDirty = true;
                                     saveTimer.restart();
+                                }
+                            }
+
+                            onActiveFocusChanged: {
+                                if (!activeFocus && window.isDirty) {
+                                    saveCurrentNote();
                                 }
                             }
 
