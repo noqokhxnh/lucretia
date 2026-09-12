@@ -104,3 +104,11 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/keycast_backend.cpp")
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../bin"
     )
 endif()
+
+# Clip Fetcher Backend target
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/clipboard/clip_fetcher.cpp")
+    add_executable(clip_fetcher clipboard/clip_fetcher.cpp)
+    set_target_properties(clip_fetcher PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../bin/quickshell/clipboard"
+    )
+endif()

@@ -512,7 +512,8 @@
   "updater": {
     "notification": {
       "app_name": "Cập nhật",
-      "action_open_guide": "Mở Cài đặt",
+      "action_open_guide": "Mở trình cập nhật",
+      "action_open_updater": "Mở trình cập nhật",
       "update_available_title": "Có bản cập nhật mới: v{remote}",
       "update_available_body": "Phiên bản hiện tại: v{local}. Nhấn để xem lịch sử thay đổi và cập nhật."
     }
@@ -558,7 +559,10 @@
     "clear": "Xóa toàn bộ",
     "empty": "Lịch sử clipboard trống",
     "recent": "Gần đây",
-    "pinned": "Đã ghim"
+    "pinned": "Đã ghim",
+    "all": "Tất cả",
+    "text": "Văn bản",
+    "images": "Hình ảnh"
   },
   "lock": {
     "status": {
@@ -897,7 +901,8 @@
       "round": "Tròn",
       "compact": "Thu gọn",
       "rect": "Chữ nhật",
-      "rounded": "Bo góc"
+      "rounded": "Bo góc",
+      "notebook": "Sổ tay"
     },
     "picker": {
       "select_app": "Chọn ứng dụng",

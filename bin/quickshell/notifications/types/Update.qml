@@ -24,8 +24,7 @@ Notification {
                 }
             }
         }
-        Quickshell.execDetached(["bash", "-c", "echo 'about' > '" + Caching.getCacheDir("guide") + "/last_tab.txt'"]);
-        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "guide"]);
+        Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "open", "updater"]);
         doClose();
     }
 

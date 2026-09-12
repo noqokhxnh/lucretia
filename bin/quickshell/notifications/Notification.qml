@@ -315,6 +315,14 @@ Rectangle {
                         if (mainAction && typeof mainAction.invoke === "function") {
                             mainAction.invoke();
                         }
+                    } else {
+                        let app = (model ? (model.appName || "") : "").toLowerCase();
+                        let sum = (model ? (model.summary || "") : "").toLowerCase();
+                        if (app === "updater" || app === "lucretia updater" || app === "update" || app === "cập nhật" ||
+                            sum.includes("update available") || sum.includes("cập nhật") || (app === "lucretia" && sum.includes("update"))) {
+                            Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "open", "updater"]);
+                            doClose();
+                        }
                     }
                 }
             }

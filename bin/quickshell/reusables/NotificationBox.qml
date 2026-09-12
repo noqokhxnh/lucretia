@@ -405,8 +405,14 @@ Item {
                             let nData = memberList.length > 0 ? memberList[0] : null;
                             let appn = nData ? nData.appName : (displayName || "");
                             let app = appn.toLowerCase();
+                            let summary = (nData ? (nData.summary || "") : (latestSummary || "")).toLowerCase();
                             if (app === "weather") return "../notifications/types/Weather.qml";
                             if (app === "screenshot" || app === "screen recorder") return "../notifications/types/Screenshot.qml";
+                            if (app === "updater" || app === "lucretia updater" || app === "update" || app === "cập nhật" ||
+                                summary.includes("update available") || summary.includes("cập nhật") ||
+                                (app === "lucretia" && summary.includes("update"))) {
+                                return "../notifications/types/Update.qml";
+                            }
                             return "../notifications/types/Default.qml";
                         }
                         onLoaded: {
@@ -850,8 +856,14 @@ Item {
                                                     if (!memberData) return "";
                                                     let appn = memberData.appName || displayName || "";
                                                     let app = appn.toLowerCase();
+                                                    let summary = (memberData.summary || "").toLowerCase();
                                                     if (app === "weather") return "../notifications/types/Weather.qml";
                                                     if (app === "screenshot" || app === "screen recorder") return "../notifications/types/Screenshot.qml";
+                                                    if (app === "updater" || app === "lucretia updater" || app === "update" || app === "cập nhật" ||
+                                                        summary.includes("update available") || summary.includes("cập nhật") ||
+                                                        (app === "lucretia" && summary.includes("update"))) {
+                                                        return "../notifications/types/Update.qml";
+                                                    }
                                                     return "../notifications/types/Default.qml";
                                                 }
 

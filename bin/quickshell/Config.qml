@@ -124,7 +124,7 @@ Item {
     property string powerProfile: "balanced"
     property int idleLockTimeout: 10
     property int idleScreenOffTimeout: 5
-    property int idleSleepTimeout: 60
+    property int idleSleepTimeout: 0
     property var enabledModules: ({
         "music": true,
         "battery": true,

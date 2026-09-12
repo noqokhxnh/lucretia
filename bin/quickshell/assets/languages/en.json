@@ -512,7 +512,8 @@
   "updater": {
     "notification": {
       "app_name": "Update",
-      "action_open_guide": "Open guide",
+      "action_open_guide": "Open updater",
+      "action_open_updater": "Open updater",
       "update_available_title": "Update available: v{remote}",
       "update_available_body": "Current version: v{local}. Click to view changelog and update."
     }
@@ -558,7 +559,10 @@
     "clear": "Clear",
     "empty": "Nothing found",
     "recent": "Recent",
-    "pinned": "Pinned"
+    "pinned": "Pinned",
+    "all": "All",
+    "text": "Text",
+    "images": "Images"
   },
   "lock": {
     "status": {
@@ -897,7 +901,8 @@
       "icon": "Icon",
       "card": "Card",
       "badge": "Badge",
-      "bloc": "Daily Almanac"
+      "bloc": "Daily Almanac",
+      "notebook": "Notebook"
     },
     "picker": {
       "select_app": "Select Application",

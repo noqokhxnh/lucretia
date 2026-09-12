@@ -41,8 +41,7 @@ while true; do
                 # Cache the version so we don't spam the user every 10 minutes
                 echo "$REMOTE_VERSION" > "$CACHE_FILE"
 
-                # Send standard notification without the action prompt
-                notify-send -t 15000 -a 'Lucretia' -u normal 'Update Available' "A new version ($REMOTE_VERSION) is ready! Click the update icon in the topbar to install."
+                notify-send -t 15000 -a 'Lucretia' -u normal 'Update Available' "A new version ($REMOTE_VERSION) is ready! Click here or the update icon in the topbar to install."
                 
             fi
         fi

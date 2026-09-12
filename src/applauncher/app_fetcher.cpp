@@ -2,6 +2,7 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <algorithm>
 #include <filesystem>
@@ -112,16 +113,57 @@ int main() {
         } catch (...) {}
     }
 
-    std::vector<json> res;
+    std::set<std::string> favorites;
+    std::set<std::string> hidden;
+    const char* home = std::getenv("HOME");
+    if (home) {
+        fs::path settingsPath = fs::path(home) / ".cache/applauncher_settings.json";
+        if (fs::exists(settingsPath)) {
+            try {
+                std::ifstream sf(settingsPath);
+                if (sf.is_open()) {
+                    json sj;
+                    sf >> sj;
+                    if (sj.contains("favorites") && sj["favorites"].is_array()) {
+                        for (const auto& fav : sj["favorites"]) {
+                            if (fav.is_string()) favorites.insert(fav.get<std::string>());
+                        }
+                    }
+                    if (sj.contains("hidden") && sj["hidden"].is_array()) {
+                        for (const auto& hid : sj["hidden"]) {
+                            if (hid.is_string()) hidden.insert(hid.get<std::string>());
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    std::vector<std::pair<std::string, AppInfo>> sorted_apps;
     for (const auto& pair : apps) {
+        if (hidden.count(pair.second.name)) continue;
+        sorted_apps.push_back(pair);
+    }
+
+    std::sort(sorted_apps.begin(), sorted_apps.end(), [&favorites](const auto& a, const auto& b) {
+        bool favA = (favorites.count(a.second.name) > 0);
+        bool favB = (favorites.count(b.second.name) > 0);
+        if (favA != favB) return favA > favB;
+        return a.first < b.first;
+    });
+
+    std::vector<json> res;
+    for (const auto& pair : sorted_apps) {
+        bool isFav = (favorites.count(pair.second.name) > 0);
         res.push_back({
             {"name", pair.second.name},
             {"exec", pair.second.exec},
-            {"icon", pair.second.icon}
+            {"icon", pair.second.icon},
+            {"is_favorite", isFav},
+            {"pinned", isFav}
         });
     }
 
-    // Map is already sorted by key (name)
     std::cout << json(res).dump() << std::endl;
 
     return 0;

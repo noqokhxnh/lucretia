@@ -198,6 +198,7 @@ PanelWindow {
     }
 
     function loadSettings() {
+        settingsFile.reload();
         let txt = settingsFile.text();
         if (!txt || txt.trim().length === 0) {
             launcherWindow.currentSettings = { favorites: [], hidden: [] };
@@ -227,23 +228,39 @@ PanelWindow {
         launcherWindow.executeFilter(searchInput.text);
     }
 
-    function toggleFavorite(idOrName) {
-        if (!idOrName) return;
+    function toggleFavorite(desktopId, appName) {
         let s = launcherWindow.currentSettings || { favorites: [], hidden: [] };
         let favs = (s.favorites || []).slice();
-        let idx = favs.indexOf(idOrName);
-        if (idx === -1) favs.push(idOrName);
-        else favs.splice(idx, 1);
+        let id = desktopId || "";
+        let name = appName || "";
+        if (!id && !name) return;
+
+        let hasId = id && favs.indexOf(id) !== -1;
+        let hasName = name && favs.indexOf(name) !== -1;
+
+        if (hasId || hasName) {
+            favs = favs.filter(function(x) { return x !== id && x !== name; });
+        } else {
+            favs.push(name || id);
+        }
         saveSettings({ favorites: favs, hidden: s.hidden || [] });
     }
 
-    function toggleHidden(idOrName) {
-        if (!idOrName) return;
+    function toggleHidden(desktopId, appName) {
         let s = launcherWindow.currentSettings || { favorites: [], hidden: [] };
         let hid = (s.hidden || []).slice();
-        let idx = hid.indexOf(idOrName);
-        if (idx === -1) hid.push(idOrName);
-        else hid.splice(idx, 1);
+        let id = desktopId || "";
+        let name = appName || "";
+        if (!id && !name) return;
+
+        let hasId = id && hid.indexOf(id) !== -1;
+        let hasName = name && hid.indexOf(name) !== -1;
+
+        if (hasId || hasName) {
+            hid = hid.filter(function(x) { return x !== id && x !== name; });
+        } else {
+            hid.push(name || id);
+        }
         saveSettings({ favorites: s.favorites || [], hidden: hid });
     }
 
@@ -386,8 +403,7 @@ PanelWindow {
         if (isVisible) {
             searchInput.clear();
             filterDebounceTimer.stop();
-            loadApps();
-            executeFilter("");
+            loadSettings();
             if (launcherWindow.smartRanking) {
                 rankFetcher.running = false;
                 rankFetcher.running = true;
@@ -1275,7 +1291,7 @@ PanelWindow {
                             if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
                                 let it = appModel.get(appList.currentIndex);
                                 if (it && !it.isCommand && !it.isCalc && !it.isTool) {
-                                    launcherWindow.toggleFavorite(it.desktop_id || it.name);
+                                    launcherWindow.toggleFavorite(it.desktop_id, it.name);
                                 }
                             }
                             event.accepted = true;
@@ -1285,7 +1301,7 @@ PanelWindow {
                             if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
                                 let it = appModel.get(appList.currentIndex);
                                 if (it && !it.isCommand && !it.isCalc && !it.isTool) {
-                                    launcherWindow.toggleHidden(it.desktop_id || it.name);
+                                    launcherWindow.toggleHidden(it.desktop_id, it.name);
                                 }
                             }
                             event.accepted = true;
@@ -1464,7 +1480,7 @@ PanelWindow {
                                                 if (model.isCommand) return "󰆍";
                                                 return "󰵆";
                                             }
-                                            font.family: ThemeBackend.fontFamily
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: launcherWindow.s(16)
                                             color: delegateRoot.isSelected ? ThemeBackend.mauve : ThemeBackend.subtext0
                                             verticalAlignment: Text.AlignVCenter
@@ -1499,10 +1515,10 @@ PanelWindow {
                                         }
 
                                         Text {
-                                            visible: !!model.isFavorite
-                                            text: "󰓎"
-                                            font.family: ThemeBackend.fontFamily
-                                            font.pixelSize: launcherWindow.s(13)
+                                            visible: !!model.isFavorite && !actionButtonsRow.visible
+                                            text: "󰐃"
+                                            font.family: "Iosevka Nerd Font"
+                                            font.pixelSize: launcherWindow.s(12)
                                             color: delegateRoot.isSelected ? ThemeBackend.crust : (ThemeBackend.yellow || "#f9e2af")
                                             verticalAlignment: Text.AlignVCenter
                                         }
@@ -1526,9 +1542,12 @@ PanelWindow {
                                 }
 
                                 RowLayout {
+                                    id: actionButtonsRow
+                                    z: 3
                                     Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
                                     spacing: launcherWindow.s(4)
-                                    visible: ma.containsMouse && !model.isCommand && !model.isCalc && !model.isTool
+                                    property bool isHovered: ma.containsMouse || favMa.containsMouse || hidMa.containsMouse
+                                    visible: isHovered && !model.isCommand && !model.isCalc && !model.isTool
 
                                     Rectangle {
                                         width: launcherWindow.s(24)
@@ -1538,8 +1557,8 @@ PanelWindow {
 
                                         Text {
                                             anchors.centerIn: parent
-                                            text: model.isFavorite ? "󰓎" : "󰓏"
-                                            font.family: ThemeBackend.fontFamily
+                                            text: model.isFavorite ? "󰐃" : "󰐄"
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: launcherWindow.s(13)
                                             color: model.isFavorite ? (delegateRoot.isSelected ? ThemeBackend.crust : (ThemeBackend.yellow || "#f9e2af")) : (delegateRoot.isSelected ? ThemeBackend.crust : ThemeBackend.subtext0)
                                         }
@@ -1549,8 +1568,9 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                launcherWindow.toggleFavorite(model.desktop_id || model.name);
+                                            onClicked: (mouse) => {
+                                                mouse.accepted = true;
+                                                launcherWindow.toggleFavorite(model.desktop_id, model.name);
                                             }
                                         }
                                     }
@@ -1563,8 +1583,8 @@ PanelWindow {
 
                                         Text {
                                             anchors.centerIn: parent
-                                            text: model.isHidden ? "󰘓" : "󰘔"
-                                            font.family: ThemeBackend.fontFamily
+                                            text: model.isHidden ? "󰈉" : "󰈈"
+                                            font.family: "Iosevka Nerd Font"
                                             font.pixelSize: launcherWindow.s(13)
                                             color: delegateRoot.isSelected ? ThemeBackend.crust : ThemeBackend.subtext0
                                         }
@@ -1574,8 +1594,9 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                launcherWindow.toggleHidden(model.desktop_id || model.name);
+                                            onClicked: (mouse) => {
+                                                mouse.accepted = true;
+                                                launcherWindow.toggleHidden(model.desktop_id, model.name);
                                             }
                                         }
                                     }
@@ -1584,6 +1605,7 @@ PanelWindow {
 
                             MouseArea {
                                 id: ma
+                                z: 1
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor

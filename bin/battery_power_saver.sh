@@ -238,8 +238,8 @@ check_critical_battery() {
         return
     fi
 
-    # 2. Suspend khi pin cạn — ratchet: chỉ suspend lại khi tụt dưới latch − 1
-    if [ "$cap" -le "$CRIT_SUSPEND" ]; then
+    # 2. Suspend khi pin cạn — ratchet: chỉ suspend khi tính năng suspend được bật và mức suspend > 0
+    if [ "$CRIT_SUSPEND" -gt 0 ] && [ "$SUSPEND_ENABLED" = "true" ] && [ "$cap" -le "$CRIT_SUSPEND" ]; then
         local latch=""
         [ -f "$SUSPEND_LATCH_FILE" ] && read -r latch < "$SUSPEND_LATCH_FILE" 2>/dev/null
         if [ -z "$latch" ] || [ "$cap" -le $((latch - 1)) ]; then
@@ -253,13 +253,21 @@ check_critical_battery() {
             systemctl suspend 2>/dev/null || true
         fi
         return
+    elif [ "$cap" -le 5 ]; then
+        # Cảnh báo khẩn cấp khi pin <= 5% nếu không thể suspend
+        local cur_crit=""
+        [ -f "$CRIT_LEVEL_FILE" ] && read -r cur_crit < "$CRIT_LEVEL_FILE" 2>/dev/null
+        if [ "$cur_crit" != "crit_low" ] && [ "$cur_crit" != "shutdown" ]; then
+            echo "crit_low" > "$CRIT_LEVEL_FILE"
+            notify-send -r 99111 -u critical "Pin cực yếu" "Pin còn ${cap}%. Vui lòng cắm sạc ngay, máy sẽ tắt khi còn ${CRIT_SHUTDOWN}%."
+        fi
     fi
 
     # 3. Cảnh báo pin yếu — 1 lần mỗi mức
     if [ "$cap" -le "$CRIT_WARN" ]; then
         local cur_crit=""
         [ -f "$CRIT_LEVEL_FILE" ] && read -r cur_crit < "$CRIT_LEVEL_FILE" 2>/dev/null
-        if [ "$cur_crit" != "warn" ]; then
+        if [ "$cur_crit" != "warn" ] && [ "$cur_crit" != "crit_low" ] && [ "$cur_crit" != "suspend" ] && [ "$cur_crit" != "shutdown" ]; then
             echo "warn" > "$CRIT_LEVEL_FILE"
             notify-send -r 99110 -u normal "Pin yếu" "Pin còn ${cap}%. Hãy cắm sạc."
         fi
@@ -270,9 +278,10 @@ LAST_SETTINGS_MTIME=0
 AUTO_SAVER="true"
 CRIT_PROTECT="true"
 CRIT_WARN=15
-CRIT_SUSPEND=5
+CRIT_SUSPEND=0
 CRIT_SHUTDOWN=2
 BOOST_SAVE="true"
+SUSPEND_ENABLED="false"
 
 read_settings() {
     [ -f "$SETTINGS_FILE" ] || return 0
@@ -285,26 +294,28 @@ read_settings() {
             (.autoBatterySaver // true),
             (.critProtect // true),
             (.critBatteryWarn // 15),
-            (.critBatterySuspend // 5),
+            (.critBatterySuspend // 0),
             (.critBatteryShutdown // 2),
-            (.boostPowerSave // true)
+            (.boostPowerSave // true),
+            (if .idle.actions.suspend.enabled != null then .idle.actions.suspend.enabled else false end)
         ] | @tsv' "$SETTINGS_FILE" 2>/dev/null)
 
         if [ -n "$raw" ]; then
-            local val_auto val_crit val_warn val_susp val_shut val_boost
-            read -r val_auto val_crit val_warn val_susp val_shut val_boost <<< "$raw"
+            local val_auto val_crit val_warn val_susp val_shut val_boost val_suspend_en
+            read -r val_auto val_crit val_warn val_susp val_shut val_boost val_suspend_en <<< "$raw"
 
             [ "$val_auto" = "false" ] && AUTO_SAVER="false" || AUTO_SAVER="true"
             [ "$val_crit" = "false" ] && CRIT_PROTECT="false" || CRIT_PROTECT="true"
 
             [[ "$val_warn" =~ ^[0-9]+$ ]] && CRIT_WARN="$val_warn" || CRIT_WARN=15
-            [[ "$val_susp" =~ ^[0-9]+$ ]] && CRIT_SUSPEND="$val_susp" || CRIT_SUSPEND=5
+            [[ "$val_susp" =~ ^[0-9]+$ ]] && CRIT_SUSPEND="$val_susp" || CRIT_SUSPEND=0
             [[ "$val_shut" =~ ^[0-9]+$ ]] && CRIT_SHUTDOWN="$val_shut" || CRIT_SHUTDOWN=2
             [ "$CRIT_WARN" -gt 100 ] && CRIT_WARN=15
-            [ "$CRIT_SUSPEND" -gt 100 ] && CRIT_SUSPEND=5
+            [ "$CRIT_SUSPEND" -gt 100 ] && CRIT_SUSPEND=0
             [ "$CRIT_SHUTDOWN" -gt 100 ] && CRIT_SHUTDOWN=2
 
             [ "$val_boost" = "false" ] && BOOST_SAVE="false" || BOOST_SAVE="true"
+            [ "$val_suspend_en" = "true" ] && SUSPEND_ENABLED="true" || SUSPEND_ENABLED="false"
         fi
     fi
 }

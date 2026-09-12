@@ -80,7 +80,7 @@ PanelWindow {
     property real outerCornerRadius: cornerRadius
 
     property real baseLauncherWidth: isSideAttached ? Math.round(s(460) / 1.1) : Math.round(s(680) / 1.15)
-    property real baseLauncherHeight: isSideAttached ? Math.round(s(74) + 7 * s(56)) : Math.round(s(74) + 6 * s(56))
+    property real baseLauncherHeight: isSideAttached ? Math.round(s(110) + 7 * s(56)) : Math.round(s(110) + 6 * s(56))
 
     visible: isVisible || container.animProgress > 0.001
 
@@ -90,6 +90,7 @@ PanelWindow {
     property bool hasMoreClips: true
     property bool fetchPending: false
     property int fetchFailures: 0
+    property string activeTypeFilter: "all"
 
     property string expandedClipId: ""
     property string expandedClipFullText: ""
@@ -97,6 +98,13 @@ PanelWindow {
 
     property bool isKeyboardNav: false
     property string pendingQuery: ""
+
+    function setTypeFilter(type) {
+        if (clipboardWindow.activeTypeFilter === type) return;
+        clipboardWindow.activeTypeFilter = type;
+        clipboardWindow.refreshClips();
+        clipboardWindow.grabInputFocus();
+    }
 
     function grabInputFocus() {
         searchInput.forceActiveFocus();
@@ -202,6 +210,9 @@ PanelWindow {
 
         for (let i = 0; i < clipboardWindow.allFetchedClips.length; i++) {
             let item = clipboardWindow.allFetchedClips[i];
+            if (clipboardWindow.activeTypeFilter !== "all" && item.type !== clipboardWindow.activeTypeFilter) {
+                continue;
+            }
             let contentLower = (item.content || "").toLowerCase();
             let matchQuality = 0;
             let matches = false;
@@ -396,7 +407,7 @@ PanelWindow {
         let qsDir = (typeof Caching !== "undefined" && Caching.qsDir) ? Caching.qsDir : "";
         let cacheDir = (typeof Caching !== "undefined" && Caching.getCacheDir) ? Caching.getCacheDir("clipboard") : "";
         clipFetcherProc.running = false;
-        clipFetcherProc.command = [qsDir + "/clipboard/clip_fetcher", clipboardWindow.clipOffset.toString(), clipboardWindow.clipPageSize.toString(), cacheDir];
+        clipFetcherProc.command = [qsDir + "/clipboard/clip_fetcher", clipboardWindow.clipOffset.toString(), clipboardWindow.clipPageSize.toString(), cacheDir, clipboardWindow.activeTypeFilter];
         clipFetcherProc.running = true;
     }
 
@@ -963,6 +974,21 @@ PanelWindow {
                             event.accepted = true;
                         }
                         Keys.onPressed: function(event) {
+                            if (event.modifiers & Qt.AltModifier) {
+                                if (event.key === Qt.Key_1) {
+                                    clipboardWindow.setTypeFilter("all");
+                                    event.accepted = true;
+                                    return;
+                                } else if (event.key === Qt.Key_2) {
+                                    clipboardWindow.setTypeFilter("text");
+                                    event.accepted = true;
+                                    return;
+                                } else if (event.key === Qt.Key_3) {
+                                    clipboardWindow.setTypeFilter("image");
+                                    event.accepted = true;
+                                    return;
+                                }
+                            }
                             if (event.key === Qt.Key_PageDown) {
                                 clipboardWindow.isKeyboardNav = true;
                                 keyboardNavTimer.restart();
@@ -1020,6 +1046,66 @@ PanelWindow {
                         onTriggered: {
                             clipboardWindow.animateClear();
                         }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: clipboardWindow.s(6)
+
+                    ClickButton {
+                        id: tabAll
+                        Layout.preferredHeight: clipboardWindow.s(28)
+                        horizontalPadding: clipboardWindow.s(10)
+                        cornerRadius: Math.min(ThemeBackend.borderRadius, clipboardWindow.s(8))
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.all", "All") : "All"
+                        buttonIcon: "󰏫"
+                        iconFontSize: clipboardWindow.s(12)
+                        textFontSize: clipboardWindow.s(10.5)
+                        accentColor: clipboardWindow.activeTypeFilter === "all" ? ThemeBackend.mauve : ThemeBackend.surface0
+                        textColor: clipboardWindow.activeTypeFilter === "all" ? ThemeBackend.base : ThemeBackend.subtext0
+                        action_highlight: clipboardWindow.activeTypeFilter === "all"
+                        onTriggered: {
+                            clipboardWindow.setTypeFilter("all");
+                        }
+                    }
+
+                    ClickButton {
+                        id: tabText
+                        Layout.preferredHeight: clipboardWindow.s(28)
+                        horizontalPadding: clipboardWindow.s(10)
+                        cornerRadius: Math.min(ThemeBackend.borderRadius, clipboardWindow.s(8))
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.text", "Text") : "Text"
+                        buttonIcon: "󰈙"
+                        iconFontSize: clipboardWindow.s(12)
+                        textFontSize: clipboardWindow.s(10.5)
+                        accentColor: clipboardWindow.activeTypeFilter === "text" ? ThemeBackend.mauve : ThemeBackend.surface0
+                        textColor: clipboardWindow.activeTypeFilter === "text" ? ThemeBackend.base : ThemeBackend.subtext0
+                        action_highlight: clipboardWindow.activeTypeFilter === "text"
+                        onTriggered: {
+                            clipboardWindow.setTypeFilter("text");
+                        }
+                    }
+
+                    ClickButton {
+                        id: tabImages
+                        Layout.preferredHeight: clipboardWindow.s(28)
+                        horizontalPadding: clipboardWindow.s(10)
+                        cornerRadius: Math.min(ThemeBackend.borderRadius, clipboardWindow.s(8))
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.images", "Images") : "Images"
+                        buttonIcon: "󰋩"
+                        iconFontSize: clipboardWindow.s(12)
+                        textFontSize: clipboardWindow.s(10.5)
+                        accentColor: clipboardWindow.activeTypeFilter === "image" ? ThemeBackend.mauve : ThemeBackend.surface0
+                        textColor: clipboardWindow.activeTypeFilter === "image" ? ThemeBackend.base : ThemeBackend.subtext0
+                        action_highlight: clipboardWindow.activeTypeFilter === "image"
+                        onTriggered: {
+                            clipboardWindow.setTypeFilter("image");
+                        }
+                    }
+
+                    Item {
+                        Layout.fillWidth: true
                     }
                 }
 

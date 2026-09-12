@@ -8,13 +8,14 @@
   "kbOptions": "grp:alt_shift_toggle",
   "critProtect": true,
   "critBatteryWarn": 15,
-  "critBatterySuspend": 5,
+  "critBatterySuspend": 0,
   "critBatteryShutdown": 2,
   "bluetoothPowerSave": true,
   "boostPowerSave": true,
+  "powerProfile": "balanced",
   "idleLockTimeout": 5,
   "idleScreenOffTimeout": 6,
-  "idleSleepTimeout": 10,
+  "idleSleepTimeout": 0,
   "idle": {
     "enabled": true,
     "manualInhibit": false,
@@ -646,10 +647,10 @@
       "command": "swayosd-server --top-margin 0.9 --style \"$HOME/.config/swayosd/style.css\""
     },
     {
-      "command": "wl-paste --type text --watch cliphist store"
+      "command": "wl-paste --type text --watch bash -c \"$HOME/.config/niri/bin/quickshell/clipboard/clip_store.sh text\""
     },
     {
-      "command": "wl-paste --type image --watch cliphist store"
+      "command": "wl-paste --type image --watch bash -c \"$HOME/.config/niri/bin/quickshell/clipboard/clip_store.sh image\""
     },
     {
       "command": "~/.config/niri/bin/volume_listener.sh"

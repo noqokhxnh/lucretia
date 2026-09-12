@@ -161,7 +161,8 @@ QtObject {
             defaultVariant: "checklist",
             variants: {
                 "checklist": { file: "faces/NoteFaceChecklist.qml", icon: "1", label: I18n.t("widgets.variants.checklist") },
-                "compact":   { file: "faces/NoteFaceCompact.qml",   icon: "2", label: I18n.t("widgets.variants.compact") }
+                "compact":   { file: "faces/NoteFaceCompact.qml",   icon: "2", label: I18n.t("widgets.variants.compact") },
+                "notebook":  { file: "faces/NoteFaceNotebook.qml",  icon: "3", label: I18n.t("widgets.variants.notebook") }
             },
             additionalSettings: [
                 {

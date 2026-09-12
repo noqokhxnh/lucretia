@@ -3,7 +3,15 @@
 # ──────────────────────────────────────────────────────────────
 # POWER & THERMAL MANAGEMENT (chạy đầu tiên)
 # ──────────────────────────────────────────────────────────────
-# Mặc định power-saver để giảm nhiệt, chỉ lên balanced khi cần
+INIT_SETTINGS_FILE="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
+[ -e "$INIT_SETTINGS_FILE" ] && INIT_SETTINGS_FILE="$(readlink -f "$INIT_SETTINGS_FILE" 2>/dev/null || echo "$INIT_SETTINGS_FILE")"
+[ ! -f "$INIT_SETTINGS_FILE" ] && INIT_SETTINGS_FILE="$HOME/.config/niri/settings.json"
+
+TARGET_POWER_PROFILE="balanced"
+if [ -f "$INIT_SETTINGS_FILE" ]; then
+    TARGET_POWER_PROFILE=$(jq -r '.powerProfile // "balanced"' "$INIT_SETTINGS_FILE" 2>/dev/null || echo "balanced")
+fi
+
 if command -v gdbus &>/dev/null; then
     sudo -n systemctl enable --now power-profiles-daemon 2>/dev/null || true
     sleep 0.5
@@ -12,7 +20,7 @@ if command -v gdbus &>/dev/null; then
         --object-path /net/hadess/PowerProfiles \
         --method org.freedesktop.DBus.Properties.Set \
         net.hadess.PowerProfiles \
-        ActiveProfile "<'power-saver'>" 2>/dev/null || true
+        ActiveProfile "<'$TARGET_POWER_PROFILE'>" 2>/dev/null || true
 fi
 # ──────────────────────────────────────────────────────────────
 # ALSA — Headphone volume fix (tránh headphone bị mute sau reboot)
@@ -79,9 +87,6 @@ ensure_awww_ready() {
     return 1
 }
 
-INIT_SETTINGS_FILE="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
-[ -e "$INIT_SETTINGS_FILE" ] && INIT_SETTINGS_FILE="$(readlink -f "$INIT_SETTINGS_FILE" 2>/dev/null || echo "$INIT_SETTINGS_FILE")"
-[ ! -f "$INIT_SETTINGS_FILE" ] && INIT_SETTINGS_FILE="$HOME/.config/niri/settings.json"
 INIT_MATUGEN_ENABLED="true"
 if [ -f "$INIT_SETTINGS_FILE" ]; then
     INIT_MATUGEN_ENABLED=$(jq -r 'if .theme.matugen != null then .theme.matugen else true end' "$INIT_SETTINGS_FILE" 2>/dev/null || echo "true")

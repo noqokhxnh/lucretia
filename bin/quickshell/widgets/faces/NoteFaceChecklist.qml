@@ -17,6 +17,7 @@ Item {
     property real minAspect: 0.5
     property real maxAspect: 2.6
     property bool isRound: false
+    property bool ruledPaperTheme: false
 
     property string wImagePath: ""
     property string currentNoteId: ""
@@ -90,11 +91,58 @@ Item {
     Rectangle {
         id: bgContainer
         anchors.fill: parent
-        color: ThemeBackend.surface0
+        color: root.ruledPaperTheme ? (ThemeBackend.isDark ? Qt.rgba(0.12, 0.12, 0.16, 0.98) : Qt.rgba(0.98, 0.97, 0.94, 0.98)) : ThemeBackend.surface0
         radius: ThemeBackend.borderRadius * 1.5
-        border.color: Qt.alpha(ThemeBackend.surface1, 0.8)
+        border.color: root.ruledPaperTheme ? (ThemeBackend.isDark ? Qt.rgba(ThemeBackend.surface1.r, ThemeBackend.surface1.g, ThemeBackend.surface1.b, 0.7) : Qt.rgba(0.82, 0.79, 0.74, 0.9)) : Qt.alpha(ThemeBackend.surface1, 0.8)
         border.width: 1
         antialiasing: true
+
+        // Ruled Paper Canvas (Nền kẻ vở & lề đỏ)
+        Canvas {
+            id: checklistRuledCanvas
+            anchors.fill: parent
+            visible: root.ruledPaperTheme
+            renderStrategy: Canvas.Immediate
+            renderTarget: Canvas.Image
+
+            Connections {
+                target: ThemeBackend
+                function onBaseChanged() { checklistRuledCanvas.requestPaint(); }
+            }
+
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
+
+            onPaint: {
+                if (!root.ruledPaperTheme) return;
+                let ctx = getContext("2d");
+                ctx.reset();
+                let w = width;
+                let h = height;
+                let isDark = ThemeBackend.isDark;
+                let spacing = s(34);
+                let marginX = Math.round(s(34));
+
+                // Vertical Red Margin Line (Đường kẻ lề đỏ)
+                ctx.beginPath();
+                ctx.strokeStyle = isDark ? "rgba(235, 110, 125, 0.4)" : "rgba(225, 90, 100, 0.5)";
+                ctx.lineWidth = 1.5;
+                ctx.moveTo(marginX + 0.5, 0);
+                ctx.lineTo(marginX + 0.5, h);
+                ctx.stroke();
+
+                // Horizontal Ruled Lines (Đường kẻ ngang)
+                let startY = Math.round(s(44)) + 0.5;
+                ctx.strokeStyle = isDark ? "rgba(137, 180, 250, 0.15)" : "rgba(115, 150, 220, 0.25)";
+                ctx.lineWidth = 1;
+                for (let y = startY; y < h - s(38); y += spacing) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+            }
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -214,6 +262,22 @@ Item {
                         }
                     }
 
+                    // Ruled Paper Theme Toggle Button
+                    IconButton {
+                        size: s(24)
+                        cornerRadius: ThemeBackend.borderRadius
+                        buttonIcon: "󱞎"
+                        iconFontSize: s(13)
+                        accentColor: root.ruledPaperTheme ? Qt.alpha(ThemeBackend.mauve, 0.25) : "transparent"
+                        textColor: root.ruledPaperTheme ? ThemeBackend.mauve : (isHoveredOrHighlighted ? ThemeBackend.mauve : ThemeBackend.subtext0)
+                        onClicked: {
+                            root.ruledPaperTheme = !root.ruledPaperTheme;
+                            if (root.ruledPaperTheme) {
+                                checklistRuledCanvas.requestPaint();
+                            }
+                        }
+                    }
+
                     // Open Full Notes Popup Button
                     IconButton {
                         size: s(24)
@@ -222,7 +286,7 @@ Item {
                         iconFontSize: s(13)
                         accentColor: "transparent"
                         textColor: isHoveredOrHighlighted ? ThemeBackend.mauve : ThemeBackend.subtext0
-                        onClicked: Notes.openNotesPopup()
+                        onClicked: Notes.openNotesPopup(root.effectiveNoteId)
                     }
                 }
             }
