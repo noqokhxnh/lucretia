@@ -82,14 +82,15 @@ Item {
             reloadIdleCmd = `bash "${niriConfigDir}/bin/swayidle.sh" >/dev/null 2>&1 & `;
         }
 
-        let cmd = `mkdir -p "$(dirname '${settingsJsonPath}')" && ` +
-                  `[ ! -s '${settingsJsonPath}' ] && echo '{}' > '${settingsJsonPath}'; ` +
-                  `( flock 200; ` +
-                  `jq '. + {"${key}": ${safeValue}${syncFlatExtra}}' '${settingsJsonPath}' > '${settingsJsonPath}.tmp' 2>/dev/null && ` +
-                  `jq -e . '${settingsJsonPath}.tmp' > /dev/null 2>&1 && ` +
-                  `cp '${settingsJsonPath}.tmp' '${settingsJsonPath}' && sync -d '${settingsJsonPath}' && rm -f '${settingsJsonPath}.tmp'; ` +
+        let cmd = `target='${settingsJsonPath}'; [ -e "$target" ] && target="$(readlink -f "$target" 2>/dev/null || echo "$target")"; ` +
+                  `mkdir -p "$(dirname "$target")" && ` +
+                  `[ ! -s "$target" ] && echo '{}' > "$target"; ` +
+                  `( flock -w 2 200; ` +
+                  `jq '. + {"${key}": ${safeValue}${syncFlatExtra}}' "$target" > "$target.tmp" 2>/dev/null && ` +
+                  `jq -e . "$target.tmp" > /dev/null 2>&1 && ` +
+                  `cp "$target.tmp" "$target" && sync -d "$target" && rm -f "$target.tmp"; ` +
                   `${reloadIdleCmd}` +
-                  `) 200>'${settingsJsonPath}.lock'`;
+                  `) 200>"$target.lock"`;
         sh(cmd);
     }
 
@@ -99,14 +100,15 @@ Item {
             reloadIdleCmd = `bash "${niriConfigDir}/bin/swayidle.sh" >/dev/null 2>&1 & `;
         }
         let jsonStr = JSON.stringify(dataObj).replace(/'/g, "'\\''");
-        let cmd = `mkdir -p "$(dirname '${settingsJsonPath}')" && ` +
-                  `[ ! -s '${settingsJsonPath}' ] && echo '{}' > '${settingsJsonPath}'; ` +
-                  `( flock 200; ` +
-                  `jq '. + ${jsonStr}' '${settingsJsonPath}' > '${settingsJsonPath}.tmp' 2>/dev/null && ` +
-                  `jq -e . '${settingsJsonPath}.tmp' > /dev/null 2>&1 && ` +
-                  `cp '${settingsJsonPath}.tmp' '${settingsJsonPath}' && sync -d '${settingsJsonPath}' && rm -f '${settingsJsonPath}.tmp'; ` +
+        let cmd = `target='${settingsJsonPath}'; [ -e "$target" ] && target="$(readlink -f "$target" 2>/dev/null || echo "$target")"; ` +
+                  `mkdir -p "$(dirname "$target")" && ` +
+                  `[ ! -s "$target" ] && echo '{}' > "$target"; ` +
+                  `( flock -w 2 200; ` +
+                  `jq '. + ${jsonStr}' "$target" > "$target.tmp" 2>/dev/null && ` +
+                  `jq -e . "$target.tmp" > /dev/null 2>&1 && ` +
+                  `cp "$target.tmp" "$target" && sync -d "$target" && rm -f "$target.tmp"; ` +
                   `${reloadIdleCmd}` +
-                  `) 200>'${settingsJsonPath}.lock'`;
+                  `) 200>"$target.lock"`;
         sh(cmd);
         
         let temp = Object.assign({}, rawSettings);

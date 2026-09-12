@@ -75,7 +75,8 @@
       "popular_keys": "Popular Keys:",
       "validation_key": "Please choose or record a key name!",
       "validation_action": "Please enter an action command!",
-      "all_categories": "All"
+      "all_categories": "All",
+      "reloaded": "Reloaded from config.kdl"
     },
     "launcher": {
       "position": {
@@ -319,7 +320,8 @@
       },
       "workspaces": {
         "title": "Choose an amount of workspaces to display",
-        "disc": "Note: this doesn't affect the actual amount of workspaces in the compositor"
+        "disc": "Note: this doesn't affect the actual amount of workspaces in the compositor",
+        "desc": "Note: this doesn't affect the actual amount of workspaces in the compositor"
       },
       "opacity": {
         "title": "Bar opacity",
@@ -524,7 +526,10 @@
   },
   "applauncher": {
     "search": "Search",
-    "placeholder": "Start with > for a command..."
+    "placeholder": "Start with > for a command...",
+    "calc_result": "Calculation result (Enter to copy)",
+    "command_hint": "Type a command to execute",
+    "command_run": "Execute command: {cmd}"
   },
   "calendar": {
     "loading": "Loading...",
@@ -631,7 +636,8 @@
       },
       "weather": {
         "fallback_summary": "Weather report",
-        "fallback_body": "No breakdown data provided."
+        "fallback_body": "No breakdown data provided.",
+        "title": "Weather"
       },
       "screenshot": {
         "badge": "Screenshot",
@@ -782,7 +788,8 @@
       "blue": "Blue",
       "purple": "Purple",
       "pink": "Pink",
-      "monochrome": "Monochrome"
+      "monochrome": "Monochrome",
+      "history": "History"
     }
   },
   "weather": {
@@ -864,7 +871,9 @@
     "redactor": {
       "no_widgets_active": "No widgets active",
       "click_to_add": "Click a widget icon in the bottom toolbar to add it",
-      "done": "Done"
+      "done": "Done",
+      "widget_singular": "widget",
+      "widgets_plural": "widgets"
     },
     "types": {
       "clock": "Clock",
@@ -891,7 +900,12 @@
       "bloc": "Daily Almanac"
     },
     "picker": {
-      "select_app": "Select Application"
+      "select_app": "Select Application",
+      "select_apps": "Select Applications"
+    },
+    "monitors": {
+      "name": "Monitors",
+      "desc": "Manage displays, resolution, and refresh rate"
     }
   },
   "notes": {
@@ -953,7 +967,8 @@
       "current_focus": "Monitor and log active window focus changes",
       "monitors_detect": "Query active display outputs and refresh rates",
       "location_manual": "Set geographic coordinates and timezone manually",
-      "blue_light_filter": "Adjust color temperature and automatic day/night schedule"
+      "blue_light_filter": "Adjust color temperature and automatic day/night schedule",
+      "translate": "Quick translation tool for text and selected content"
     }
   },
   "daemon": {
@@ -1063,5 +1078,30 @@
       "disabling_dm": "-> Disabling conflicting display manager: {dm}",
       "sddm_success": "-> SDDM Material You theme installed and service enabled [ OK ]"
     }
+  },
+  "search": "Search...",
+  "monitors": {
+    "title": "Display Settings",
+    "modes": {
+      "extend": "Extend",
+      "mirror": "Mirror",
+      "internal": "PC Only",
+      "external": "Second Only"
+    },
+    "info": {
+      "extend_hint": "Extend mode  ·  drag to reposition",
+      "mirror": "Mirror ({from} ➔ {to})",
+      "internal": "PC Only ({external} Off)",
+      "external": "Second Only ({internal} Off)",
+      "extend": "Extend Mode"
+    },
+    "refresh_rate": "Refresh Rate",
+    "apply": "Apply",
+    "apply_all": "Apply All",
+    "mirror_mode": "Mirror Mode",
+    "pc_only": "PC Only",
+    "second_only": "Second Only",
+    "off": "OFF",
+    "unknown": "Unknown"
   }
 }

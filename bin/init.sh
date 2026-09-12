@@ -79,17 +79,27 @@ ensure_awww_ready() {
     return 1
 }
 
+INIT_SETTINGS_FILE="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
+[ -e "$INIT_SETTINGS_FILE" ] && INIT_SETTINGS_FILE="$(readlink -f "$INIT_SETTINGS_FILE" 2>/dev/null || echo "$INIT_SETTINGS_FILE")"
+[ ! -f "$INIT_SETTINGS_FILE" ] && INIT_SETTINGS_FILE="$HOME/.config/niri/settings.json"
+INIT_MATUGEN_ENABLED="true"
+if [ -f "$INIT_SETTINGS_FILE" ]; then
+    INIT_MATUGEN_ENABLED=$(jq -r 'if .theme.matugen != null then .theme.matugen else true end' "$INIT_SETTINGS_FILE" 2>/dev/null || echo "true")
+fi
+
 if [ -n "$CUR_VID" ]; then
     pkill -x mpvpaper 2>/dev/null || true
     mpvpaper -o 'loop --no-audio --hwdec=auto --profile=fast' '*' "$CUR_VID" &
 
-    if [ -n "$CACHE_IMG" ] && [ -f "$MATUGEN_APPLY" ]; then
-        bash "$MATUGEN_APPLY" apply "$CUR_VID" "$CACHE_IMG"
-    fi
+    if [ "$INIT_MATUGEN_ENABLED" = "true" ]; then
+        if [ -n "$CACHE_IMG" ] && [ -f "$MATUGEN_APPLY" ]; then
+            bash "$MATUGEN_APPLY" apply "$CUR_VID" "$CACHE_IMG"
+        fi
 
-    if [ -f "$RELOAD_SCRIPT_PATH" ]; then
-        chmod +x "$RELOAD_SCRIPT_PATH"
-        bash "$RELOAD_SCRIPT_PATH"
+        if [ -f "$RELOAD_SCRIPT_PATH" ]; then
+            chmod +x "$RELOAD_SCRIPT_PATH"
+            bash "$RELOAD_SCRIPT_PATH"
+        fi
     fi
 
     mkdir -p "$(dirname "$FLAG")" "$QS_STATE_DIR/wallpaper_picker"
@@ -113,13 +123,15 @@ if [ -n "$CUR_WALL" ] || [ -n "$CACHE_IMG" ]; then
         echo "$TARGET_IMG" > "$QS_CACHE_WALLPAPER_PICKER/current_wallpaper.path" 2>/dev/null || true
     fi
 
-    if [ -f "$MATUGEN_APPLY" ]; then
-        bash "$MATUGEN_APPLY" apply "${CUR_WALL:-$TARGET_IMG}" "${CACHE_IMG:-$TARGET_IMG}"
-    fi
+    if [ "$INIT_MATUGEN_ENABLED" = "true" ]; then
+        if [ -f "$MATUGEN_APPLY" ]; then
+            bash "$MATUGEN_APPLY" apply "${CUR_WALL:-$TARGET_IMG}" "${CACHE_IMG:-$TARGET_IMG}"
+        fi
 
-    if [ -f "$RELOAD_SCRIPT_PATH" ]; then
-        chmod +x "$RELOAD_SCRIPT_PATH"
-        bash "$RELOAD_SCRIPT_PATH"
+        if [ -f "$RELOAD_SCRIPT_PATH" ]; then
+            chmod +x "$RELOAD_SCRIPT_PATH"
+            bash "$RELOAD_SCRIPT_PATH"
+        fi
     fi
 
     mkdir -p "$(dirname "$FLAG")" "$QS_STATE_DIR/wallpaper_picker"

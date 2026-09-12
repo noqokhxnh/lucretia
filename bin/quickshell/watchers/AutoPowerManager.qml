@@ -7,6 +7,7 @@ Item {
 
     property string lastAppliedProfile: ""
     property int lowLoadTicks: 0
+    property int highLoadTicks: 0
     property double _lastSwitchTime: 0
     property bool activeSubscriber: false
 
@@ -46,41 +47,47 @@ Item {
             let now = Date.now();
             if (now - manager._lastSwitchTime < 30000) return;
 
-            // 1. Peak Load Condition (Transition to balanced or performance based on saver setting)
-            if (cpu >= 75 || temp >= 75) {
-                targetProfile = Config.autoBatterySaver ? "balanced" : "performance";
+            // 1. Peak Load Condition: Sustained high CPU load (>=80% for 10s), prevented if overheating (>=85°C)
+            if (cpu >= 80 && temp < 85) {
+                manager.highLoadTicks++;
                 manager.lowLoadTicks = 0;
-            }
-            // 2. Idle Load Condition (Sustained low load required for power-saver)
-            else if (cpu <= 25 && temp <= 50) {
-                manager.lowLoadTicks++;
-                if (manager.lowLoadTicks >= 2) { // 10 seconds sustained
-                    targetProfile = "power-saver";
+                if (manager.highLoadTicks >= 2) { // 10 seconds sustained
+                    targetProfile = Config.autoBatterySaver ? "balanced" : "performance";
                 } else {
-                    targetProfile = manager.lastAppliedProfile !== "" ? manager.lastAppliedProfile : "power-saver";
+                    targetProfile = manager.lastAppliedProfile !== "" ? manager.lastAppliedProfile : (Config.autoBatterySaver ? "power-saver" : "balanced");
                 }
             }
-            // 3. Normal / Transition Conditions
+            // 2. Idle Load Condition: Sustained low CPU load
+            else if (cpu <= 25) {
+                manager.highLoadTicks = 0;
+                manager.lowLoadTicks++;
+                if (Config.autoBatterySaver) {
+                    if (manager.lowLoadTicks >= 2) { // 10 seconds sustained
+                        targetProfile = "power-saver";
+                    } else {
+                        targetProfile = manager.lastAppliedProfile !== "" ? manager.lastAppliedProfile : "power-saver";
+                    }
+                } else {
+                    // On AC: return from performance to balanced
+                    targetProfile = "balanced";
+                }
+            }
+            // 3. Normal Load Condition (Moderate CPU usage)
             else {
+                manager.highLoadTicks = 0;
                 manager.lowLoadTicks = 0;
 
                 if (manager.lastAppliedProfile === "performance") {
-                    // Hysteresis: only drop down to balanced if it cools down enough
-                    if (cpu < 45 && temp < 60) {
+                    // Step down to balanced when CPU drops below 55% or temperature is too high
+                    if (cpu < 55 || temp >= 85) {
                         targetProfile = "balanced";
                     } else {
                         targetProfile = "performance";
                     }
-                } else if (manager.lastAppliedProfile === "balanced") {
-                    // From balanced: go to power-saver if cool enough
-                    if (cpu < 25 && temp < 50) {
-                        targetProfile = "power-saver";
-                    } else {
-                        targetProfile = "balanced";
-                    }
-                } else {
-                    // Default: power-saver (tiết kiệm nhiệt)
+                } else if (Config.autoBatterySaver) {
                     targetProfile = "power-saver";
+                } else {
+                    targetProfile = "balanced";
                 }
             }
 
@@ -124,6 +131,7 @@ Item {
             if (!Config.autoPowerMode) {
                 manager.lastAppliedProfile = "";
                 manager.lowLoadTicks = 0;
+                manager.highLoadTicks = 0;
             }
             if (!Config.autoPowerNotify) {
                 Quickshell.execDetached([
