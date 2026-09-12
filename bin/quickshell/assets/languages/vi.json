@@ -75,7 +75,8 @@
       "popular_keys": "Phím phổ biến:",
       "validation_key": "Vui lòng chọn hoặc ghi một phím!",
       "validation_action": "Vui lòng nhập lệnh thực thi!",
-      "all_categories": "Tất cả"
+      "all_categories": "Tất cả",
+      "reloaded": "Đã nạp lại từ config.kdl"
     },
     "launcher": {
       "position": {
@@ -189,7 +190,8 @@
       },
       "hooks": {
         "title": "Hooks"
-      }
+      },
+      "invalid_badge": "Thứ tự"
     },
     "welcome": {
       "by_author": "bởi @{author}",
@@ -318,7 +320,8 @@
       },
       "workspaces": {
         "title": "Chọn số lượng không gian làm việc hiển thị",
-        "desc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
+        "desc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor",
+        "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
       },
       "opacity": {
         "title": "Độ mờ / trong suốt",
@@ -358,7 +361,11 @@
       }
     },
     "theme": {
-      "font": "Phông chữ hệ thống",
+      "font": {
+        "title": "Phông chữ",
+        "desc": "Chọn phông chữ mặc định được Lucretia sử dụng",
+        "select": "Chọn phông chữ..."
+      },
       "radius": {
         "title": "Bo góc viền",
         "desc": "Bán kính bo tròn góc cho các cửa sổ và thẻ giao diện"
@@ -519,14 +526,22 @@
   },
   "applauncher": {
     "search": "Tìm kiếm",
-    "placeholder": "Tìm kiếm ứng dụng hoặc gõ lệnh > ..."
+    "placeholder": "Tìm kiếm ứng dụng hoặc gõ lệnh > ...",
+    "calc_result": "Kết quả tính toán (Nhấn Enter để sao chép)",
+    "command_hint": "Nhập lệnh để thực thi",
+    "command_run": "Chạy lệnh: {cmd}"
   },
   "calendar": {
     "loading": "Đang tải...",
     "loading_schedule": "Đang tải lịch trình...",
     "no_events": "Không có sự kiện nào",
     "open_web": "Mở trang web",
-    "weather": "Thời tiết",
+    "weather": {
+      "wind": "Gió",
+      "humid": "Độ ẩm",
+      "rain": "Mưa",
+      "feels": "Cảm giác"
+    },
     "days": {
       "mo": "T2",
       "tu": "T3",
@@ -621,7 +636,8 @@
       },
       "weather": {
         "fallback_summary": "Báo cáo thời tiết",
-        "fallback_body": "Không có dữ liệu chi tiết."
+        "fallback_body": "Không có dữ liệu chi tiết.",
+        "title": "Thời tiết"
       },
       "screenshot": {
         "badge": "Ảnh chụp màn hình",
@@ -638,7 +654,41 @@
       "disk": "Ổ đĩa",
       "net": "Mạng"
     },
-    "timer": "Đồng hồ bấm giờ"
+    "timer": {
+      "tabs": {
+        "timer": "Hẹn giờ",
+        "stopwatch": "Bấm giờ",
+        "pomodoro": "Pomodoro"
+      },
+      "stopwatch": {
+        "lap": "Vòng {number}"
+      },
+      "pomodoro": {
+        "phases": {
+          "focus": "Tập trung",
+          "short_break": "Nghỉ ngắn",
+          "long_break": "Nghỉ dài"
+        },
+        "settings": {
+          "work": "Làm việc (phút)",
+          "short_break": "Nghỉ ngắn (phút)",
+          "long_break": "Nghỉ dài (phút)",
+          "sessions": "Chu kỳ"
+        }
+      },
+      "notification": {
+        "app_name": "Đồng hồ Quickshell",
+        "timer_finished_title": "Hết giờ hẹn",
+        "timer_finished_body": "Bộ đếm thời gian {time} của bạn đã kết thúc.",
+        "focus_complete_title": "Hoàn thành tập trung",
+        "focus_complete_body": "Làm việc tuyệt vời! Đã đến lúc nghỉ ngơi một chút.",
+        "break_over_title": "Hết giờ nghỉ",
+        "break_over_body": "Giờ nghỉ đã hết. Hãy quay lại làm việc nào!",
+        "pomo_skipped_title": "Đã bỏ qua Pomodoro",
+        "pomo_skipped_focus_body": "Đã bỏ qua phiên tập trung. Chuyển sang giờ nghỉ.",
+        "pomo_skipped_break_body": "Đã bỏ qua giờ nghỉ. Quay lại tập trung."
+      }
+    }
   },
   "screenshot": {
     "video_mode": "Nhấn ghi hình",
@@ -689,7 +739,15 @@
       "balanced": "Cân bằng",
       "power_saver": "Tiết kiệm pin"
     },
-    "battery": "Thời lượng pin",
+    "battery": {
+      "fully_charged": "Đã sạc đầy",
+      "charging": "Đang sạc",
+      "charging_time": "Đang sạc • {hours}h {mins}m",
+      "discharging": "Đang dùng pin",
+      "left_time": "Còn lại {hours}h {mins}m",
+      "until_full": "cho đến khi đầy",
+      "remaining": "còn lại"
+    },
     "actions": {
       "system_name": "Hệ thống",
       "hibernate_error_title": "Chế độ ngủ đông không khả dụng",
@@ -730,7 +788,8 @@
       "blue": "Xanh dương",
       "purple": "Tím",
       "pink": "Hồng",
-      "monochrome": "Đơn sắc"
+      "monochrome": "Đơn sắc",
+      "history": "Lịch sử"
     }
   },
   "weather": {
@@ -826,15 +885,27 @@
       "note": "Ghi chú & Công việc"
     },
     "variants": {
+      "icon": "Biểu tượng",
+      "card": "Thẻ",
+      "badge": "Huy hiệu",
+      "bloc": "Lịch ngày",
       "checklist": "Danh sách kiểm tra",
-      "digital": "Kỹ thuật số",
+      "digital": "Điện tử",
       "analog": "Kim đồng hồ",
       "full": "Đầy đủ",
       "minimal": "Tối giản",
       "round": "Tròn",
-      "compact": "Gọn",
+      "compact": "Thu gọn",
       "rect": "Chữ nhật",
       "rounded": "Bo góc"
+    },
+    "picker": {
+      "select_app": "Chọn ứng dụng",
+      "select_apps": "Chọn các ứng dụng"
+    },
+    "monitors": {
+      "name": "Màn hình",
+      "desc": "Quản lý màn hình, độ phân giải và tần số quét"
     }
   },
   "notes": {
@@ -1007,5 +1078,30 @@
       "disabling_dm": "-> Vô hiệu hóa display manager xung đột: {dm}",
       "sddm_success": "-> Đã cài theme SDDM Material You và kích hoạt dịch vụ [ OK ]"
     }
+  },
+  "search": "Tìm kiếm...",
+  "monitors": {
+    "title": "Cài đặt màn hình",
+    "modes": {
+      "extend": "Mở rộng",
+      "mirror": "Phản chiếu",
+      "internal": "Chỉ máy tính",
+      "external": "Màn hình 2"
+    },
+    "info": {
+      "extend_hint": "Chế độ mở rộng  ·  kéo để sắp xếp vị trí",
+      "mirror": "Phản chiếu ({from} ➔ {to})",
+      "internal": "Chỉ máy tính (Tắt {external})",
+      "external": "Màn hình 2 (Tắt {internal})",
+      "extend": "Chế độ mở rộng"
+    },
+    "refresh_rate": "Tần số quét",
+    "apply": "Áp dụng",
+    "apply_all": "Áp dụng tất cả",
+    "mirror_mode": "Chế độ phản chiếu",
+    "pc_only": "Chỉ máy tính",
+    "second_only": "Màn hình 2",
+    "off": "TẮT",
+    "unknown": "Không rõ"
   }
 }

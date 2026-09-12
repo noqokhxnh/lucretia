@@ -193,14 +193,14 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "right": { anchor: "center" } 
             } 
         },
-        "monitors": { 
-            w: 880, h: 580, comp: "monitors/MonitorPopup.qml", 
-            pos: { 
-                "top": { anchor: "center" }, 
-                "bottom": { anchor: "center" }, 
-                "left": { anchor: "center" }, 
-                "right": { anchor: "center" } 
-            } 
+        "monitors": {
+            w: 980, h: 700, comp: "monitors/MonitorPopup.qml",
+            pos: {
+                "top": { anchor: "center" },
+                "bottom": { anchor: "center" },
+                "left": { anchor: "center" },
+                "right": { anchor: "center" }
+            }
         },
         "battery": { 
             w: 500, h: "fill", comp: "syspanel/SystemPanel.qml", 
