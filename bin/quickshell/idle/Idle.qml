@@ -62,7 +62,7 @@ Item {
                 "id": "suspend",
                 "name": "System Suspend",
                 "timeout": 600,
-                "enabled": true,
+                "enabled": false,
                 "respectInhibitors": true,
                 "mprisInhibit": false,
                 "warningTimeout": 30,
