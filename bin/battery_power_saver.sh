@@ -365,10 +365,9 @@ while true; do
     fi
 
     # Bảo vệ pin cạn — chạy bất kể autoBatterySaver (an toàn, không phải tùy chọn)
-    local sleep_interval=10
+    sleep_interval=10
     if [ "$AC_STATUS" = "0" ]; then
         check_critical_battery
-        local cap
         cap=$(get_battery_capacity)
         if [[ "$cap" =~ ^[0-9]+$ ]] && [ "$cap" -le "$CRIT_WARN" ]; then
             sleep_interval=3
