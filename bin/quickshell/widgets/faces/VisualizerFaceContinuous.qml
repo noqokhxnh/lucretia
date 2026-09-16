@@ -32,9 +32,12 @@ Item {
         if (isVisVisible) Cava.unregisterConsumer();
     }
 
-    property int sampleCount: 64
+    property int sampleCount: 40
     property var rawBarLevels: Cava.barLevels
-    property var processedBars: {
+    property var smoothLevels: []
+    property real totalEnergy: 0.0
+
+    function getProcessedBars() {
         let source = rawBarLevels;
         let count = sampleCount;
         let out = [];
@@ -80,16 +83,15 @@ Item {
         return smoothed;
     }
 
-    property var smoothLevels: []
-    property real totalEnergy: 0.0
-
     onRawBarLevelsChanged: {
-        let src = rawBarLevels;
-        if (src && src.length) {
-            for (let i = 0; i < src.length; i++) {
-                if (src[i] > 0.01) {
-                    if (!animTimer.running) animTimer.running = true;
-                    return;
+        if (!animTimer.running && root.isVisVisible) {
+            let src = rawBarLevels;
+            if (src && src.length) {
+                for (let i = 0; i < src.length; i++) {
+                    if (src[i] > 0.01) {
+                        animTimer.running = true;
+                        return;
+                    }
                 }
             }
         }
@@ -98,10 +100,10 @@ Item {
     Timer {
         id: animTimer
         interval: 16
-        running: root.isVisVisible
+        running: false
         repeat: true
         onTriggered: {
-            let targets = root.processedBars;
+            let targets = root.getProcessedBars();
             let current = root.smoothLevels;
             let updated = [];
             let sum = 0.0;
@@ -150,27 +152,27 @@ Item {
             if (!levels || levels.length === 0) return;
 
             let count = levels.length;
-            let pts = [];
-            for (let i = 0; i < count; i++) {
-                let px = (i / (count - 1)) * w;
-                let py = h - (levels[i] * h * 0.92);
-                pts.push({ x: px, y: py });
-            }
+            if (count < 2) return;
 
             ctx.beginPath();
             ctx.moveTo(0, h);
-            ctx.lineTo(pts[0].x, pts[0].y);
 
-            for (let i = 0; i < pts.length - 1; i++) {
-                let p0 = pts[i];
-                let p1 = pts[i + 1];
-                let mx = (p0.x + p1.x) / 2;
-                let my = (p0.y + p1.y) / 2;
-                ctx.quadraticCurveTo(p0.x, p0.y, mx, my);
+            let step = w / (count - 1);
+            let prevX = 0;
+            let prevY = h - (levels[0] * h * 0.92);
+            ctx.lineTo(prevX, prevY);
+
+            for (let i = 1; i < count; i++) {
+                let currX = i * step;
+                let currY = h - (levels[i] * h * 0.92);
+                let mx = (prevX + currX) * 0.5;
+                let my = (prevY + currY) * 0.5;
+                ctx.quadraticCurveTo(prevX, prevY, mx, my);
+                prevX = currX;
+                prevY = currY;
             }
 
-            let last = pts[pts.length - 1];
-            ctx.lineTo(last.x, last.y);
+            ctx.lineTo(w, prevY);
             ctx.lineTo(w, h);
             ctx.closePath();
 
