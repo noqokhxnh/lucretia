@@ -62,8 +62,14 @@ if [[ "$ACTION" == "widgetredactor" || "$ACTION" == "widgets" || "$TARGET" == "w
     [[ "$MONITOR" == "widgets" || "$MONITOR" == "widgetredactor" ]] && MONITOR=""
 
     QS_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/quickshell"
-    mkdir -p "$QS_RUN_DIR"
-    [[ -n "$MONITOR" ]] && echo "$MONITOR" > "$QS_RUN_DIR/redactor_target_monitor"
+    LUCRETIA_RUN_DIR="${XDG_RUNTIME_DIR:-/tmp}/lucretia"
+    mkdir -p "$QS_RUN_DIR" "$LUCRETIA_RUN_DIR"
+    if [[ -n "$MONITOR" ]]; then
+        echo "$MONITOR" > "$QS_RUN_DIR/redactor_target_monitor"
+        echo "$MONITOR" > "$LUCRETIA_RUN_DIR/redactor_target_monitor"
+    fi
+
+    for p in $(pgrep -f '[R]unner\.qml'); do [ "$p" != "$$" ] && [ "$p" != "$PPID" ] && kill "$p" 2>/dev/null; done
 
     QS_WIDGET_MONITOR="$MONITOR" LUCRETIA_TARGET_FILE="$SCRIPTS_DIR/widgets/WidgetRedactor.qml" SERPANTINUM_TARGET_FILE="$SCRIPTS_DIR/widgets/WidgetRedactor.qml" quickshell -p "$SCRIPTS_DIR/Runner.qml" >/dev/null 2>&1 &
     disown

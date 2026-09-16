@@ -62,6 +62,7 @@ Item {
     })
 
     property var spectrumLevels: []
+    property bool _spectrumSubscribed: false
 
     property bool isConnected: daemonSocket.connected
 
@@ -181,6 +182,9 @@ Item {
                 // Send initial handshake / subscriptions
                 sendRequest("sysdata", "subscribe", {}, null);
                 sendRequest("music", "subscribe", {}, null);
+                if (root._spectrumSubscribed || (typeof Cava !== "undefined" && Cava.activeConsumers > 0)) {
+                    sendRequest("spectrum", "subscribe", {}, null);
+                }
                 // Weather is delivered via broadcasts, but fetch once on every
                 // (re)connect so a fresh connection never sits on stale data.
                 sendRequest("weather", "get", {}, (res) => {
@@ -287,11 +291,19 @@ Item {
     }
 
     function subscribeSpectrum(callback) {
-        return sendRequest("spectrum", "subscribe", {}, callback);
+        root._spectrumSubscribed = true;
+        if (daemonSocket.connected) {
+            return sendRequest("spectrum", "subscribe", {}, callback);
+        }
+        return "";
     }
 
     function unsubscribeSpectrum(callback) {
-        return sendRequest("spectrum", "unsubscribe", {}, callback);
+        root._spectrumSubscribed = false;
+        if (daemonSocket.connected) {
+            return sendRequest("spectrum", "unsubscribe", {}, callback);
+        }
+        return "";
     }
 
     function setSpectrumBars(bars, callback) {

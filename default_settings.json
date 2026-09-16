@@ -1,5 +1,23 @@
 {
   "uiScale": 1.0,
+  "dock": {
+    "enabled": false,
+    "position": "bottom",
+    "onTop": true,
+    "elementSize": 44,
+    "floating": false,
+    "opacity": 100,
+    "exclusive": false,
+    "autohide": false,
+    "autohideTimeout": 1000,
+    "editing": false,
+    "apps": [],
+    "overrideBoundsCorrection": false,
+    "enableScrolling": false,
+    "visibleElements": 7,
+    "hoverScale": 120,
+    "cascadeScale": false
+  },
   "openGuideAtStartup": false,
   "topbarHelpIcon": true,
   "workspaceCount": 8,
@@ -98,6 +116,7 @@
     "width": 100,
     "opacity": 100,
     "style": "modular",
+    "distinctPills": false,
     "time": {
       "format": "HH:mm:ss"
     },
@@ -141,7 +160,11 @@
     "sfxVolume": 23,
     "weatherInterval": 30,
     "weatherUnit": "metric",
-    "quickactions": true
+    "quickactions": true,
+    "screenshotCaptureOnRelease": false
+  },
+  "widgets": {
+    "hideBarInRedactor": true
   },
   "keybinds": [
     {

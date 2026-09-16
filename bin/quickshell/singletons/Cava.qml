@@ -44,6 +44,11 @@ Item {
                 root.barLevels = levels;
             }
         }
+        function onIsConnectedChanged() {
+            if (QsDaemonClient.isConnected && root.activeConsumers > 0) {
+                QsDaemonClient.subscribeSpectrum();
+            }
+        }
     }
 
     onBarCountChanged: {

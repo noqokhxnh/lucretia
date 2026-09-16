@@ -29,6 +29,7 @@ Item {
     }
     property bool isFill: barStyle === "fill"
     property bool isSolid: barStyle === "solid" || barStyle === "fill"
+    property bool distinctPills: barWindow ? (barWindow.distinctPills !== undefined ? barWindow.distinctPills : false) : false
     property real cornerRadius: barWindow ? barWindow.cornerRadius : 12
 
     property bool suppressAnimation: false
@@ -64,9 +65,9 @@ Item {
     }
 
     property var defaultModuleSettings: {
-        "left": ["left", "vis", "workspaces", "media"],
-        "center": ["timedate", "info", "weather"],
-        "right": [["tray", "wifi", "bt", "vol", "bat"]]
+        "left": ["left", "workspaces", "focus"],
+        "center": ["timedate", "info", "weather", "media", "vis"],
+        "right": ["tray", "sysmon", "kb", "wifi", "bt", "vol", "bat"]
     }
 
     function parseModuleSettings(ms) {
@@ -125,18 +126,10 @@ Item {
             return out;
         }
 
-        let fl = filterCenter(l);
-        let fc = filterCenter(c);
-        let fr = filterCenter(r);
-
-        if (!fl.length && !fc.length && !fr.length) {
-            return defaultModuleSettings;
-        }
-
         return {
-            "left": fl,
-            "center": fc,
-            "right": fr
+            "left": filterCenter(l),
+            "center": filterCenter(c),
+            "right": filterCenter(r)
         };
     }
 
@@ -239,6 +232,7 @@ Item {
     property real gap: barWindow ? barWindow.s(2) : 2
     property real groupGap: barWindow ? -barWindow.s(4) : -4
     property real gap8: barWindow ? barWindow.s(10) : 10
+    property real groupPad: (!isSolid || distinctPills) ? (barWindow ? barWindow.s(4) : 4) : 0
 
     function calcTargetHeight(arr) {
         let total = 0;
@@ -256,7 +250,7 @@ Item {
                     }
                 }
                 if (gItems > 0) {
-                    total += gh;
+                    total += gh + groupPad * 2;
                     groupCount++;
                 }
             } else {
@@ -274,12 +268,14 @@ Item {
     property real tcGap: (tHeightTarget > 0 && cHeightTarget > 0) ? gap8 : 0
     property real cbGap: (cHeightTarget > 0 && bHeightTarget > 0) ? gap8 : 0
 
-    property real fillInset: 0
-    property real baseMinTop: isFill ? fillInset : (barWindow ? (barWindow.edgePadding + barWindow.s(1)) : 0)
-    property real baseMaxBottom: isFill ? (contentWrapper.height - fillInset) : (barWindow ? (contentWrapper.height - barWindow.edgePadding - barWindow.s(1)) : contentWrapper.height)
+    property real distinctEdgePadding: (isSolid && distinctPills) ? (barWindow ? barWindow.s(4) : 4) : 4
+    property real fillInset: distinctEdgePadding
 
-    property real screenMinTop: isFill ? fillInset : (barWindow ? barWindow.s(1) : 0)
-    property real screenMaxBottom: isFill ? (contentWrapper.height - fillInset) : (barWindow ? (contentWrapper.height - barWindow.s(1)) : contentWrapper.height)
+    property real baseMinTop: isFill ? fillInset : (barWindow ? (barWindow.verticalOffset + barWindow.s(1) + distinctEdgePadding) : distinctEdgePadding)
+    property real baseMaxBottom: isFill ? (contentWrapper.height - fillInset) : (barWindow ? (contentWrapper.height - barWindow.verticalOffset - barWindow.s(1) - distinctEdgePadding) : (contentWrapper.height - distinctEdgePadding))
+
+    property real screenMinTop: isFill ? fillInset : (barWindow ? (barWindow.s(1) + distinctEdgePadding) : distinctEdgePadding)
+    property real screenMaxBottom: isFill ? (contentWrapper.height - fillInset) : (barWindow ? (contentWrapper.height - barWindow.s(1) - distinctEdgePadding) : (contentWrapper.height - distinctEdgePadding))
 
     property real rawCNaturalY: (contentWrapper.height - cHeightTarget) / 2
 
@@ -311,19 +307,27 @@ Item {
     property real dynamicMinY: {
         if (isFill) return 0;
         let m = contentWrapper.height;
-        if (tHeightTarget > 0) m = Math.min(m, tFinalY - (barWindow ? barWindow.s(1) : 0));
-        if (cHeightTarget > 0) m = Math.min(m, cFinalY - (barWindow ? barWindow.s(1) : 0));
-        if (bHeightTarget > 0) m = Math.min(m, bFinalClampedY - (barWindow ? barWindow.s(1) : 0));
-        return Math.max(0, Math.min(m, barWindow ? barWindow.edgePadding : 0));
+        let hasModules = (tHeightTarget > 0 || cHeightTarget > 0 || bHeightTarget > 0);
+        if (tHeightTarget > 0) m = Math.min(m, tFinalY - (barWindow ? barWindow.s(1) : 0) - distinctEdgePadding);
+        if (cHeightTarget > 0) m = Math.min(m, cFinalY - (barWindow ? barWindow.s(1) : 0) - distinctEdgePadding);
+        if (bHeightTarget > 0) m = Math.min(m, bFinalClampedY - (barWindow ? barWindow.s(1) : 0) - distinctEdgePadding);
+        if (layoutState !== "default") {
+            return hasModules ? Math.max(0, m) : contentWrapper.height / 2;
+        }
+        return Math.max(0, Math.min(m, barWindow ? barWindow.verticalOffset : 0));
     }
 
     property real dynamicMaxY: {
         if (isFill) return contentWrapper.height;
         let m = 0;
-        if (tHeightTarget > 0) m = Math.max(m, tFinalY + tHeightTarget + (barWindow ? barWindow.s(1) : 0));
-        if (cHeightTarget > 0) m = Math.max(m, cFinalY + cHeightTarget + (barWindow ? barWindow.s(1) : 0));
-        if (bHeightTarget > 0) m = Math.max(m, bFinalClampedY + bHeightTarget + (barWindow ? barWindow.s(1) : 0));
-        return Math.min(contentWrapper.height, Math.max(m, barWindow ? (contentWrapper.height - barWindow.edgePadding) : contentWrapper.height));
+        let hasModules = (tHeightTarget > 0 || cHeightTarget > 0 || bHeightTarget > 0);
+        if (tHeightTarget > 0) m = Math.max(m, tFinalY + tHeightTarget + (barWindow ? barWindow.s(1) : 0) + distinctEdgePadding);
+        if (cHeightTarget > 0) m = Math.max(m, cFinalY + cHeightTarget + (barWindow ? barWindow.s(1) : 0) + distinctEdgePadding);
+        if (bHeightTarget > 0) m = Math.max(m, bFinalClampedY + bHeightTarget + (barWindow ? barWindow.s(1) : 0) + distinctEdgePadding);
+        if (layoutState !== "default") {
+            return hasModules ? Math.min(contentWrapper.height, m) : contentWrapper.height / 2;
+        }
+        return Math.min(contentWrapper.height, Math.max(m, barWindow ? (barWindow.verticalOffset + barWindow.effectiveBarHeight) : contentWrapper.height));
     }
 
     function matchId(item, id) {
@@ -359,21 +363,22 @@ Item {
                     if (matchId(item[k], id)) { groupHasId = true; break; }
                 }
                 let gItems = 0;
+                let groupOffset = offset + groupPad;
                 for (let j = 0; j < item.length; j++) {
                     let mId = item[j];
                     let h = getH(mId);
                     if (matchId(mId, id)) {
-                        if (gItems > 0) offset += groupGap;
-                        return baseY + offset;
+                        if (gItems > 0) groupOffset += groupGap;
+                        return baseY + groupOffset;
                     }
                     if (h > 0) {
-                        if (gItems > 0) offset += groupGap;
-                        offset += h;
+                        if (gItems > 0) groupOffset += groupGap;
+                        groupOffset += h;
                         gItems++;
                     }
                 }
                 if (gItems > 0 && !groupHasId) {
-                    offset += gap;
+                    offset = groupOffset + groupPad + gap;
                 }
             } else {
                 if (matchId(item, id)) {
@@ -427,6 +432,21 @@ Item {
         else if (widgetName === "system" || widgetName === "pills") return systemWidget;
         else if (widgetName === "record") return infoWidget ? infoWidget.recCol : null;
         return null;
+    }
+
+    function getModuleX(widget) {
+        if (!barWindow) return 0;
+        let bThick = barWindow.barHeight;
+        let isRight = barWindow.barPosition === "right";
+        let base = (barWindow.baseOffsetX !== undefined) ? barWindow.baseOffsetX : (isRight ? (contentWrapper.width - bThick) : 0);
+        let w = widget ? widget.width : 0;
+        if (w > 0 && w < bThick) {
+            return base + Math.round((bThick - w) / 2);
+        }
+        if (w > bThick && isRight) {
+            return contentWrapper.width - w;
+        }
+        return base;
     }
 
     anchors.fill: parent
@@ -583,7 +603,7 @@ Item {
                 let firstY = -1;
                 let lastY = -1;
                 let lastH = 0;
-                let maxW = barWindow ? barWindow.barHeight : 40;
+                let groupW = barWindow ? ((contentWrapper.isSolid && contentWrapper.distinctPills) ? barWindow.barHeight - 6 : barWindow.barHeight) : ((contentWrapper.isSolid && contentWrapper.distinctPills) ? 24 : 30);
                 for (let i = 0; i < groupIds.length; i++) {
                     let id = groupIds[i];
                     let widget = contentWrapper.getPositionedWidget(id);
@@ -601,40 +621,48 @@ Item {
 
                     if (id === "timedate" || id === "info" || id === "weather" || id === "media") continue;
 
-                    if (widget.width > maxW) {
-                        maxW = widget.width;
+                    if (widget.width > groupW) {
+                        groupW = widget.width;
                     }
                 }
-                if (firstY === -1) return { y: 0, h: 0, w: barWindow ? barWindow.barHeight : 40, v: false };
-                return { y: firstY, h: (lastY + lastH - firstY), w: maxW, v: true };
+                if (firstY === -1) return { y: 0, h: 0, w: groupW, v: false };
+                return { y: firstY - contentWrapper.groupPad, h: (lastY + lastH - firstY) + contentWrapper.groupPad * 2, w: groupW, v: true };
             }
 
             property var metrics: getGroupMetrics()
 
-            x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+            x: {
+                let bThick = barWindow ? barWindow.barHeight : 40;
+                let base = (barWindow && barWindow.baseOffsetX !== undefined) ? barWindow.baseOffsetX : (barWindow && barWindow.barPosition === "right" ? (parent.width - bThick) : 0);
+                return base + Math.round((bThick - width) / 2);
+            }
             y: metrics.y
             width: metrics.w
             height: metrics.h
-            visible: metrics.v && (barWindow ? !barWindow.positionChanging : true) && height > 0 && !contentWrapper.isSolid && !contentWrapper.isFill
+            visible: metrics.v && (barWindow ? !barWindow.positionChanging : true) && height > 0 && (!contentWrapper.isSolid || contentWrapper.distinctPills)
             opacity: visible ? 1.0 : 0.0
 
-            color: Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+            color: (contentWrapper.isSolid && contentWrapper.distinctPills)
+                ? Qt.alpha(Qt.darker(ThemeBackend.surface0, 1.15), (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+                : Qt.alpha(ThemeBackend.base, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
             radius: ThemeBackend.borderRadius
-            border.width: 1
-            border.color: Qt.alpha(ThemeBackend.surface0, (barWindow && barWindow.barOpacity !== undefined) ? barWindow.barOpacity : 1.0)
+            border.width: 0
 
             Behavior on y {
                 enabled: contentWrapper.layoutAnimationsEnabled
                 NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
             }
+
             Behavior on height {
                 enabled: contentWrapper.layoutAnimationsEnabled
                 NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
             }
+
             Behavior on width {
                 enabled: contentWrapper.layoutAnimationsEnabled
                 NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
             }
+
             Behavior on opacity {
                 enabled: barWindow && !barWindow.positionChanging && barWindow.startupCascadeFinished && !contentWrapper.suppressAnimation
                 NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
@@ -645,7 +673,7 @@ Item {
     SideTopWidget {
         id: leftWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(leftWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("left")
         barWindow: contentWrapper.barWindow
@@ -667,7 +695,7 @@ Item {
     SideWorkspacesWidget {
         id: workspacesWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(workspacesWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("workspaces")
         barWindow: contentWrapper.barWindow
@@ -689,11 +717,12 @@ Item {
     SideFocusWidget {
         id: focusWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(focusWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("focus")
         barWindow: contentWrapper.barWindow
         isSolid: contentWrapper.isSolid || contentWrapper.isFill
+        distinctPills: contentWrapper.distinctPills
         moduleActive: contentWrapper.isModuleActive("focus")
         isGrouped: contentWrapper.isModuleGrouped("focus")
         targetY: contentWrapper.getModuleY("focus", contentWrapper.layoutState)
@@ -711,7 +740,7 @@ Item {
     SideMediaWidget {
         id: mediaWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(mediaWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("media")
         barWindow: contentWrapper.barWindow
@@ -734,7 +763,7 @@ Item {
     SideVisWidget {
         id: visWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(visWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("vis")
         barWindow: contentWrapper.barWindow
@@ -756,7 +785,7 @@ Item {
     SideTrayWidget {
         id: trayWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(trayWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("tray")
         barWindow: contentWrapper.barWindow
@@ -780,7 +809,7 @@ Item {
     SideSysMonWidget {
         id: sysMonWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(sysMonWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("sysmon")
         barWindow: contentWrapper.barWindow
@@ -802,7 +831,7 @@ Item {
     SideKbWidget {
         id: kbWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(kbWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("kb")
         barWindow: contentWrapper.barWindow
@@ -824,7 +853,7 @@ Item {
     SideWifiWidget {
         id: wifiWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(wifiWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("wifi")
         barWindow: contentWrapper.barWindow
@@ -846,7 +875,7 @@ Item {
     SideBtWidget {
         id: btWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(btWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("bt")
         barWindow: contentWrapper.barWindow
@@ -868,7 +897,7 @@ Item {
     SideVolWidget {
         id: volWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(volWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("vol")
         barWindow: contentWrapper.barWindow
@@ -890,7 +919,7 @@ Item {
     SideBatWidget {
         id: batWidget
         z: 1
-        x: barWindow && barWindow.barPosition === "right" ? (parent.width - width) : 0
+        x: contentWrapper.getModuleX(batWidget)
         y: targetY
         visible: contentWrapper.isModuleActive("bat")
         barWindow: contentWrapper.barWindow
@@ -944,6 +973,7 @@ Item {
     SideTimeDateWidget {
         id: timeDateWidget
         z: 10
+        x: contentWrapper.getModuleX(timeDateWidget)
         visible: contentWrapper.isModuleActive("timedate")
         barWindow: contentWrapper.barWindow
         isSolid: contentWrapper.isSolid || contentWrapper.isFill
@@ -964,6 +994,7 @@ Item {
     SideInfoWidget {
         id: infoWidget
         z: 10
+        x: contentWrapper.getModuleX(infoWidget)
         visible: contentWrapper.isModuleActive("info")
         barWindow: contentWrapper.barWindow
         isSolid: contentWrapper.isSolid || contentWrapper.isFill
@@ -984,6 +1015,7 @@ Item {
     SideWeatherWidget {
         id: weatherWidget
         z: 10
+        x: contentWrapper.getModuleX(weatherWidget)
         visible: contentWrapper.isModuleActive("weather")
         barWindow: contentWrapper.barWindow
         isSolid: contentWrapper.isSolid || contentWrapper.isFill

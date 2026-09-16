@@ -24,6 +24,16 @@ PanelWindow {
 
     property string targetMonitorName: ""
 
+    property var generalSettings: Config.getSetting("general", { "screenshotCaptureOnRelease": false })
+    readonly property bool captureOnRelease: generalSettings && generalSettings.screenshotCaptureOnRelease === true
+
+    Connections {
+        target: Config
+        function onSettingsLoaded() {
+            root.generalSettings = Config.getSetting("general", { "screenshotCaptureOnRelease": false });
+        }
+    }
+
     property var targetScreen: {
         if (targetMonitorName !== "") {
             for (let i = 0; i < Quickshell.screens.length; i++) {
@@ -670,6 +680,10 @@ PanelWindow {
                     if (root.selW > 10 && root.selH > 10) {
                         root.hasSelection = true;
                         root.saveCache();
+                        if (root.captureOnRelease && root.interactionMode === 1 && !root.isVideoMode) {
+                            root.executeCapture(false, false);
+                            return;
+                        }
                     } else if (root.interactionMode === 1) {
                         let clamp = (val, min, max) => Math.max(min, Math.min(max, val));
                         let left = clamp(root.startX - 20, 0, Math.max(0, root.width - 40));

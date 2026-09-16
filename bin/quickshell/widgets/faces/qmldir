@@ -1,5 +1,6 @@
 ClockFaceAnalog 1.0 ClockFaceAnalog.qml
 ClockFaceDigital 1.0 ClockFaceDigital.qml
+ClockFaceMinimal 1.0 ClockFaceMinimal.qml
 ImageFaceRect 1.0 ImageFaceRect.qml
 ImageFaceRound 1.0 ImageFaceRound.qml
 ImageFaceRounded 1.0 ImageFaceRounded.qml
@@ -8,7 +9,6 @@ MusicFaceRound 1.0 MusicFaceRound.qml
 WeatherFaceCompact 1.0 WeatherFaceCompact.qml
 WeatherFaceFull 1.0 WeatherFaceFull.qml
 WeatherFaceRound 1.0 WeatherFaceRound.qml
-AppFaceSingle 1.0 AppFaceSingle.qml
 LunarFaceCompact 1.0 LunarFaceCompact.qml
 LunarFaceFull 1.0 LunarFaceFull.qml
 LunarFaceBloc 1.0 LunarFaceBloc.qml
@@ -16,4 +16,7 @@ LunarFaceRound 1.0 LunarFaceRound.qml
 NoteFaceChecklist 1.0 NoteFaceChecklist.qml
 NoteFaceCompact 1.0 NoteFaceCompact.qml
 NoteFaceNotebook 1.0 NoteFaceNotebook.qml
-
+BatteryFace 1.0 BatteryFace.qml
+UserFace 1.0 UserFace.qml
+VisualizerFace 1.0 VisualizerFace.qml
+VisualizerFaceContinuous 1.0 VisualizerFaceContinuous.qml

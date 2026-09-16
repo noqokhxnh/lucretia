@@ -14,11 +14,26 @@ Variants {
     delegate: Component {
         PanelWindow {
             id: barWindow
-            visible: barConfigReady
+            property var modelData: null
+            property bool fastPollerLoaded: false
+            visible: barConfigReady && !shouldHideForRedact
 
             property bool pendingReload: false
             property bool startupFilesReady: false
             property bool isRedacting: false
+
+            property bool hideBarInRedactor: {
+                let dummy = configRevision;
+                if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.widgets && Config.rawSettings.widgets.hideBarInRedactor !== undefined) {
+                    return Config.rawSettings.widgets.hideBarInRedactor;
+                }
+                if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.hideBarInRedactor !== undefined) {
+                    return Config.rawSettings.bar.hideBarInRedactor;
+                }
+                return true;
+            }
+
+            property bool shouldHideForRedact: isRedacting && hideBarInRedactor
 
             property var activeToplevel: ToplevelManager.activeToplevel
             property bool isFullscreenActive: {
@@ -48,10 +63,18 @@ Variants {
                 function onSettingsLoaded() {
                     barWindow.configRevision++;
                 }
+                function onDataReadyChanged() {
+                    barWindow.configRevision++;
+                }
+                function onRawSettingsChanged() {
+                    barWindow.configRevision++;
+                }
             }
 
             Component.onCompleted: {
-                barWindow.configRevision++;
+                if (typeof Config !== "undefined" && Config.dataReady) {
+                    barWindow.configRevision++;
+                }
             }
 
             property string barStyle: {
@@ -67,104 +90,112 @@ Variants {
             }
             property bool isFill: barStyle === "fill"
             property bool isSolid: barStyle === "solid" || barStyle === "fill"
-            property bool barConfigReady: typeof Config !== "undefined" && Config.dataReady
+            property bool distinctPills: {
+                let dummy = configRevision;
+                return (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.distinctPills !== undefined) ? Config.rawSettings.bar.distinctPills : false;
+            }
+
+            property bool isStartupReady: true
+            property bool isDataReady: true
+
+            property bool barConfigReady: {
+                let dummy = configRevision;
+                if (typeof Config === "undefined") return true;
+                if (Config.dataReady !== undefined) return Config.dataReady;
+                return true;
+            }
+
             property bool autohide: {
                 let dummy = configRevision;
                 return (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.autohide !== undefined) ? Config.rawSettings.bar.autohide : false;
             }
+
             property int autohideTimeout: {
                 let dummy = configRevision;
                 return (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.autohideTimeout !== undefined) ? Config.rawSettings.bar.autohideTimeout : 1000;
             }
+
             property real barOpacity: {
                 let dummy = configRevision;
-                return (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.opacity !== undefined) ? (Config.rawSettings.bar.opacity / 100.0) : 1.0;
-            }
-
-            HoverHandler {
-                id: barHover
-                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                let val = 100;
+                if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.opacity !== undefined) {
+                    val = Config.rawSettings.bar.opacity;
+                }
+                return Math.max(0.05, Math.min(1.0, val / 100.0));
             }
 
             Timer {
                 id: hideTimer
                 interval: barWindow.autohideTimeout
-            }
-
-            function checkHideTimer() {
-                if (!barHover.hovered && barWindow.autohide) {
-                    hideTimer.restart();
-                } else {
-                    hideTimer.stop();
-                }
+                repeat: false
             }
 
             Connections {
                 target: barHover
-                function onHoveredChanged() { barWindow.checkHideTimer(); }
+                function onHoveredChanged() {
+                    if (!barHover.hovered && barWindow.autohide) {
+                        hideTimer.restart();
+                    } else if (barHover.hovered) {
+                        hideTimer.stop();
+                    }
+                }
             }
 
             property bool isRevealed: {
-                if (isRedacting) return false;
+                if (shouldHideForRedact) return false;
                 if (!autohide) return true;
                 if (barHover.hovered) return true;
                 if (hideTimer.running) return true;
+                if (barWindow.activeWidget === "notifications" || barWindow.activeWidget === "system") return true;
                 return false;
             }
 
+            Item {
+                id: barHover
+                anchors.fill: parent
+                property bool hovered: false
+
+                HoverHandler {
+                    id: hh
+                    onHoveredChanged: barHover.hovered = hh.hovered
+                }
+            }
+
+            function reloadConfig() {
+                if (barWindow.isNotifOpen || barWindow.isSysOpen) {
+                    barWindow.pendingReload = true;
+                } else {
+                    Quickshell.reload(true);
+                }
+            }
+
+            WlrLayershell.namespace: "qs-bar"
+            WlrLayershell.layer: WlrLayer.Top
+
+            property var startupSettings: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar) ? Config.rawSettings.bar : ({})
+            property string startupBarPosition: (startupSettings && startupSettings.position !== undefined) ? startupSettings.position : "top"
+            property real startupBarWidth: (startupSettings && startupSettings.width !== undefined) ? startupSettings.width : 100
+            property string startupBarStyle: {
+                let s = startupSettings ? startupSettings.style : undefined;
+                if (typeof s === "string") return s;
+                if (s && typeof s === "object") {
+                    if (s.fill || s.mode === "fill") return "fill";
+                    if (s.solid || s.mode === "solid") return "solid";
+                }
+                return "modular";
+            }
+
+            property bool startupCascadeFinished: false
             Timer {
-                interval: 50
+                id: cascadeTimer
+                interval: 600
                 running: true
-                onTriggered: barWindow.startupFilesReady = true
-            }
-
-            IpcHandler {
-                target: "topbar"
-                function setRedactMode(active: string): void {
-                    barWindow.isRedacting = (active === "true" || active === "1");
-                }
-                function forceReload() {
-                    Quickshell.reload(true)
-                }
-                function queueReload() {
-                    if (!barWindow.isNotifOpen && !barWindow.isSysOpen) {
-                        Quickshell.reload(true)
-                    } else {
-                        barWindow.pendingReload = true
-                    }
-                }
-                function toggleUpdate() {
-                    let target = null;
-                    if (barWindow.isVertical) target = verticalWrapper.getWidget("left");
-                    else target = contentWrapper.getWidget("left");
-                    if (target && typeof target.toggleUpdate === "function") {
-                        target.toggleUpdate();
-                    }
-                }
-                function getWidgetGeometry(widgetName: string): void {
-                    let target = null;
-                    if (barWindow.isVertical) target = verticalWrapper.getWidget(widgetName);
-                    else target = contentWrapper.getWidget(widgetName);
-
-                    if (target && target.width > 0) {
-                        let pos = target.mapToItem(null, 0, 0);
-
-                        let absoluteX = pos.x + barWindow.margins.left;
-                        let absoluteY = pos.y + barWindow.margins.top;
-
-                        let geo = {
-                            startX: Math.round(absoluteX),
-                            startY: Math.round(absoluteY),
-                            endX: Math.round(absoluteX + target.width),
-                            endY: Math.round(absoluteY + target.height)
-                        };
-                        Quickshell.execDetached(["bash", "-c", "echo '" + JSON.stringify(geo) + "' > " + Caching.runDir + "/tutorial_target.json"]);
-                    }
+                repeat: false
+                onTriggered: {
+                    barWindow.startupCascadeFinished = true;
+                    barWindow.startupFilesReady = true;
                 }
             }
-
-            required property var modelData
-            screen: modelData
 
             property string barPosition: {
                 let dummy = configRevision;
@@ -180,11 +211,14 @@ Variants {
             property real effectiveBarWidth: Math.round(isVertical ? barWindow.width : (isFill ? barWindow.width : ((barWindow.width - (autohide ? edgePadding * 2 : 0)) * (barWidthPercent / 100.0))))
             property real horizontalOffset: Math.round(isVertical ? 0 : (isFill ? 0 : ((barWindow.width - effectiveBarWidth) / 2)))
 
-            property real currentBarMinX: contentWrapper ? contentWrapper.dynamicMinX : horizontalOffset
-            property real currentBarMaxX: contentWrapper ? contentWrapper.dynamicMaxX : (horizontalOffset + effectiveBarWidth)
+            property real effectiveBarHeight: Math.round(!isVertical ? barWindow.height : (isFill ? barWindow.height : ((barWindow.height - (autohide ? edgePadding * 2 : 0)) * (barWidthPercent / 100.0))))
+            property real verticalOffset: Math.round(!isVertical ? 0 : (isFill ? 0 : ((barWindow.height - effectiveBarHeight) / 2)))
 
-            property real currentBarMinY: verticalWrapper ? verticalWrapper.dynamicMinY : 0
-            property real currentBarMaxY: verticalWrapper ? verticalWrapper.dynamicMaxY : barWindow.height
+            property real currentBarMinX: (contentWrapper && contentWrapper.dynamicMaxX > contentWrapper.dynamicMinX) ? contentWrapper.dynamicMinX : horizontalOffset
+            property real currentBarMaxX: (contentWrapper && contentWrapper.dynamicMaxX > contentWrapper.dynamicMinX) ? contentWrapper.dynamicMaxX : (horizontalOffset + effectiveBarWidth)
+
+            property real currentBarMinY: (verticalWrapper && verticalWrapper.dynamicMaxY > verticalWrapper.dynamicMinY) ? verticalWrapper.dynamicMinY : verticalOffset
+            property real currentBarMaxY: (verticalWrapper && verticalWrapper.dynamicMaxY > verticalWrapper.dynamicMinY) ? verticalWrapper.dynamicMaxY : (verticalOffset + effectiveBarHeight)
 
             Timer {
                 id: positionChangeTimer
@@ -233,11 +267,11 @@ Variants {
                 right: isFill ? 0 : (barPosition === "left" ? 0 : (autohide ? 0 : s(4)))
             }
 
-            exclusiveZone: (!barConfigReady || autohide || isRedacting) ? 0 : barHeight
+            exclusiveZone: (!barConfigReady || autohide || shouldHideForRedact) ? 0 : barHeight
             color: "transparent"
 
-            property real activeMaskHeight: isRedacting ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? barWindow.height : (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding))))
-            property real activeMaskWidth: isRedacting ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding)) : (isFill ? barWindow.width : (effectiveBarWidth + edgePadding * 2))))
+            property real activeMaskHeight: shouldHideForRedact ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? barWindow.height : (effectiveBarHeight + edgePadding * 2)) : (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding))))
+            property real activeMaskWidth: shouldHideForRedact ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding)) : (isFill ? barWindow.width : (effectiveBarWidth + edgePadding * 2))))
 
             mask: Region {
                 Region {
@@ -278,24 +312,48 @@ Variants {
                 onFileChanged: reload()
                 onLoaded: {
                     let txt = text().trim();
-                    if (barWindow.activeWidget !== txt) barWindow.activeWidget = txt;
+                    let widget = "";
+                    let targetScreen = "";
+
+                    try {
+                        let parsed = JSON.parse(txt);
+                        if (parsed && typeof parsed === "object") {
+                            widget = parsed.widget || "";
+                            targetScreen = parsed.screen || "";
+                        } else if (typeof parsed === "string") {
+                            widget = parsed;
+                        }
+                    } catch (e) {
+                        widget = txt;
+                    }
+
+                    let myScreenName = (barWindow.screen && barWindow.screen.name) ? barWindow.screen.name : "";
+                    let effectiveWidget = "";
+                    if (widget === "notifications" || widget === "system") {
+                        if (!targetScreen || targetScreen === myScreenName) {
+                            effectiveWidget = widget;
+                        }
+                    }
+
+                    if (barWindow.activeWidget !== effectiveWidget) {
+                        barWindow.activeWidget = effectiveWidget;
+                    }
                 }
             }
 
-            property bool isStartupReady: false
-            Timer { interval: 10; running: true; onTriggered: barWindow.isStartupReady = true }
-
-            property bool startupCascadeFinished: false
-            Timer { interval: 1050; running: true; onTriggered: barWindow.startupCascadeFinished = true }
-
-            property bool fastPollerLoaded: false
-            property bool isDataReady: fastPollerLoaded
-            Timer { interval: 400; running: true; onTriggered: barWindow.isDataReady = true }
+            FileView {
+                id: redactorWatcher
+                path: (barWindow.startupFilesReady && Caching.runDir) ? (Caching.runDir + "/redactor_active") : ""
+                watchChanges: true
+                onFileChanged: reload()
+                onLoaded: {
+                    barWindow.isRedacting = text().trim() === "1"
+                }
+            }
 
             SideBar {
                 id: verticalWrapper
                 barWindow: barWindow
-                visible: barWindow.isVertical
                 property real hideOffsetX: {
                     if (!barWindow || barWindow.isRevealed) return 0;
                     let offset = barWindow.barHeight + barWindow.edgePadding + barWindow.s(10);
@@ -303,14 +361,13 @@ Variants {
                 }
                 transform: Translate {
                     x: verticalWrapper.hideOffsetX
-                    Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
+                    Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
                 }
             }
 
             TopBar {
                 id: contentWrapper
                 barWindow: barWindow
-                visible: !barWindow.isVertical
             }
         }
     }

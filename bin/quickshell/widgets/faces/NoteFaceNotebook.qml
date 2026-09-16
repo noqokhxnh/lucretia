@@ -87,7 +87,7 @@ Item {
     }
 
     // Colors tailored for notebook aesthetic
-    readonly property bool isDark: ThemeBackend.isDark
+    readonly property bool isDark: Boolean(typeof ThemeBackend !== "undefined" && ThemeBackend.isDark)
     readonly property color paperBg: isDark ? Qt.rgba(0.12, 0.12, 0.16, 0.96) : Qt.rgba(0.98, 0.97, 0.94, 0.98)
     readonly property color spineBg: isDark ? Qt.rgba(0.09, 0.09, 0.12, 0.98) : Qt.rgba(0.92, 0.90, 0.85, 0.98)
     readonly property color marginLineColor: isDark ? Qt.rgba(0.92, 0.42, 0.48, 0.45) : Qt.rgba(0.88, 0.35, 0.40, 0.55)
