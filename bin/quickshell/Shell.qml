@@ -23,7 +23,7 @@ ShellRoot {
 
     Process {
         id: zombieCleanup
-        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; pkill -f 'watchers/.*\\.sh' 2>/dev/null || true; QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\"; rm -f \"$QS_RUN/qs_daemon.sock\" \"$QS_RUN\"/qs_*.lock /tmp/quickshell_qs_daemon.sock"]
+        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; killall cava 2>/dev/null || true; pkill -f 'watchers/.*\\.sh' 2>/dev/null || true; pkill -f 'workspaces.sh' 2>/dev/null || true; QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/quickshell\"; LUC_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\" \"$LUC_RUN\"; rm -f \"$QS_RUN/qs_daemon.sock\" \"$QS_RUN\"/qs_*.lock \"$LUC_RUN/qs_daemon.sock\" \"$LUC_RUN\"/qs_*.lock /tmp/quickshell_qs_daemon.sock"]
         running: true
         onExited: {
             qsDaemon.running = true;
@@ -77,6 +77,12 @@ ShellRoot {
                 Bar {}
                 PopoutManager {}
                 Keycast {}
+
+                Loader {
+                    id: dockLoader
+                    active: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.dock && Config.rawSettings.dock.enabled !== undefined) ? Boolean(Config.rawSettings.dock.enabled) : false
+                    source: "dock/Dock.qml"
+                }
 
                 // --- Lazy-Loaded Overlays ---
 

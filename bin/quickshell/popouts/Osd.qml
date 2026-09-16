@@ -36,14 +36,31 @@ PanelWindow {
     readonly property color themeColor: ThemeBackend.accent ?? ThemeBackend.mauve
     readonly property color briColor: themeColor
     readonly property color volColor: themeColor
+    readonly property color micColor: Qt.lighter(ThemeBackend.mauve, 1.3)
 
     property bool isVisible: OsdController.isVisible
     property string kind: OsdController.kind
     property int briVal: OsdController.briVal
 
-    readonly property int volVal: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
-    readonly property bool isMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
-    readonly property int currentVal: kind === "volume" ? volVal : briVal
+    readonly property PwNode activeSink: Audio.defaultSink || (Audio.outputs && Audio.outputs.length > 0 ? Audio.outputs[0] : null)
+    readonly property int volVal: activeSink && activeSink.audio ? Math.round(activeSink.audio.volume * 100) : 0
+    readonly property bool isMuted: activeSink && activeSink.audio ? activeSink.audio.muted : false
+
+    readonly property PwNode activeSource: Audio.defaultSource || (Audio.inputs && Audio.inputs.length > 0 ? Audio.inputs[0] : null)
+    readonly property int micVal: activeSource && activeSource.audio ? Math.round(activeSource.audio.volume * 100) : 0
+    readonly property bool isMicMuted: activeSource && activeSource.audio ? activeSource.audio.muted : false
+
+    readonly property bool isMutedState: {
+        if (kind === "volume") return isMuted;
+        if (kind === "mic") return isMicMuted;
+        return false;
+    }
+
+    readonly property int currentVal: {
+        if (kind === "volume") return volVal;
+        if (kind === "mic") return micVal;
+        return briVal;
+    }
 
     property int configRevision: 0
 
@@ -142,12 +159,21 @@ PanelWindow {
             if (targetPct >= 0) {
                 if (osdWindow.kind === "volume") {
                     if (targetPct > 0 && osdWindow.isMuted) {
-                        if (Audio.defaultSink && Audio.defaultSink.audio && Audio.defaultSink.audio.muted) {
-                            Audio.toggleMute(Audio.defaultSink);
+                        if (osdWindow.activeSink && osdWindow.activeSink.audio && osdWindow.activeSink.audio.muted) {
+                            Audio.toggleMute(osdWindow.activeSink);
                         }
                     }
-                    if (Audio.defaultSink) {
-                        Audio.setVolume(Audio.defaultSink, targetPct);
+                    if (osdWindow.activeSink) {
+                        Audio.setVolume(osdWindow.activeSink, targetPct);
+                    }
+                } else if (osdWindow.kind === "mic") {
+                    if (targetPct > 0 && osdWindow.isMicMuted) {
+                        if (osdWindow.activeSource && osdWindow.activeSource.audio && osdWindow.activeSource.audio.muted) {
+                            Audio.toggleMute(osdWindow.activeSource);
+                        }
+                    }
+                    if (osdWindow.activeSource) {
+                        Audio.setVolume(osdWindow.activeSource, targetPct);
                     }
                 } else {
                     Quickshell.execDetached(["brightnessctl", "set", targetPct + "%"]);
@@ -504,11 +530,13 @@ PanelWindow {
                 IconButton {
                     Layout.alignment: Qt.AlignHCenter
                     size: osdWindow.s(26)
-                    iconOffsetX: osdWindow.kind === "volume" ? -1 : -3
+                    iconOffsetX: (osdWindow.kind === "volume" || osdWindow.kind === "mic") ? -1 : -3
                     cornerRadius: osdWindow.s(8)
                     buttonIcon: {
                         if (osdWindow.kind === "volume") {
                             return osdWindow.isMuted || osdWindow.volVal === 0 ? "󰖁" : (osdWindow.volVal > 50 ? "󰕾" : "󰖀");
+                        } else if (osdWindow.kind === "mic") {
+                            return osdWindow.isMicMuted || osdWindow.micVal === 0 ? "󰍭" : "󰍬";
                         } else {
                             return osdWindow.briVal > 66 ? "󰃠" : (osdWindow.briVal > 33 ? "󰃟" : "󰃞");
                         }
@@ -519,6 +547,8 @@ PanelWindow {
                         if (isHoveredOrHighlighted) return ThemeBackend.text;
                         if (osdWindow.kind === "volume") {
                             return osdWindow.isMuted ? ThemeBackend.overlay0 : osdWindow.volColor;
+                        } else if (osdWindow.kind === "mic") {
+                            return osdWindow.isMicMuted ? ThemeBackend.overlay0 : osdWindow.micColor;
                         } else {
                             return osdWindow.briColor;
                         }
@@ -526,8 +556,12 @@ PanelWindow {
                     onClicked: {
                         OsdController.restartTimer();
                         if (osdWindow.kind === "volume") {
-                            if (Audio.defaultSink) {
-                                Audio.toggleMute(Audio.defaultSink);
+                            if (osdWindow.activeSink) {
+                                Audio.toggleMute(osdWindow.activeSink);
+                            }
+                        } else if (osdWindow.kind === "mic") {
+                            if (osdWindow.activeSource) {
+                                Audio.toggleMute(osdWindow.activeSource);
                             }
                         } else {
                             let target = osdWindow.briVal > 0 ? 0 : 100;
@@ -548,7 +582,15 @@ PanelWindow {
                     value: osdWindow.currentVal
                     backgroundColor: ThemeBackend.surface1
 
-                    readonly property color activeColor: osdWindow.kind === "volume" ? (osdWindow.isMuted ? ThemeBackend.surface2 : osdWindow.volColor) : osdWindow.briColor
+                    readonly property color activeColor: {
+                        if (osdWindow.kind === "volume") {
+                            return osdWindow.isMuted ? ThemeBackend.surface2 : osdWindow.volColor;
+                        } else if (osdWindow.kind === "mic") {
+                            return osdWindow.isMicMuted ? ThemeBackend.surface2 : osdWindow.micColor;
+                        } else {
+                            return osdWindow.briColor;
+                        }
+                    }
 
                     accentColor: activeColor
                     gradColor1: activeColor
@@ -557,9 +599,9 @@ PanelWindow {
                     cornerRadius: osdWindow.s(5)
                     handleSize: osdWindow.s(16)
 
-                    handleColor: (osdWindow.kind === "volume" && osdWindow.isMuted) ? ThemeBackend.overlay0 : Qt.lighter(activeColor, 1.15)
-                    handleHoverColor: (osdWindow.kind === "volume" && osdWindow.isMuted) ? ThemeBackend.subtext0 : Qt.lighter(activeColor, 1.5)
-                    handleDragColor: (osdWindow.kind === "volume" && osdWindow.isMuted) ? ThemeBackend.text : Qt.lighter(activeColor, 1.45)
+                    handleColor: osdWindow.isMutedState ? ThemeBackend.overlay0 : Qt.lighter(activeColor, 1.15)
+                    handleHoverColor: osdWindow.isMutedState ? ThemeBackend.subtext0 : Qt.lighter(activeColor, 1.5)
+                    handleDragColor: osdWindow.isMutedState ? ThemeBackend.text : Qt.lighter(activeColor, 1.45)
                     handleBorderColor: Qt.rgba(0, 0, 0, 0.2)
 
                     onDragStarted: OsdController.cancelHide()
@@ -568,7 +610,7 @@ PanelWindow {
                         OsdController.restartTimer();
                         let maxVal = osdWindow.kind === "volume" ? 150 : 100;
                         let pct = Math.max(0, Math.min(maxVal, Math.round(val)));
-                        if (osdWindow.kind !== "volume") {
+                        if (osdWindow.kind !== "volume" && osdWindow.kind !== "mic") {
                             OsdController.briVal = pct;
                         }
                         cmdThrottle.targetPct = pct;
@@ -591,10 +633,12 @@ PanelWindow {
                         anchors.centerIn: parent
                         size: osdWindow.s(30)
                         cornerRadius: osdWindow.s(8)
-                        iconOffsetX: osdWindow.kind === "volume" ? -1 : -3
+                        iconOffsetX: (osdWindow.kind === "volume" || osdWindow.kind === "mic") ? -1 : -3
                         buttonIcon: {
                             if (osdWindow.kind === "volume") {
                                 return osdWindow.isMuted || osdWindow.volVal === 0 ? "󰖁" : (osdWindow.volVal > 50 ? "󰕾" : "󰖀");
+                            } else if (osdWindow.kind === "mic") {
+                                return osdWindow.isMicMuted || osdWindow.micVal === 0 ? "󰍭" : "󰍬";
                             } else {
                                 return osdWindow.briVal > 66 ? "󰃠" : (osdWindow.briVal > 33 ? "󰃟" : "󰃞");
                             }
@@ -605,6 +649,8 @@ PanelWindow {
                             if (isHoveredOrHighlighted) return ThemeBackend.text;
                             if (osdWindow.kind === "volume") {
                                 return osdWindow.isMuted ? ThemeBackend.overlay0 : osdWindow.volColor;
+                            } else if (osdWindow.kind === "mic") {
+                                return osdWindow.isMicMuted ? ThemeBackend.overlay0 : osdWindow.micColor;
                             } else {
                                 return osdWindow.briColor;
                             }
@@ -612,8 +658,12 @@ PanelWindow {
                         onClicked: {
                             OsdController.restartTimer();
                             if (osdWindow.kind === "volume") {
-                                if (Audio.defaultSink) {
-                                    Audio.toggleMute(Audio.defaultSink);
+                                if (osdWindow.activeSink) {
+                                    Audio.toggleMute(osdWindow.activeSink);
+                                }
+                            } else if (osdWindow.kind === "mic") {
+                                if (osdWindow.activeSource) {
+                                    Audio.toggleMute(osdWindow.activeSource);
                                 }
                             } else {
                                 let target = osdWindow.briVal > 0 ? 0 : 100;
@@ -636,7 +686,15 @@ PanelWindow {
                     value: osdWindow.currentVal
                     backgroundColor: ThemeBackend.surface1
 
-                    readonly property color activeColor: osdWindow.kind === "volume" ? (osdWindow.isMuted ? ThemeBackend.surface2 : osdWindow.volColor) : osdWindow.briColor
+                    readonly property color activeColor: {
+                        if (osdWindow.kind === "volume") {
+                            return osdWindow.isMuted ? ThemeBackend.surface2 : osdWindow.volColor;
+                        } else if (osdWindow.kind === "mic") {
+                            return osdWindow.isMicMuted ? ThemeBackend.surface2 : osdWindow.micColor;
+                        } else {
+                            return osdWindow.briColor;
+                        }
+                    }
 
                     accentColor: activeColor
                     gradColor1: activeColor
@@ -645,9 +703,9 @@ PanelWindow {
                     cornerRadius: osdWindow.s(5)
                     handleSize: osdWindow.s(16)
 
-                    handleColor: (osdWindow.kind === "volume" && osdWindow.isMuted) ? ThemeBackend.overlay0 : Qt.lighter(activeColor, 1.15)
-                    handleHoverColor: (osdWindow.kind === "volume" && osdWindow.isMuted) ? ThemeBackend.subtext0 : Qt.lighter(activeColor, 1.5)
-                    handleDragColor: (osdWindow.kind === "volume" && osdWindow.isMuted) ? ThemeBackend.text : Qt.lighter(activeColor, 1.45)
+                    handleColor: osdWindow.isMutedState ? ThemeBackend.overlay0 : Qt.lighter(activeColor, 1.15)
+                    handleHoverColor: osdWindow.isMutedState ? ThemeBackend.subtext0 : Qt.lighter(activeColor, 1.5)
+                    handleDragColor: osdWindow.isMutedState ? ThemeBackend.text : Qt.lighter(activeColor, 1.45)
                     handleBorderColor: Qt.rgba(0, 0, 0, 0.2)
 
                     onDragStarted: OsdController.cancelHide()
@@ -656,7 +714,7 @@ PanelWindow {
                         OsdController.restartTimer();
                         let maxVal = osdWindow.kind === "volume" ? 150 : 100;
                         let pct = Math.max(0, Math.min(maxVal, Math.round(val)));
-                        if (osdWindow.kind !== "volume") {
+                        if (osdWindow.kind !== "volume" && osdWindow.kind !== "mic") {
                             OsdController.briVal = pct;
                         }
                         cmdThrottle.targetPct = pct;

@@ -93,9 +93,9 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "right": { anchor: "bottom-right", mr: 52, mb: 5 } 
             } 
         },
-        "guide": { 
-            w: 1200, h: 750, comp: "guide/GuidePopup.qml", 
-            pos: { 
+        "guide": {
+            w: 1200, h: 750, comp: "guide/GuidePopup.qml", draggable: true,
+            pos: {
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
                 "left": { anchor: "center" }, 
@@ -193,14 +193,14 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "right": { anchor: "center" } 
             } 
         },
-        "monitors": { 
-            w: 880, h: 580, comp: "monitors/MonitorPopup.qml", 
-            pos: { 
-                "top": { anchor: "center" }, 
-                "bottom": { anchor: "center" }, 
-                "left": { anchor: "center" }, 
-                "right": { anchor: "center" } 
-            } 
+        "monitors": {
+            w: 980, h: 700, comp: "monitors/MonitorPopup.qml",
+            pos: {
+                "top": { anchor: "center" },
+                "bottom": { anchor: "center" },
+                "left": { anchor: "center" },
+                "right": { anchor: "center" }
+            }
         },
         "battery": { 
             w: 500, h: "fill", comp: "syspanel/SystemPanel.qml", 
@@ -211,9 +211,9 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
                 "right": { anchor: "left" } 
             } 
         },
-        "settings": { 
-            w: 1200, h: 750, comp: "guide/GuidePopup.qml", 
-            pos: { 
+        "settings": {
+            w: 1200, h: 750, comp: "guide/GuidePopup.qml", draggable: true,
+            pos: {
                 "top": { anchor: "center" }, 
                 "bottom": { anchor: "center" }, 
                 "left": { anchor: "center" }, 
@@ -314,7 +314,7 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
             break;
     }
 
-    return { w: finalW, h: finalH, rx: mx + rx, ry: my + ry, comp: t.comp };
+    return { w: finalW, h: finalH, rx: mx + rx, ry: my + ry, comp: t.comp, draggable: Boolean(t.draggable) };
 }
 
 function getPopupLayout(mw, mh, userScale) {

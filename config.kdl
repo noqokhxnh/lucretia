@@ -93,6 +93,11 @@ window-rule {
     open-fullscreen true
 }
 
+window-rule {
+    match app-id=r#"^at\.yrlf\.wl_mirror$"#
+    open-fullscreen true
+}
+
 // --- Overview: place wallpaper into backdrop ---
 layer-rule {
     match namespace="^(awww-daemon|mpvpaper)$"
@@ -219,10 +224,6 @@ spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/update_notifier.sh"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
 // spawn-at-startup "easyeffects" "--service-mode"
-
-
-
-
 
 output "eDP-1" {
     mode "1920x1080@60"

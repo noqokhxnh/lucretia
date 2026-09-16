@@ -1,6 +1,9 @@
 #include "audio_spectrum.hpp"
 #include <QTemporaryFile>
 #include <QTextStream>
+#include <QStandardPaths>
+#include <QFile>
+#include <QDir>
 #include <cmath>
 
 AudioSpectrumService::AudioSpectrumService(QObject* parent) : QObject(parent) {
@@ -50,16 +53,33 @@ void AudioSpectrumService::startProcess() {
                              "ascii_max_range = 1000\n"
                              "bar_delimiter = 59\n").arg(m_bars);
 
-    QString cmd = QString("cava -p <(cat << 'EOF'\n%1\nEOF\n)").arg(config);
-    m_process->start("bash", QStringList() << "-c" << cmd);
+    QString runtimeDir = QStandardPaths::writableLocation(QStandardPaths::RuntimeLocation);
+    if (runtimeDir.isEmpty()) runtimeDir = "/tmp";
+    QString configDir = runtimeDir + "/lucretia";
+    QDir().mkpath(configDir);
+    m_configPath = configDir + "/cava_spectrum.conf";
+    QFile f(m_configPath);
+    if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        f.write(config.toUtf8());
+        f.close();
+    }
+
+    m_process->start("cava", QStringList() << "-p" << m_configPath);
 }
 
 void AudioSpectrumService::stopProcess() {
     if (m_process) {
-        m_process->kill();
-        m_process->waitForFinished(500);
+        m_process->terminate();
+        if (!m_process->waitForFinished(300)) {
+            m_process->kill();
+            m_process->waitForFinished(200);
+        }
         m_process->deleteLater();
         m_process = nullptr;
+    }
+    if (!m_configPath.isEmpty()) {
+        QFile::remove(m_configPath);
+        m_configPath.clear();
     }
 }
 

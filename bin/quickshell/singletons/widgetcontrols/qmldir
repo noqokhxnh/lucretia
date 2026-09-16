@@ -3,3 +3,4 @@ singleton LauncherController 1.0 LauncherController.qml
 singleton OsdController 1.0 OsdController.qml
 singleton SideMusicController 1.0 SideMusicController.qml
 singleton TrayMenuController 1.0 TrayMenuController.qml
+singleton WidgetSync 1.0 WidgetSync.qml

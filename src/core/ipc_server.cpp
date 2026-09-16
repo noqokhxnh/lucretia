@@ -370,6 +370,7 @@ DaemonServer::DaemonServer(QObject* parent) : QObject(parent) {
         for (QLocalSocket* client : spectrumSubscribers) {
             if (client && client->state() == QLocalSocket::ConnectedState) {
                 client->write(payload);
+                client->flush();
             }
         }
     });
@@ -504,7 +505,9 @@ void DaemonServer::onClientDisconnected(QLocalSocket* client) {
     clients.removeAll(client);
     sysSubscribers.removeAll(client);
     musicSubscribers.removeAll(client);
-    spectrumSubscribers.removeAll(client);
+    if (spectrumSubscribers.removeAll(client) > 0) {
+        if (audioSpectrum) audioSpectrum->removeSubscriber();
+    }
     client->deleteLater();
 }
 

@@ -8,6 +8,7 @@ import Quickshell.Io
 import "../"
 import "../reusables"
 import "../singletons"
+import "../singletons/widgetcontrols"
 import "faces"
 
 PanelWindow {
@@ -85,13 +86,19 @@ PanelWindow {
     }
 
     function exitRedactor() {
+        Quickshell.execDetached(["bash", "-c", "printf '0' > '" + (Caching.runDir || "/tmp/lucretia") + "/redactor_active'"]);
+        if (typeof WidgetSync !== "undefined") WidgetSync.setRedactMode(redactorWindow.safeMonitorName, false);
         sendIpc("setRedactMode", ["false"]);
+        sendIpc("save", []);
         sendBarIpc("setRedactMode", ["false"]);
         exitTimer.start();
     }
 
     Component.onDestruction: {
+        Quickshell.execDetached(["bash", "-c", "printf '0' > '" + (Caching.runDir || "/tmp/lucretia") + "/redactor_active'"]);
+        if (typeof WidgetSync !== "undefined") WidgetSync.setRedactMode(redactorWindow.safeMonitorName, false);
         sendIpc("setRedactMode", ["false"]);
+        sendIpc("save", []);
         sendBarIpc("setRedactMode", ["false"]);
     }
 
@@ -123,6 +130,34 @@ PanelWindow {
         property real safeMinY: 0
         property real safeWidth: redactorMode.width
         property real safeHeight: redactorMode.height
+
+        Connections {
+            target: (typeof WidgetSync !== "undefined") ? WidgetSync : null
+            function onPositionChanged(monitor, widgetId, x, y) {
+                if (monitor !== redactorWindow.safeMonitorName) return;
+                let target = String(widgetId).trim();
+                for (let i = 0; i < activeWidgetsModel.count; i++) {
+                    let item = activeWidgetsModel.get(i);
+                    if (String(item.wId).trim() === target) {
+                        activeWidgetsModel.setProperty(i, "wX", x);
+                        activeWidgetsModel.setProperty(i, "wY", y);
+                        redactorMode.queueUpdateToolbarObscured();
+                        break;
+                    }
+                }
+            }
+        }
+
+        Timer {
+            id: toolbarCheckTimer
+            interval: 100
+            repeat: false
+            onTriggered: redactorMode.updateToolbarObscured()
+        }
+
+        function queueUpdateToolbarObscured() {
+            toolbarCheckTimer.restart();
+        }
 
         function removeAllWidgets() {
             redactorMode.selectedId = "";
@@ -430,37 +465,11 @@ PanelWindow {
             }
         }
 
-        function openAppPicker(targetIdx, targetId, curApp) {
-            appPickerLoader.active = true;
-            let trigger = () => {
-                if (appPickerLoader.item) {
-                    appPickerLoader.item.targetWidgetIndex = targetIdx;
-                    appPickerLoader.item.targetWidgetId = String(targetId);
-                    appPickerLoader.item.openPicker(curApp, false);
-                }
-            };
-            if (appPickerLoader.status === Loader.Ready) {
-                trigger();
-            } else {
-                let conn = function() {
-                    if (appPickerLoader.status === Loader.Ready) {
-                        appPickerLoader.statusChanged.disconnect(conn);
-                        trigger();
-                    }
-                };
-                appPickerLoader.statusChanged.connect(conn);
-            }
-        }
-
         function addWidget(typeKey) {
             let t = WidgetRegistry.types[typeKey];
             if (!t) return;
             if (t.requiresFilePicker) {
                 openImagePicker(-1, "", "", false);
-                return;
-            }
-            if (t.requiresAppPicker) {
-                openAppPicker(-1, "", "");
                 return;
             }
             let def = WidgetRegistry.defaultSize(typeKey);
@@ -488,13 +497,14 @@ PanelWindow {
                 "wWidth": defW,
                 "wHeight": defH,
                 "wOpacity": 1.0,
+                "wRotation": 0,
                 "wImagePath": "",
                 "wId": newId
             });
 
             redactorMode.topZ += 1;
             redactorMode.selectedId = newId;
-            redactorWindow.sendIpc("add", [newId, typeKey, spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", ""]);
+            redactorWindow.sendIpc("add", [newId, typeKey, spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", "", "0"]);
             redactorWindow.sendIpc("bringToFront", [newId]);
             redactorMode.updateToolbarObscured();
         }
@@ -503,9 +513,6 @@ PanelWindow {
             if (action === "pickImage") {
                 let curImg = activeWidgetsModel.get(itemIndex) ? (activeWidgetsModel.get(itemIndex).wImagePath || "") : "";
                 openImagePicker(itemIndex, itemId, curImg, proxy.wVariant === "round");
-            } else if (action === "pickApp") {
-                let curApp = activeWidgetsModel.get(itemIndex) ? (activeWidgetsModel.get(itemIndex).wImagePath || "") : "";
-                openAppPicker(itemIndex, itemId, curApp);
             } else if (action === "openNotes") {
                 Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle notes"]);
             }
@@ -707,7 +714,8 @@ PanelWindow {
                             widgetProxy.isSyncPending = true;
                             widgetProxy.hasUnsyncedChanges = false;
                             let curOp = widgetProxy.wOpacity;
-                            let cmd = ["quickshell", "-p", Caching.mainQml, "ipc", "call", "widgets-" + redactorWindow.safeMonitorName, "geometry", String(widgetProxy.wId), model.wX.toString(), model.wY.toString(), model.wWidth.toString(), model.wHeight.toString(), curOp.toString()];
+                            let curRot = (model.wRotation !== undefined && !isNaN(model.wRotation)) ? model.wRotation.toString() : "0";
+                            let cmd = ["quickshell", "-p", Caching.mainQml, "ipc", "call", "widgets-" + redactorWindow.safeMonitorName, "geometry", String(widgetProxy.wId), model.wX.toString(), model.wY.toString(), model.wWidth.toString(), model.wHeight.toString(), curOp.toString(), curRot];
                             syncProcess.command = cmd;
                             syncProcess.running = false;
                             syncProcess.running = true;
@@ -733,7 +741,8 @@ PanelWindow {
                         widgetProxy.hasUnsyncedChanges = false;
                         widgetProxy.isSyncPending = false;
                         let curOp = widgetProxy.wOpacity;
-                        redactorWindow.sendIpc("geometry", [String(widgetProxy.wId), model.wX.toString(), model.wY.toString(), model.wWidth.toString(), model.wHeight.toString(), curOp.toString()]);
+                        let curRot = (model.wRotation !== undefined && !isNaN(model.wRotation)) ? model.wRotation.toString() : "0";
+                        redactorWindow.sendIpc("geometry", [String(widgetProxy.wId), model.wX.toString(), model.wY.toString(), model.wWidth.toString(), model.wHeight.toString(), curOp.toString(), curRot]);
                         redactorWindow.sendIpc("opacity", [String(widgetProxy.wId), curOp.toString()]);
                         redactorWindow.sendIpc("bringToFront", [String(widgetProxy.wId)]);
                         redactorMode.updateToolbarObscured();
@@ -1616,13 +1625,34 @@ PanelWindow {
 
         FileView {
             id: layoutFile
-            // Daemon (widget_manager.cpp) always writes to ~/.local/state/quickshell/widgets/<monitor>/layout.json
-            // Caching.getStateDir() points to lucretia state dir — wrong path, so hardcode the daemon path here
+            path: redactorWindow.safeMonitorName
+                  ? (Caching.getStateDir("widgets/" + redactorWindow.safeMonitorName) + "/layout.json")
+                  : ""
+            watchChanges: false
+            onLoaded: {
+                let content = text();
+                if ((!content || content.trim() === "" || content.trim() === "[]") && fallbackLayoutFile.text().trim() !== "" && fallbackLayoutFile.text().trim() !== "[]") {
+                    redactorMode.loadLayoutFromText(fallbackLayoutFile.text());
+                } else {
+                    redactorMode.loadLayoutFromText(content);
+                }
+            }
+        }
+
+        FileView {
+            id: fallbackLayoutFile
             path: redactorWindow.safeMonitorName
                   ? (Caching.home + "/.local/state/quickshell/widgets/" + redactorWindow.safeMonitorName + "/layout.json")
                   : ""
             watchChanges: false
-            onLoaded: redactorMode.loadLayoutFromText(text())
+            onLoaded: {
+                if (activeWidgetsModel.count === 0 && (!layoutFile.text() || layoutFile.text().trim() === "" || layoutFile.text().trim() === "[]")) {
+                    let content = text();
+                    if (content && content.trim() !== "" && content.trim() !== "[]") {
+                        redactorMode.loadLayoutFromText(content);
+                    }
+                }
+            }
         }
 
         function loadLayoutFromText(content) {
@@ -1644,6 +1674,8 @@ PanelWindow {
                         let w = item.wWidth !== undefined ? parseFloat(item.wWidth) : defW * sVal;
                         let h = item.wHeight !== undefined ? parseFloat(item.wHeight) : defH * sVal;
                         let op = item.wOpacity !== undefined ? parseFloat(item.wOpacity) : 1.0;
+                        let rotVal = (item.wRotation !== undefined) ? parseFloat(item.wRotation) : (item.rotation !== undefined ? parseFloat(item.rotation) : 0);
+                        if (isNaN(rotVal)) rotVal = 0;
                         let imgPath = item.wImagePath || item.imagePath || item.path || "";
 
                         activeWidgetsModel.append({
@@ -1654,6 +1686,7 @@ PanelWindow {
                             wWidth: w,
                             wHeight: h,
                             wOpacity: op,
+                            wRotation: rotVal,
                             wImagePath: imgPath,
                             wId: String(item.wId || item.id || ("w_" + Date.now() + "_" + i))
                         });
@@ -1663,6 +1696,8 @@ PanelWindow {
             redactorMode.isReady = true;
             redactorMode.updateToolbarObscured();
             Qt.callLater(() => {
+                Quickshell.execDetached(["bash", "-c", "printf '1' > '" + (Caching.runDir || "/tmp/lucretia") + "/redactor_active'"]);
+                if (typeof WidgetSync !== "undefined") WidgetSync.setRedactMode(redactorWindow.safeMonitorName, true);
                 redactorWindow.sendIpc("setRedactMode", ["true"]);
                 redactorWindow.sendBarIpc("setRedactMode", ["true"]);
             });
@@ -1678,6 +1713,7 @@ PanelWindow {
 
         function reloadLayout() {
             layoutFile.reload();
+            fallbackLayoutFile.reload();
         }
 
         Connections {
@@ -1862,68 +1898,14 @@ PanelWindow {
                             "wWidth": defW,
                             "wHeight": defH,
                             "wOpacity": 1.0,
+                            "wRotation": 0,
                             "wImagePath": filePath,
                             "wId": newId
                         });
 
                         redactorMode.topZ += 1;
                         redactorMode.selectedId = newId;
-                        redactorWindow.sendIpc("add", [newId, "image", spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", filePath]);
-                        redactorWindow.sendIpc("bringToFront", [newId]);
-                        redactorMode.updateToolbarObscured();
-                    }
-                }
-            }
-        }
-
-        Loader {
-            id: appPickerLoader
-            anchors.fill: parent
-            z: 350000
-            active: false
-            sourceComponent: AppPicker {
-                rootObj: redactorMode
-                property int targetWidgetIndex: -1
-                property string targetWidgetId: ""
-
-                onAppSelected: (desktopId, appName, appIcon) => {
-                    let appData = JSON.stringify({ id: desktopId, name: appName, icon: appIcon });
-                    if (targetWidgetIndex >= 0 && targetWidgetId !== "") {
-                        activeWidgetsModel.setProperty(targetWidgetIndex, "wImagePath", appData);
-                        redactorWindow.sendIpc("imagePath", [targetWidgetId, appData]);
-                        targetWidgetIndex = -1;
-                        targetWidgetId = "";
-                    } else if (desktopId !== "") {
-                        let def = WidgetRegistry.defaultSize("app");
-                        let defW = def.w;
-                        let defH = def.h;
-                        let spawnX = Math.max(0, (redactorMode.safeWidth - s(defW)) / 2);
-                        let spawnY = Math.max(0, (redactorMode.safeHeight - s(defH)) / 2);
-                        let newId = "w_" + Date.now() + "_" + Math.floor(Math.random() * 1000);
-
-                        if (redactorMode.gridEnabled) {
-                            let snapped = redactorMode.snapBoxToGrid(null, spawnX, spawnY, defW, defH);
-                            spawnX = snapped.x;
-                            spawnY = snapped.y;
-                            defW = snapped.w;
-                            defH = snapped.h;
-                        }
-
-                        activeWidgetsModel.append({
-                            "wType": "app",
-                            "wVariant": WidgetRegistry.defaultVariant("app"),
-                            "wX": spawnX,
-                            "wY": spawnY,
-                            "wWidth": defW,
-                            "wHeight": defH,
-                            "wOpacity": 1.0,
-                            "wImagePath": appData,
-                            "wId": newId
-                        });
-
-                        redactorMode.topZ += 1;
-                        redactorMode.selectedId = newId;
-                        redactorWindow.sendIpc("add", [newId, "app", spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", appData]);
+                        redactorWindow.sendIpc("add", [newId, "image", spawnX.toString(), spawnY.toString(), defW.toString(), defH.toString(), "1.0", filePath, "0"]);
                         redactorWindow.sendIpc("bringToFront", [newId]);
                         redactorMode.updateToolbarObscured();
                     }

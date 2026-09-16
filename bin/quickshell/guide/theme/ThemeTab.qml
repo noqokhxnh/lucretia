@@ -299,6 +299,18 @@ Item {
     }
 
     function activateTab() {
+        let ts = Config.getSetting("theme", themeTabRoot.defaultThemeSettings);
+        themeTabRoot.themeSettings = ts;
+        themeTabRoot.currentFontFamily = ts.fontFamily !== undefined ? ts.fontFamily : ThemeBackend.fontFamily;
+        themeTabRoot.currentBorderRadius = ts.borderRadius !== undefined ? ts.borderRadius : ThemeBackend.borderRadius;
+        themeTabRoot.currentPreset = ts.activePreset !== undefined ? ts.activePreset : "Matugen";
+        themeTabRoot.useMatugen = ts.matugen !== undefined ? ts.matugen : true;
+
+        let wpDir = Config.getSetting("wallpaperDir", "") || Config.getSetting("wallpaper_dir", "");
+        if (wpDir && wpDir !== "") {
+            themeTabRoot.currentWallpaperDir = wpDir;
+        }
+
         themeTabRoot.loadAvailableFonts();
         wallpaperDirScanner.running = false;
         wallpaperDirScanner.running = true;
@@ -442,14 +454,16 @@ Item {
     }
 
     function updateFontSetting() {
-        let current = Config.getSetting("theme", themeTabRoot.defaultThemeSettings);
+        let current = Object.assign({}, Config.getSetting("theme", themeTabRoot.defaultThemeSettings));
         current.fontFamily = themeTabRoot.currentFontFamily;
+        themeTabRoot.themeSettings = current;
         Config.setSetting("theme", current);
     }
 
     function updateBorderRadiusSetting() {
-        let current = Config.getSetting("theme", themeTabRoot.defaultThemeSettings);
+        let current = Object.assign({}, Config.getSetting("theme", themeTabRoot.defaultThemeSettings));
         current.borderRadius = themeTabRoot.currentBorderRadius;
+        themeTabRoot.themeSettings = current;
         Config.setSetting("theme", current);
         if (typeof ThemeBackend !== "undefined") {
             ThemeBackend.reloadColors();
@@ -461,12 +475,13 @@ Item {
         themeTabRoot.useMatugen = modelData.isMatugen === true;
 
         let rawColors = (modelData.colors && modelData.colors.colors) ? modelData.colors.colors : (modelData.colors || {});
-        let current = Config.getSetting("theme", themeTabRoot.defaultThemeSettings);
+        let current = Object.assign({}, Config.getSetting("theme", themeTabRoot.defaultThemeSettings));
         current.activePreset = modelData.name;
         current.matugen = modelData.isMatugen === true;
         if (!modelData.isMatugen) {
             current.colors = rawColors;
         }
+        themeTabRoot.themeSettings = current;
 
         Config.setSetting("theme", current);
 

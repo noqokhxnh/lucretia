@@ -138,7 +138,10 @@ PanelWindow {
 
     visible: isVisible
 
-    mask: Region { item: topBarHole; intersection: Intersection.Xor }
+    mask: Region {
+        item: topBarHole
+        intersection: Intersection.Xor
+    }
 
     property var rawBarSettings: (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar) ? Config.rawSettings.bar : ({})
     property string barPosition: (rawBarSettings && rawBarSettings.position !== undefined) ? rawBarSettings.position : "top"
@@ -146,8 +149,12 @@ PanelWindow {
 
     readonly property bool isFullscreenActive: {
         try {
-            if (typeof Hyprland !== "undefined" && Hyprland.focusedWorkspace) {
-                return Boolean(Hyprland.focusedWorkspace.hasFullscreen || (Hyprland.activeToplevel && Hyprland.activeToplevel.fullscreen));
+            if (typeof ToplevelManager !== "undefined" && ToplevelManager.activeToplevel && ToplevelManager.activeToplevel.fullscreen) {
+                let atl = ToplevelManager.activeToplevel;
+                if (atl.screens && atl.screens.length > 0) {
+                    return atl.screens.indexOf(masterWindow.screen) !== -1;
+                }
+                return true;
             }
         } catch (e) {}
         return false;
@@ -155,6 +162,11 @@ PanelWindow {
 
     readonly property bool isBarEffectivelyHidden: barAutohide || isFullscreenActive
     readonly property bool screenReady: masterWindow.width >= 100 && masterWindow.height >= 100
+    readonly property bool isCurrentDraggable: {
+        let t = getLayout(masterWindow.currentActive);
+        return Boolean(t && t.draggable) || masterWindow.currentActive === "guide" || masterWindow.currentActive === "settings";
+    }
+    property bool userMoved: false
 
     Item {
         id: topBarHole
@@ -381,7 +393,8 @@ PanelWindow {
                 h: result.h,
                 rx: result.rx,
                 ry: result.ry,
-                comp: result.comp
+                comp: result.comp,
+                draggable: result.draggable
             };
 
             if (bp === "top") {
@@ -434,8 +447,10 @@ PanelWindow {
 
     onTargetLayoutChanged: {
         if (!targetLayout || masterWindow.currentActive === "hidden" || !masterWindow.isVisible) return;
-        masterWindow._animX = targetLayout.x;
-        masterWindow._animY = targetLayout.y;
+        if (!masterWindow.userMoved || !masterWindow.isCurrentDraggable) {
+            masterWindow._animX = targetLayout.x;
+            masterWindow._animY = targetLayout.y;
+        }
         masterWindow._animW = targetLayout.w;
         masterWindow._animH = targetLayout.h;
         masterWindow._stageW = targetLayout.w;
@@ -453,6 +468,34 @@ PanelWindow {
         width: masterWindow._animW
         height: masterWindow._animH
         clip: true
+
+        DragHandler {
+            id: windowDragHandler
+            target: null
+            acceptedButtons: Qt.LeftButton
+            enabled: masterWindow.isCurrentDraggable
+
+            property real startX: 0
+            property real startY: 0
+
+            onActiveChanged: {
+                if (active) {
+                    masterWindow.disableMorph = true;
+                    startX = masterWindow._animX;
+                    startY = masterWindow._animY;
+                } else {
+                    masterWindow.disableMorph = false;
+                }
+            }
+
+            onTranslationChanged: {
+                if (active) {
+                    masterWindow.userMoved = true;
+                    masterWindow._animX = startX + translation.x;
+                    masterWindow._animY = startY + translation.y;
+                }
+            }
+        }
 
         Item {
             id: contentStage
@@ -526,6 +569,10 @@ PanelWindow {
         let gen = masterWindow.switchGeneration;
         masterWindow.targetActive = newWidget;
 
+        if (newWidget !== "guide" && newWidget !== "settings") {
+            masterWindow.userMoved = false;
+        }
+
         if (delayedClear.running) {
             delayedClear.stop();
         }
@@ -583,8 +630,10 @@ PanelWindow {
         let finalX = (finalW !== t.w) ? recenterX(t, finalW) : t.rx;
         let finalY = t.ry;
 
-        masterWindow._animX = finalX;
-        masterWindow._animY = finalY;
+        if (!masterWindow.userMoved || !masterWindow.isCurrentDraggable) {
+            masterWindow._animX = finalX;
+            masterWindow._animY = finalY;
+        }
         masterWindow._animW = finalW;
         masterWindow._animH = finalH;
         masterWindow._stageW = finalW;

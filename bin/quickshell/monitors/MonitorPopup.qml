@@ -19,7 +19,8 @@ Item {
     // Custom File Logger
     function debugLog(msg) {
         let safeMsg = msg.replace(/'/g, "'\\''");
-        Quickshell.execDetached(["sh", "-c", "echo '" + safeMsg + "' >> " + paths.logDir + "/monitor_popup.log"]);
+        let lDir = (paths && paths.cacheDir ? paths.cacheDir : "/tmp");
+        Quickshell.execDetached(["sh", "-c", "echo '" + safeMsg + "' >> " + lDir + "/monitor_popup.log"]);
     }
     
     // -------------------------------------------------------------------------
@@ -56,8 +57,46 @@ Item {
     property int originalLayoutOriginX: 0
     property int originalLayoutOriginY: 0
 
-    // Niri does not support mirror mode — always extend
-    // property bool mirrorMode: false  // REMOVED: unsupported on niri
+    // Display Mode State: "extend" | "mirror" | "internal" | "external"
+    property string currentDisplayMode: "extend"
+    property string internalOutputName: "eDP-1"
+    property string externalOutputName: "HDMI-A-1"
+
+    function setDisplayMode(modeId) {
+        window.currentDisplayMode = modeId;
+        window.debugLog("Setting display mode to: " + modeId);
+        let scriptPath = (paths && paths.qsDir ? paths.qsDir : "/home/khxnh/.config/niri/bin/quickshell") + "/scripts/display_mode.py";
+        Quickshell.execDetached(["python3", scriptPath, "set", modeId]);
+        modeRefreshTimer.restart();
+    }
+
+    Timer {
+        id: modeRefreshTimer
+        interval: 800
+        repeat: false
+        onTriggered: {
+            displayPoller.running = true;
+            displayModeChecker.running = true;
+        }
+    }
+
+    Process {
+        id: displayModeChecker
+        command: ["python3", (paths && paths.qsDir ? paths.qsDir : "/home/khxnh/.config/niri/bin/quickshell") + "/scripts/display_mode.py", "status"]
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    let data = JSON.parse(this.text.trim());
+                    if (data.mode) window.currentDisplayMode = data.mode;
+                    if (data.internal) window.internalOutputName = data.internal;
+                    if (data.external) window.externalOutputName = data.external;
+                } catch(e) {
+                    console.log("[MonitorPopup] Error parsing display mode: " + e);
+                }
+            }
+        }
+    }
 
     ListModel {
         id: monitorsModel
@@ -77,18 +116,54 @@ Item {
     property color selectedResAccent: window.mauve
     property color selectedRateAccent: window.blue
 
-    property int currentTransform: monitorsModel.count > 0 ? monitorsModel.get(window.activeEditIndex).transform : 0
+    readonly property var activeMon: (monitorsModel.count > 0 && window.activeEditIndex >= 0 && window.activeEditIndex < monitorsModel.count) ? monitorsModel.get(window.activeEditIndex) : null
+
+    property int currentTransform: activeMon ? activeMon.transform : 0
     property bool currentIsPortrait: currentTransform === 1 || currentTransform === 3
 
     property real currentSimW: {
-        if (monitorsModel.count === 0) return 1920;
-        let mon = monitorsModel.get(window.activeEditIndex);
-        return currentIsPortrait ? mon.resH : mon.resW;
+        if (!activeMon) return 1920;
+        return currentIsPortrait ? activeMon.resH : activeMon.resW;
     }
     property real currentSimH: {
-        if (monitorsModel.count === 0) return 1080;
-        let mon = monitorsModel.get(window.activeEditIndex);
-        return currentIsPortrait ? mon.resW : mon.resH;
+        if (!activeMon) return 1080;
+        return currentIsPortrait ? activeMon.resW : activeMon.resH;
+    }
+
+    function updateActiveAccents() {
+        if (!activeMon) return;
+        for (let i = 0; i < window.resList.length; i++) {
+            if (window.resList[i].w === activeMon.resW && window.resList[i].h === activeMon.resH) {
+                window.selectedResAccent = window.resList[i].accent;
+                break;
+            }
+        }
+        let currentVal = parseInt(activeMon.rate) || 60;
+        let closestIdx = 2;
+        let minDiff = 9999;
+        for (let i = 0; i < sliderContainer.rates.length; i++) {
+            let diff = Math.abs(sliderContainer.rates[i] - currentVal);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestIdx = i;
+            }
+        }
+        window.selectedRateAccent = sliderContainer.rateColors[closestIdx];
+    }
+
+    onVisibleChanged: {
+        if (visible) {
+            displayPoller.running = true;
+            displayModeChecker.running = true;
+        }
+    }
+
+    Connections {
+        target: Quickshell
+        function onScreensChanged() {
+            displayPoller.running = true;
+            displayModeChecker.running = true;
+        }
     }
 
     property real globalOrbitAngle: 0
@@ -205,6 +280,7 @@ Item {
     property bool applyPressed: false
 
     onActiveEditIndexChanged: {
+        updateActiveAccents();
         menuTransitionAnim.restart();
     }
 
@@ -395,10 +471,15 @@ Item {
                             rate: rateHz.toString(),
                             uiX: normalizedX,
                             uiY: normalizedY,
-                            transform: tf
+                            transform: tf,
+                            enabled: (out.logical !== null && out.logical !== undefined)
                         });
                     }
 
+                    if (window.activeEditIndex >= monitorsModel.count) {
+                        window.activeEditIndex = 0;
+                    }
+                    window.updateActiveAccents();
                     window.forceLayoutUpdate();
                 } catch(e) {
                     console.log("[MonitorPopup] Parsing error: " + e);
@@ -513,8 +594,14 @@ Item {
             window.debugLog("Output block:\n" + outputBlocks[outputBlocks.length - 1]);
         }
 
+        if (window.currentDisplayMode !== "extend") {
+            window.setDisplayMode(window.currentDisplayMode);
+            return;
+        }
+
         // Apply: backup config, strip old output blocks with perl, append new ones, reload niri
         let applyLines = [];
+        applyLines.push("killall -9 wl-mirror 2>/dev/null || true");
         applyLines.push("CONFIG=~/.config/niri/config.kdl");
         applyLines.push("cp \"$CONFIG\" \"${CONFIG}.bak\"");
         // Remove all existing output "..." { ... } blocks (single-level nesting)
@@ -525,7 +612,8 @@ Item {
             applyLines.push("printf '\\n%s\\n' '" + block.replace(/'/g, "'\\''") + "' >> \"$CONFIG\"");
         }
 
-        applyLines.push("niri msg action reload-config");
+        applyLines.push("[ -f /home/khxnh/orca/workspaces/niri/nuckelavee/config.kdl ] && cp \"$CONFIG\" /home/khxnh/orca/workspaces/niri/nuckelavee/config.kdl 2>/dev/null || true");
+        applyLines.push("niri msg action load-config-file");
 
         let fullCmd = applyLines.join(" && ");
         Quickshell.execDetached(["sh", "-c", fullCmd]);
@@ -577,11 +665,11 @@ Item {
             // ==========================================
             Item {
                 id: leftVisualArea
-                width: window.s(380)
-                height: window.s(300)
+                width: window.s(410)
+                height: window.s(360)
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.leftMargin: window.s(20)
+                anchors.leftMargin: window.s(25)
 
                 // --------------------------------------------------
                 // MODE 1: SINGLE MONITOR
@@ -593,8 +681,8 @@ Item {
                     Item {
                         id: singleMonitorZoom
                         anchors.centerIn: parent
-                        width: window.s(380)
-                        height: window.s(280)
+                        width: window.s(410)
+                        height: window.s(340)
                         
                         property real baseScale: Math.min(1.0, Math.min(2200 / window.currentSimW, 1400 / Math.max(1, window.currentSimH)))
                         scale: baseScale * window.monitorScale
@@ -751,13 +839,13 @@ Item {
                                             text: "󰍹"
                                             Behavior on color { ColorAnimation { duration: 400 } } 
                                         }
-                                        Text { 
+                                        Text {
                                             Layout.alignment: Qt.AlignHCenter
                                             font.family: "JetBrains Mono"
                                             font.weight: Font.Bold
                                             font.pixelSize: window.s(16)
                                             color: window.text
-                                            text: monitorsModel.count > 0 ? monitorsModel.get(0).name : "Unknown" 
+                                            text: monitorsModel.count > 0 ? monitorsModel.get(0).name : (typeof I18n !== "undefined" ? I18n.t("monitors.unknown") : "Unknown")
                                         }
                                         Text { 
                                             Layout.alignment: Qt.AlignHCenter
@@ -782,10 +870,77 @@ Item {
 
                     Item {
                         id: multiMonitorView
-                        width: window.s(380)
-                        height: window.s(280)
+                        width: window.s(410)
+                        height: window.s(340)
                         anchors.centerIn: parent
-                        clip: true 
+                        clip: true
+
+                        // Display Mode Status Banner
+                        Rectangle {
+                            anchors.top: parent.top
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            anchors.topMargin: window.s(8)
+                            height: window.s(24)
+                            width: modeBannerRow.implicitWidth + window.s(20)
+                            radius: window.s(12)
+                            color: Qt.alpha(window.crust, 0.85)
+                            border.color: {
+                                if (window.currentDisplayMode === "mirror") return window.mauve;
+                                if (window.currentDisplayMode === "internal") return window.teal;
+                                if (window.currentDisplayMode === "external") return window.peach;
+                                return window.surface1;
+                            }
+                            border.width: 1
+                            z: 30
+
+                            RowLayout {
+                                id: modeBannerRow
+                                anchors.centerIn: parent
+                                spacing: window.s(6)
+
+                                Text {
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: window.s(12)
+                                    color: {
+                                        if (window.currentDisplayMode === "mirror") return window.mauve;
+                                        if (window.currentDisplayMode === "internal") return window.teal;
+                                        if (window.currentDisplayMode === "external") return window.peach;
+                                        return window.blue;
+                                    }
+                                    text: {
+                                        if (window.currentDisplayMode === "mirror") return "󰍹";
+                                        if (window.currentDisplayMode === "internal") return "󰌢";
+                                        if (window.currentDisplayMode === "external") return "󰵟";
+                                        return "󰍺";
+                                    }
+                                }
+
+                                Text {
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: window.s(10)
+                                    font.weight: Font.Bold
+                                    color: window.text
+                                    text: {
+                                        if (window.currentDisplayMode === "mirror") {
+                                            return typeof I18n !== "undefined"
+                                                ? I18n.t("monitors.info.mirror", { from: window.internalOutputName, to: window.externalOutputName })
+                                                : ("Mirror (" + window.internalOutputName + " ➔ " + window.externalOutputName + ")");
+                                        }
+                                        if (window.currentDisplayMode === "internal") {
+                                            return typeof I18n !== "undefined"
+                                                ? I18n.t("monitors.info.internal", { external: window.externalOutputName })
+                                                : ("PC Only (" + window.externalOutputName + " Off)");
+                                        }
+                                        if (window.currentDisplayMode === "external") {
+                                            return typeof I18n !== "undefined"
+                                                ? I18n.t("monitors.info.external", { internal: window.internalOutputName })
+                                                : ("Second Only (" + window.internalOutputName + " Off)");
+                                        }
+                                        return typeof I18n !== "undefined" ? I18n.t("monitors.info.extend") : "Extend Mode";
+                                    }
+                                }
+                            }
+                        }
 
                         Grid {
                             anchors.centerIn: parent
@@ -816,8 +971,9 @@ Item {
                             
                             let requiredW = (maxX - minX) + window.s(80);
                             let requiredH = (maxY - minY) + window.s(80);
-                            
-                            return Math.min(1.8 * scaler.baseScale, Math.min(window.s(340) / requiredW, window.s(240) / requiredH));
+
+                            let sScale = (typeof Scaler !== "undefined" && Scaler.baseScale) ? Scaler.baseScale : 1.0;
+                            return Math.min(1.8 * sScale, Math.min(window.s(370) / requiredW, window.s(290) / requiredH));
                         }
 
                         property real offsetX: {
@@ -887,6 +1043,7 @@ Item {
                                         border.color: isActive ? window.selectedResAccent : window.surface2
                                         border.width: isActive ? window.s(2) : window.s(1)
                                         z: isActive ? 5 : 0
+                                        opacity: (model.enabled === false) ? 0.45 : 1.0
 
                                         Behavior on x { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
                                         Behavior on y { NumberAnimation { duration: 300; easing.type: Easing.OutQuint } }
@@ -925,13 +1082,13 @@ Item {
                                                     text: "󰍹"
                                                     Behavior on color { ColorAnimation { duration: 300 } } 
                                                 }
-                                                Text { 
+                                                Text {
                                                     Layout.alignment: Qt.AlignHCenter
                                                     font.family: "JetBrains Mono"
                                                     font.weight: Font.Black
                                                     font.pixelSize: window.s(13)
-                                                    color: window.text
-                                                    text: model.name 
+                                                    color: (model.enabled === false) ? window.overlay0 : window.text
+                                                    text: model.name + ((model.enabled === false) ? (" [" + (typeof I18n !== "undefined" ? I18n.t("monitors.off") : "OFF") + "]") : "")
                                                 }
                                                 Text { 
                                                     Layout.alignment: Qt.AlignHCenter
@@ -1042,9 +1199,8 @@ Item {
                 anchors.left: leftVisualArea.right
                 anchors.right: parent.right
                 anchors.verticalCenter: parent.verticalCenter
-                anchors.verticalCenterOffset: window.s(-10) // Tweak layout slightly downwards 
-                anchors.leftMargin: window.s(10)
-                anchors.rightMargin: window.s(30)
+                anchors.leftMargin: window.s(15)
+                anchors.rightMargin: window.s(25)
                 height: rightSideContainer.implicitHeight 
 
                 opacity: window.introProgress
@@ -1083,7 +1239,132 @@ Item {
                 ColumnLayout {
                     id: rightSideContainer
                     anchors.fill: parent
-                    spacing: window.s(10)
+                    spacing: window.s(8)
+
+                    // --- DISPLAY MODE SELECTOR TABS ---
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: window.s(36)
+                        spacing: window.s(6)
+                        visible: monitorsModel.count > 1 || window.currentDisplayMode !== "extend"
+
+                        Repeater {
+                            model: [
+                                { id: "extend",   label: (typeof I18n !== "undefined" ? I18n.t("monitors.modes.extend") : "Extend"),      icon: "󰍺", accent: window.blue },
+                                { id: "mirror",   label: (typeof I18n !== "undefined" ? I18n.t("monitors.modes.mirror") : "Mirror"),      icon: "󰍹", accent: window.mauve },
+                                { id: "internal", label: (typeof I18n !== "undefined" ? I18n.t("monitors.modes.internal") : "PC Only"),     icon: "󰌢", accent: window.teal },
+                                { id: "external", label: (typeof I18n !== "undefined" ? I18n.t("monitors.modes.external") : "Second Only"), icon: "󰵟", accent: window.peach }
+                            ]
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: window.s(36)
+                                radius: window.s(10)
+                                property bool isCur: window.currentDisplayMode === modelData.id
+
+                                color: isCur ? Qt.alpha(modelData.accent, 0.22) : (modeMa.containsMouse ? window.surface0 : window.mantle)
+                                border.color: isCur ? modelData.accent : (modeMa.containsMouse ? window.surface1 : window.crust)
+                                border.width: isCur ? window.s(2) : 1
+
+                                Behavior on color { ColorAnimation { duration: 180 } }
+                                Behavior on border.color { ColorAnimation { duration: 180 } }
+
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: window.s(6)
+
+                                    Text {
+                                        font.family: "Iosevka Nerd Font"
+                                        font.pixelSize: window.s(15)
+                                        text: modelData.icon
+                                        color: isCur ? modelData.accent : window.overlay0
+                                    }
+
+                                    Text {
+                                        font.family: "JetBrains Mono"
+                                        font.weight: isCur ? Font.Black : Font.Bold
+                                        font.pixelSize: window.s(11)
+                                        text: modelData.label
+                                        color: isCur ? window.text : window.subtext0
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: modeMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        window.setDisplayMode(modelData.id);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // --- MONITOR SELECTOR TABS (Multi-Monitor) ---
+                    RowLayout {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: window.s(32)
+                        spacing: window.s(8)
+                        visible: monitorsModel.count > 1
+
+                        Repeater {
+                            model: monitorsModel
+
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: window.s(32)
+                                radius: window.s(10)
+                                property bool isCur: window.activeEditIndex === index
+
+                                color: isCur ? Qt.alpha(window.selectedResAccent, 0.18) : (tabMa.containsMouse ? window.surface0 : window.mantle)
+                                border.color: isCur ? window.selectedResAccent : (tabMa.containsMouse ? window.surface1 : window.crust)
+                                border.width: isCur ? window.s(2) : 1
+
+                                Behavior on color { ColorAnimation { duration: 150 } }
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
+
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: window.s(6)
+
+                                    Text {
+                                        font.family: "Iosevka Nerd Font"
+                                        font.pixelSize: window.s(14)
+                                        text: "󰍹"
+                                        color: isCur ? window.selectedResAccent : window.overlay0
+                                    }
+
+                                    Text {
+                                        font.family: "JetBrains Mono"
+                                        font.weight: isCur ? Font.Black : Font.Bold
+                                        font.pixelSize: window.s(12)
+                                        text: model.name
+                                        color: isCur ? window.text : window.subtext0
+                                    }
+
+                                    Text {
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: window.s(10)
+                                        text: (model.enabled === false) ? ("[" + (typeof I18n !== "undefined" ? I18n.t("monitors.off") : "OFF") + "]") : (model.resW + "x" + model.resH + "@" + model.rate + "Hz")
+                                        color: (model.enabled === false) ? window.red : (isCur ? window.selectedResAccent : window.overlay0)
+                                        opacity: 0.8
+                                    }
+                                }
+
+                                MouseArea {
+                                    id: tabMa
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        window.activeEditIndex = index;
+                                    }
+                                }
+                            }
+                        }
+                    }
 
                     // --- RESOLUTION CARDS SECTION ---
                     GridLayout {
@@ -1103,9 +1384,8 @@ Item {
                                 radius: window.s(12)
                                 
                                 property bool isSel: {
-                                    if (monitorsModel.count === 0) return false;
-                                    let activeMon = monitorsModel.get(window.activeEditIndex);
-                                    return activeMon.resW === modelData.w && activeMon.resH === modelData.h;
+                                    if (!window.activeMon) return false;
+                                    return window.activeMon.resW === modelData.w && window.activeMon.resH === modelData.h;
                                 }
                                 property color accentColor: modelData.accent
                                 
@@ -1210,7 +1490,7 @@ Item {
                             Item {
                                 id: dialPointer
                                 anchors.fill: parent
-                                property int activeTransform: monitorsModel.count > 0 ? monitorsModel.get(window.activeEditIndex).transform : 0
+                                property int activeTransform: window.activeMon ? window.activeMon.transform : 0
                                 rotation: activeTransform * 90
                                 Behavior on rotation { NumberAnimation { duration: 400; easing.type: Easing.OutBack;} }
 
@@ -1277,31 +1557,31 @@ Item {
                     // --- MULTI-MONITOR INFO BADGE (niri: extend only) ---
                     Item {
                         Layout.fillWidth: true
-                        Layout.preferredHeight: window.s(40)
-                        visible: monitorsModel.count > 1
+                        Layout.preferredHeight: window.s(30)
+                        visible: monitorsModel.count > 1 && window.currentDisplayMode === "extend"
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: window.s(14)
+                            radius: window.s(10)
                             color: Qt.alpha(window.blue, 0.08)
                             border.color: Qt.alpha(window.blue, 0.25)
                             border.width: 1
 
                             RowLayout {
                                 anchors.centerIn: parent
-                                spacing: window.s(8)
+                                spacing: window.s(6)
 
                                 Text {
                                     font.family: "Iosevka Nerd Font"
-                                    font.pixelSize: window.s(16)
+                                    font.pixelSize: window.s(14)
                                     color: window.blue
                                     text: "󰍺"
                                 }
                                 Text {
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: window.s(11)
+                                    font.pixelSize: window.s(10)
                                     color: window.subtext0
-                                    text: "Extend mode  ·  drag to reposition"
+                                    text: typeof I18n !== "undefined" ? I18n.t("monitors.info.extend_hint") : "Extend mode  ·  drag to reposition"
                                 }
                             }
                         }
@@ -1315,19 +1595,19 @@ Item {
                         Layout.leftMargin: window.s(6)
                         Layout.rightMargin: window.s(6)
                         
-                        property var rates: [60, 75, 100, 120, 144, 165, 180, 240, 360]
-                        property var rateColors: [window.red, window.mauve, window.blue, window.sapphire, window.teal, window.pink, window.yellow, window.green, window.peach]
-                        
+                        property var rates: [30, 50, 60, 75, 100, 120, 144, 165, 240]
+                        property var rateColors: [window.peach, window.yellow, window.red, window.mauve, window.blue, window.sapphire, window.teal, window.pink, window.green]
+
                         property int currentIndex: {
-                            if (monitorsModel.count === 0) return 0;
-                            let currentVal = parseInt(monitorsModel.get(window.activeEditIndex).rate) || 60;
-                            let closestIdx = 0;
+                            if (!window.activeMon) return 2;
+                            let currentVal = parseInt(window.activeMon.rate) || 60;
+                            let closestIdx = 2;
                             let minDiff = 9999;
                             for (let i = 0; i < rates.length; i++) {
                                 let diff = Math.abs(rates[i] - currentVal);
-                                if (diff < minDiff) { 
-                                    minDiff = diff; 
-                                    closestIdx = i; 
+                                if (diff < minDiff) {
+                                    minDiff = diff;
+                                    closestIdx = i;
                                 }
                             }
                             return closestIdx;
@@ -1340,7 +1620,7 @@ Item {
                         }
                         
                         function updateSelectionVisual(idx) {
-                            if (monitorsModel.count === 0) return;
+                            if (!window.activeMon) return;
                             visualPct = idx / (rates.length - 1);
                             monitorsModel.setProperty(window.activeEditIndex, "rate", rates[idx].toString());
                             window.selectedRateAccent = rateColors[idx];
@@ -1400,7 +1680,7 @@ Item {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: sliderContainer.rates[index]
                                     font.family: "JetBrains Mono"
-                                    font.pixelSize: window.s(13)
+                                    font.pixelSize: window.s(11)
                                     font.weight: sliderContainer.currentIndex === index ? Font.Bold : Font.Normal
                                     color: sliderContainer.currentIndex === index ? window.selectedRateAccent : window.overlay0
                                     Behavior on color { ColorAnimation { duration: 200 } } 
@@ -1415,7 +1695,7 @@ Item {
                             cursorShape: Qt.PointingHandCursor
 
                             function updateSelection(mouseX, snapToGrid) {
-                                if (monitorsModel.count === 0) return;
+                                if (!window.activeMon) return;
                                 window.activeFocusIndex = 2;
                                 
                                 let pct = (mouseX - track.x) / track.width;
@@ -1514,12 +1794,19 @@ Item {
                                     text: "󰸵" 
                                 }
                                 
-                                Text { 
+                                Text {
                                     font.family: "JetBrains Mono"
                                     font.weight: Font.Black
                                     font.pixelSize: window.s(14)
                                     color: window.crust
-                                    text: monitorsModel.count > 1 ? "Apply All" : "Apply" 
+                                    text: {
+                                        if (window.currentDisplayMode === "mirror") return typeof I18n !== "undefined" ? I18n.t("monitors.mirror_mode") : "Mirror Mode";
+                                        if (window.currentDisplayMode === "internal") return typeof I18n !== "undefined" ? I18n.t("monitors.pc_only") : "PC Only";
+                                        if (window.currentDisplayMode === "external") return typeof I18n !== "undefined" ? I18n.t("monitors.second_only") : "Second Only";
+                                        return (monitorsModel.count > 1
+                                            ? (typeof I18n !== "undefined" ? I18n.t("monitors.apply_all") : "Apply All")
+                                            : (typeof I18n !== "undefined" ? I18n.t("monitors.apply") : "Apply"));
+                                    }
                                 }
                             }
                         }

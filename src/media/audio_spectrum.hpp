@@ -28,6 +28,7 @@ private:
     int m_bars = 32;
     std::atomic<int> m_subscribersCount{0};
     QProcess* m_process{nullptr};
+    QString m_configPath;
 
     void startProcess();
     void stopProcess();

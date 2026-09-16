@@ -29,6 +29,31 @@ Rectangle {
     property real targetHeight: barWindow ? barWindow.s(110) : 110
     property real targetWidth: barWindow ? barWindow.barHeight : 40
 
+    property bool showLayout: !barWindow || barWindow.isStartupReady
+    property bool isVisVisible: moduleActive && showLayout
+    property bool isSubscribed: false
+    readonly property bool shouldSubscribe: isVisVisible && MprisController.isPlaying
+
+    onShouldSubscribeChanged: updateSubscription()
+
+    function updateSubscription() {
+        if (shouldSubscribe && !isSubscribed) {
+            isSubscribed = true;
+            Cava.registerConsumer();
+        } else if (!shouldSubscribe && isSubscribed) {
+            isSubscribed = false;
+            Cava.unregisterConsumer();
+        }
+    }
+
+    Component.onCompleted: updateSubscription()
+    Component.onDestruction: {
+        if (isSubscribed) {
+            isSubscribed = false;
+            Cava.unregisterConsumer();
+        }
+    }
+
     width: targetWidth
     height: targetHeight
 

@@ -18,10 +18,15 @@ Item {
     readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
     readonly property bool sysMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
 
+    readonly property real sysMicVolume: Audio.defaultSource && Audio.defaultSource.audio ? Math.round(Audio.defaultSource.audio.volume * 100) : 0
+    readonly property bool sysMicMuted: Audio.defaultSource && Audio.defaultSource.audio ? Audio.defaultSource.audio.muted : false
+
     property int sysBrightness: 0
 
     property real lastVolume: -1
     property bool lastMuted: false
+    property real lastMicVolume: -1
+    property bool lastMicMuted: false
     property int lastBrightness: -1
     property bool isInitialized: false
 
@@ -44,6 +49,8 @@ Item {
         onTriggered: {
             controller.lastVolume = controller.sysVolume;
             controller.lastMuted = controller.sysMuted;
+            controller.lastMicVolume = controller.sysMicVolume;
+            controller.lastMicMuted = controller.sysMicMuted;
             controller.lastBrightness = controller.sysBrightness;
             controller.isInitialized = true;
         }
@@ -62,6 +69,22 @@ Item {
         if (controller.lastMuted !== controller.sysMuted) {
             controller.lastMuted = controller.sysMuted;
             controller.show("volume");
+        }
+    }
+
+    onSysMicVolumeChanged: {
+        if (!controller.isInitialized) return;
+        if (controller.lastMicVolume !== controller.sysMicVolume) {
+            controller.lastMicVolume = controller.sysMicVolume;
+            controller.show("mic");
+        }
+    }
+
+    onSysMicMutedChanged: {
+        if (!controller.isInitialized) return;
+        if (controller.lastMicMuted !== controller.sysMicMuted) {
+            controller.lastMicMuted = controller.sysMicMuted;
+            controller.show("mic");
         }
     }
 
@@ -114,7 +137,7 @@ Item {
 
     function show(k, v, scr) {
         controller.kind = k || "volume";
-        if (controller.kind !== "volume" && v !== undefined) {
+        if (controller.kind !== "volume" && controller.kind !== "mic" && v !== undefined) {
             controller.briVal = parseInt(v) || 0;
         }
         if (scr !== undefined && scr !== null) {
