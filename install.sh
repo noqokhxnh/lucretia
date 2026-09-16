@@ -12,7 +12,7 @@ fi
 # set -e
 
 # Script Versioning & Initialization
-DOTS_VERSION="2.0.2"
+DOTS_VERSION="2.0.3"
 VERSION_FILE="$HOME/.local/state/lucretia-version"
 
 # Terminal UI Colors & Formatting
@@ -1737,6 +1737,21 @@ done
 # Network & Wi-Fi Self-Healing
 sudo rfkill unblock all >/dev/null 2>&1 || true
 nmcli radio wifi on >/dev/null 2>&1 || true
+
+# User Session Shutdown Timeout (prevents 90s-180s hung shutdowns)
+mkdir -p "$HOME/.config/systemd"
+if [ ! -f "$HOME/.config/systemd/user.conf" ]; then
+    cat <<EOF > "$HOME/.config/systemd/user.conf"
+[Manager]
+DefaultTimeoutStopSec=10s
+EOF
+elif ! grep -q "DefaultTimeoutStopSec" "$HOME/.config/systemd/user.conf"; then
+    cat <<EOF >> "$HOME/.config/systemd/user.conf"
+
+[Manager]
+DefaultTimeoutStopSec=10s
+EOF
+fi
 
 # ------------------------------------------------------------------------------
 # 7.5b. CPU TURBO BOOST — OFF ON BATTERY (udev rule + boot sync)

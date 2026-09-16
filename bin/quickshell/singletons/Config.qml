@@ -133,7 +133,6 @@ Item {
     function updateJsonBulk(dataObj) {
         let next = JSON.parse(JSON.stringify(rawSettings || {}));
         let syncIdle = false;
-
         for (let key in dataObj) {
             let val = dataObj[key];
             let clonedVal = (val !== null && typeof val === "object") ? JSON.parse(JSON.stringify(val)) : val;

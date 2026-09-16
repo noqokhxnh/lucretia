@@ -59,7 +59,19 @@ check_missing_deps() {
 if [ "$RECORD_MODE" = true ]; then
     qs_ensure_cache "recording"
     mkdir -p "$RECORD_DIR"
-    command -v "$VIDEO_BACKEND" &>/dev/null || check_missing_deps "$VIDEO_BACKEND"
+    if [ "$VIDEO_BACKEND" = "gpu-screen-recorder" ]; then
+        if ! command -v gpu-screen-recorder &> /dev/null || ! gpu-screen-recorder --version &> /dev/null; then
+            if command -v wf-recorder &> /dev/null; then
+                VIDEO_BACKEND="wf-recorder"
+            else
+                check_missing_deps "gpu-screen-recorder"
+            fi
+        fi
+    elif [ "$VIDEO_BACKEND" = "wf-recorder" ]; then
+        command -v wf-recorder &> /dev/null || check_missing_deps "wf-recorder"
+    elif ! command -v "$VIDEO_BACKEND" &> /dev/null; then
+        check_missing_deps "$VIDEO_BACKEND"
+    fi
 fi
 
 if [ -f "$CACHE_DIR/rec_pid" ]; then
@@ -251,18 +263,34 @@ VID_FILENAME="$RECORD_DIR/Recording_$time.mp4"
 if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
     if [ "$RECORD_MODE" = true ]; then
         if [ "$VIDEO_BACKEND" = "wf-recorder" ]; then
-            WF_ARGS=(-f "$VID_FILENAME")
+            WF_ARGS=(-f "$VID_FILENAME" -r 60)
             if [ -n "$GEOMETRY" ]; then
                 WF_ARGS+=(-g "$GEOMETRY")
             elif [ -n "$TARGET_MON" ]; then
                 WF_ARGS+=(-o "$TARGET_MON")
             fi
+
+            VA_DEV=""
+            for dev in /dev/dri/renderD*; do
+                if [ -e "$dev" ] && vainfo --display drm --device "$dev" 2>&1 | grep -q "VAEntrypointEncSlice"; then
+                    VA_DEV="$dev"
+                    break
+                fi
+            done
+
+            if [ -n "$VA_DEV" ]; then
+                WF_ARGS+=(-c h264_vaapi -d "$VA_DEV" -p rc_mode=CQP -p qp=16)
+            else
+                WF_ARGS+=(-c libx264 --pixel-format yuv420p -p preset=veryfast -p crf=16)
+            fi
+
+            WF_AUDIO_BACKEND="--audio-backend=pipewire"
             if [ "$DESK_MUTE" != "true" ]; then
                 DESK_SINK=$(pactl get-default-sink 2>/dev/null)
                 if [ -n "$DESK_SINK" ]; then
-                    WF_ARGS+=(--audio="${DESK_SINK}.monitor")
+                    WF_ARGS+=("$WF_AUDIO_BACKEND" --audio="${DESK_SINK}.monitor")
                 else
-                    WF_ARGS+=(--audio)
+                    WF_ARGS+=("$WF_AUDIO_BACKEND" --audio)
                 fi
             elif [ "$MIC_MUTE" != "true" ]; then
                 if [ -n "$MIC_DEVICE" ] && [ "$MIC_DEVICE" != "null" ]; then
@@ -271,15 +299,15 @@ if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
                     MIC_DEV=$(pactl get-default-source 2>/dev/null)
                 fi
                 if [ -n "$MIC_DEV" ]; then
-                    WF_ARGS+=(--audio="$MIC_DEV")
+                    WF_ARGS+=("$WF_AUDIO_BACKEND" --audio="$MIC_DEV")
                 else
-                    WF_ARGS+=(--audio)
+                    WF_ARGS+=("$WF_AUDIO_BACKEND" --audio)
                 fi
             fi
             wf-recorder "${WF_ARGS[@]}" > /dev/null 2>&1 &
             REC_PID=$!
         else
-            GSR_ARGS=(-w "screen" -c "mp4" -f "60" -ac "aac")
+            GSR_ARGS=(-w "screen" -c "mp4" -f "60" -q "ultra" -ac "aac")
             if [ "$DESK_MUTE" != "true" ]; then
                 DESK_SINK=$(pactl get-default-sink 2>/dev/null)
                 if [ -n "$DESK_SINK" ]; then
