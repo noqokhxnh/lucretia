@@ -138,80 +138,7 @@ build_manifest() {
 }
 
 handle_wallpaper_prep() {
-    mkdir -p "$THUMB_DIR"
-
-    (
-        if [ -f "$PREP_LOCK" ]; then
-            if kill -0 "$(cat "$PREP_LOCK")" 2>/dev/null; then
-                exit 0
-            fi
-        fi
-        echo $BASHPID > "$PREP_LOCK"
-
-        export THUMB_DIR SRC_DIR MANIFEST MAGICK_THREAD_LIMIT=1
-
-        THUMB_SOURCE_FILE="$THUMB_DIR/.source_dir"
-        if [ -f "$THUMB_SOURCE_FILE" ]; then
-            read -r CACHED_SRC < "$THUMB_SOURCE_FILE"
-            if [ "$CACHED_SRC" != "$SRC_DIR" ]; then
-                find "$THUMB_DIR" -maxdepth 1 -type f \
-                    ! -name '.source_dir' ! -name '.manifest' -delete
-                echo "$SRC_DIR" > "$THUMB_SOURCE_FILE"
-                > "$MANIFEST"
-            fi
-        else
-            echo "$SRC_DIR" > "$THUMB_SOURCE_FILE"
-            > "$MANIFEST"
-        fi
-
-        [ ! -f "$MANIFEST" ] && build_manifest
-
-        SRC_LIST=$(mktemp)
-        find "$SRC_DIR" -maxdepth 1 -type f \
-            \( -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.png" \
-               -o -iname "*.gif" -o -iname "*.mp4" -o -iname "*.mkv" \
-               -o -iname "*.mov" -o -iname "*.webm" \) \
-            -printf "%f\n" | sort > "$SRC_LIST"
-
-        comm -23 <(sed 's/^000_//' "$MANIFEST" | sort) "$SRC_LIST" | while read -r orphan; do
-            rm -f "$THUMB_DIR/$orphan" "$THUMB_DIR/000_$orphan"
-            sed -i "/^${orphan}$/d;/^000_${orphan}$/d" "$MANIFEST"
-        done
-
-        while IFS= read -r filename; do
-            img="$SRC_DIR/$filename"
-            [ -f "$img" ] || continue
-
-            extension="${filename##*.}"
-
-            if [[ "${extension,,}" == "webp" ]]; then
-                thumb="$THUMB_DIR/${filename%.*}.jpg"
-                if [ ! -f "$thumb" ]; then
-                    magick "$img" -resize x420 -quality 70 "$thumb"
-                    echo "${filename%.*}.jpg" >> "$MANIFEST"
-                fi
-                continue
-            fi
-
-            if [[ "${extension,,}" =~ ^(mp4|mkv|mov|webm)$ ]]; then
-                thumb="$THUMB_DIR/000_$filename"
-                [ -f "$THUMB_DIR/$filename" ] && rm -f "$THUMB_DIR/$filename"
-                if [ ! -f "$thumb" ]; then
-                    ffmpeg -y -ss 00:00:05 -i "$img" -vframes 1 \
-                        -threads 1 -f image2 -q:v 2 "$thumb" >/dev/null 2>&1
-                    echo "000_$filename" >> "$MANIFEST"
-                fi
-            else
-                thumb="$THUMB_DIR/$filename"
-                if [ ! -f "$thumb" ]; then
-                    magick "$img" -resize x420 -quality 70 "$thumb"
-                    echo "$filename" >> "$MANIFEST"
-                fi
-            fi
-        done < <(comm -23 "$SRC_LIST" <(sed 's/^000_//' "$MANIFEST" | sort))
-
-        rm -f "$SRC_LIST" "$PREP_LOCK"
-    ) </dev/null >/dev/null 2>&1 &
+    :
 }
 
 handle_network_prep() {
@@ -294,23 +221,6 @@ if [[ "$ACTION" == "open" || "$ACTION" == "toggle" ]]; then
             BASE=$(basename "$CURRENT_SRC")
             EXT="${BASE##*.}"
             [[ "${EXT,,}" =~ ^(mp4|mkv|mov|webm)$ ]] && TARGET_THUMB="000_$BASE" || TARGET_THUMB="$BASE"
-
-            # Ensure the thumbnail exists SYNCHRONOUSLY before the picker opens
-            if [ ! -f "$THUMB_DIR/$TARGET_THUMB" ]; then
-                if [[ "${EXT,,}" =~ ^(mp4|mkv|mov|webm)$ ]]; then
-                    ffmpeg -y -ss 00:00:05 -i "$CURRENT_SRC" -vframes 1 -threads 1 -f image2 -q:v 2 "$THUMB_DIR/$TARGET_THUMB" >/dev/null 2>&1 || true
-                else
-                    magick "$CURRENT_SRC" -resize x420 -quality 70 "$THUMB_DIR/$TARGET_THUMB" >/dev/null 2>&1 || true
-                fi
-                # Also update the manifest so handle_wallpaper_prep doesn't redo it
-                if [ -f "$MANIFEST" ]; then
-                    if [[ "${EXT,,}" =~ ^(mp4|mkv|mov|webm)$ ]]; then
-                        echo "000_$BASE" >> "$MANIFEST"
-                    else
-                        echo "$BASE" >> "$MANIFEST"
-                    fi
-                fi
-            fi
         fi
 
         quickshell -p "$SHELL_QML_PATH" ipc call main handleCommand "$ACTION" "$TARGET" "$TARGET_THUMB" >/dev/null 2>&1

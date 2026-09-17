@@ -153,17 +153,33 @@ Item {
         }
     }
 
-    Process {
-        id: wallpaperHistoryReader
-        running: false
-        command: ["cat", Caching.getCacheDir("wallpaper") + "/history.txt"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let lines = this.text.trim().split("\n").map(s => s.trim()).filter(s => s.length > 0);
+    FileView {
+        id: wallpaperHistoryFileView
+        path: Caching.getCacheDir("wallpaper") + "/history.txt"
+        watchChanges: true
+        onLoaded: readHistory()
+        onFileChanged: reload()
+
+        function readHistory() {
+            let raw = typeof text === "function" ? text() : text;
+            if (raw) {
+                let lines = raw.trim().split("\n").map(s => s.trim()).filter(s => s.length > 0);
                 window.historyList = lines;
                 if (window.currentFilter === "History") {
                     window.applyFilters(false);
                 }
+            }
+        }
+    }
+
+    QtObject {
+        id: wallpaperHistoryReader
+        property bool running: false
+        onRunningChanged: {
+            if (running) {
+                wallpaperHistoryFileView.reload();
+                wallpaperHistoryFileView.readHistory();
+                running = false;
             }
         }
     }
@@ -880,21 +896,39 @@ Item {
         onTriggered: window.triggerIndexer()
     }
 
-    Process {
-        id: indexDiskReader
-        running: false
-        command: ["cat", Caching.getCacheDir("wallpaper") + "/current_index.json"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let trimmed = this.text ? this.text.trim() : "";
+    FileView {
+        id: indexFileView
+        path: Caching.getCacheDir("wallpaper") + "/current_index.json"
+        watchChanges: true
+        onLoaded: readIndex()
+        onFileChanged: reload()
+
+        function readIndex() {
+            let raw = typeof text === "function" ? text() : text;
+            if (raw) {
+                let trimmed = raw.trim();
                 if (trimmed.length > 0) {
                     try {
                         let data = JSON.parse(trimmed);
                         if (data && data.srcDir === window.srcDir) {
                             window.loadIndexData(data);
+                            return true;
                         }
                     } catch(e) {}
                 }
+            }
+            return false;
+        }
+    }
+
+    QtObject {
+        id: indexDiskReader
+        property bool running: false
+        onRunningChanged: {
+            if (running) {
+                indexFileView.reload();
+                indexFileView.readIndex();
+                running = false;
             }
         }
     }
@@ -1655,7 +1689,7 @@ Item {
                             width: (window.itemWidth * 1.5) + ((window.itemHeight + window.s(30)) * Math.abs(window.skewFactor)) + window.s(50)
                             height: window.itemHeight + window.s(30)
                             fillMode: Image.PreserveAspectCrop
-                            source: delegateRoot.isVideo ? (delegateRoot.itemPosterUrl !== "" ? delegateRoot.itemPosterUrl : "") : delegateRoot.itemFileUrl
+                            source: delegateRoot.itemPosterUrl !== "" ? delegateRoot.itemPosterUrl : (delegateRoot.isVideo ? "" : delegateRoot.itemFileUrl)
                             asynchronous: true
                             cache: true
                             opacity: (status === Image.Ready && source.toString() !== "") ? 1.0 : 0.0
@@ -2141,7 +2175,8 @@ Item {
             window.isSearchPaused = true;
         }
 
-        indexDiskReader.running = true;
+        indexFileView.reload();
+        indexFileView.readIndex();
         window.syncFromSrcModel();
         window.triggerIndexer();
 

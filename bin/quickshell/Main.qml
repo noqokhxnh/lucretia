@@ -675,7 +675,6 @@ PanelWindow {
                 masterWindow.disableMorph = true;
                 widgetStack.clear();
                 // Immediately evict heavy dialogs when closed
-                masterWindow.evictWidget("wallpaper");
                 masterWindow.evictWidget("guide");
                 masterWindow.evictWidget("settings");
                 masterWindow.evictWidget("movies");
