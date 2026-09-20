@@ -280,7 +280,7 @@ Item {
                             anchors.left: parent.left
                             anchors.leftMargin: window.s(20)
                             anchors.verticalCenter: parent.verticalCenter
-                            text: "My Notes"
+                            text: typeof I18n !== "undefined" ? I18n.t("notes.title") : "My Notes"
                             font.family: "JetBrains Mono"
                             font.pixelSize: window.s(18)
                             font.weight: Font.Bold
@@ -414,7 +414,7 @@ Item {
 
                                 Text {
                                     width: parent.width
-                                    text: model.content.trim() === "" ? "Untitled Note" : model.content.split('\n')[0]
+                                    text: model.content.trim() === "" ? (typeof I18n !== "undefined" ? I18n.t("notes.untitled") : "Untitled Note") : model.content.split('\n')[0]
                                     font.family: "JetBrains Mono"
                                     font.pixelSize: window.s(14)
                                     font.weight: window.currentNoteId === model.id ? Font.Bold : Font.Normal
@@ -519,7 +519,7 @@ Item {
                             background: Item {}
                             enabled: window.currentNoteId !== ""
                             
-                            placeholderText: window.currentNoteId !== "" ? "Start writing your thoughts..." : "Select a note to view or edit"
+                            placeholderText: window.currentNoteId !== "" ? (typeof I18n !== "undefined" ? I18n.t("notes.placeholder") : "Start writing your thoughts...") : (typeof I18n !== "undefined" ? I18n.t("notes.select_hint") : "Select a note to view or edit")
                             placeholderTextColor: window.surface2
 
                             onTextChanged: {
@@ -559,7 +559,7 @@ Item {
 
                         // Pinned badge
                         Text {
-                            text: "󰐃 Pinned"
+                            text: "󰐃 " + (typeof I18n !== "undefined" ? I18n.t("notes.pinned") : "Pinned")
                             font.family: "Iosevka Nerd Font"
                             font.pixelSize: window.s(11.5)
                             color: window.mauve
@@ -569,7 +569,7 @@ Item {
 
                         // Saving indicator
                         Text {
-                            text: window.isSaving ? "Saving..." : "Saved"
+                            text: window.isSaving ? (typeof I18n !== "undefined" ? I18n.t("notes.saving") : "Saving...") : (typeof I18n !== "undefined" ? I18n.t("notes.saved") : "Saved")
                             font.family: "JetBrains Mono"
                             font.pixelSize: window.s(11.5)
                             color: window.surface2

@@ -386,7 +386,11 @@ Item {
         let isRealCurrentMonth = (actualToday.getMonth() === targetMonth && actualToday.getFullYear() === targetYear);
         let todayDate = actualToday.getDate();
 
-        window.targetMonthName = Qt.formatDateTime(d, "MMMM yyyy");
+        if (typeof I18n !== "undefined" && I18n.currentLang === "vi") {
+            window.targetMonthName = "Tháng " + (targetMonth + 1) + " năm " + targetYear;
+        } else {
+            window.targetMonthName = Qt.formatDateTime(d, "MMMM yyyy");
+        }
 
         let firstDay = new Date(targetYear, targetMonth, 1).getDay();
         firstDay = (firstDay === 0) ? 6 : firstDay - 1;
@@ -671,7 +675,7 @@ Item {
 
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: Qt.formatDateTime(window.currentTime, "dddd, MMMM dd")
+                        text: (typeof DateTime !== "undefined") ? DateTime.fullDate : Qt.formatDateTime(window.currentTime, "dddd, MMMM dd")
                         font.family: ThemeBackend.fontFamily
                         font.weight: Font.Bold
                         font.pixelSize: Math.round(16 * window.sf)
@@ -982,7 +986,13 @@ Item {
                             Layout.maximumWidth: Math.round(320 * window.sf)
                             Layout.topMargin: Math.round(6 * window.sf)
                             horizontalAlignment: Text.AlignRight
-                            text: window.weatherData && window.weatherData.forecast[window.weatherView] ? window.weatherData.forecast[window.weatherView].desc : ""
+                            text: {
+                                let _lang = typeof I18n !== "undefined" ? I18n.currentLang : "en";
+                                let fc = window.weatherData && window.weatherData.forecast ? window.weatherData.forecast[window.weatherView] : null;
+                                let c = fc && fc.code !== undefined ? fc.code : -1;
+                                let d = fc && (fc.desc || fc.description) ? (fc.desc || fc.description) : "";
+                                return Weather.getLocalizedDesc(c, d);
+                            }
                             font.family: ThemeBackend.fontFamily
                             font.weight: Font.Medium
                             font.pixelSize: Math.round(14 * window.sf)

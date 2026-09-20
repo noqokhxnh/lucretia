@@ -42,7 +42,8 @@
             "display_widgets": "Widgets",
             "display_general": "General",
             "osd": "On-Screen Display",
-            "dock": "Dock"
+            "dock": "Dock",
+            "widgets": "Widgets"
         },
         "keybinds": {
             "desc": "View, configure, and customize keyboard shortcuts",
@@ -80,7 +81,72 @@
             "validation_key": "Please choose or record a key name!",
             "validation_action": "Please enter an action command!",
             "all_categories": "All",
-            "reloaded": "Reloaded from config.kdl"
+            "reloaded": "Reloaded from config.kdl",
+            "guide_badge": "Guide",
+            "categories": {
+                "all": "All",
+                "basic": "Basic",
+                "resize": "Resize",
+                "move": "Move",
+                "focus": "Focus",
+                "apps": "Apps",
+                "panels": "Panels",
+                "audio_light": "Audio & Light",
+                "screenshots": "Screenshots",
+                "lock_media": "Lock & Media",
+                "workspaces": "Workspaces"
+            },
+            "actions": {
+                "close_window": "Close Window",
+                "toggle_floating": "Toggle Floating",
+                "fullscreen": "Fullscreen",
+                "toggle_overview": "Toggle Overview",
+                "decrease_column_width": "Decrease Column Width",
+                "increase_column_width": "Increase Column Width",
+                "decrease_window_height": "Decrease Window Height",
+                "increase_window_height": "Increase Window Height",
+                "move_column_left": "Move Column Left",
+                "move_column_right": "Move Column Right",
+                "move_window_up": "Move Window Up",
+                "move_window_down": "Move Window Down",
+                "focus_column_left": "Focus Column Left",
+                "focus_column_right": "Focus Column Right",
+                "focus_up_monitor": "Focus Up / Monitor",
+                "focus_down_monitor": "Focus Down / Monitor",
+                "screenshot_full": "Screenshot (Full Screen)",
+                "screenshot_edit": "Screenshot (Edit)",
+                "screenshot_area": "Screenshot (Area)",
+                "lock_screen": "Lock Screen",
+                "reload_quickshell": "Reload Quickshell",
+                "toggle_panel": "Toggle {panel}",
+                "move_to_workspace": "Move to Workspace {num}",
+                "switch_to_workspace": "Switch to Workspace {num}",
+                "terminal": "Terminal (foot)",
+                "browser": "Web Browser (Zen)",
+                "files": "File Manager (Nautilus)",
+                "brightness_up": "Brightness Up",
+                "brightness_down": "Brightness Down",
+                "toggle_mic_mute": "Toggle Microphone Mute",
+                "toggle_audio_mute": "Toggle Audio Mute",
+                "volume_up": "Volume Up",
+                "volume_down": "Volume Down",
+                "play_pause_media": "Play / Pause Media",
+                "caps_lock_indicator": "Caps Lock Indicator"
+            },
+            "preset_items": {
+                "toggle_guide": "Toggle Guide",
+                "close_window": "Close Window",
+                "toggle_floating": "Toggle Floating",
+                "fullscreen": "Fullscreen",
+                "overview": "Overview",
+                "terminal": "Terminal",
+                "browser": "Browser",
+                "files": "Files",
+                "launcher": "Launcher",
+                "clipboard": "Clipboard",
+                "screenshot": "Screenshot",
+                "lock_screen": "Lock Screen"
+            }
         },
         "launcher": {
             "position": {
@@ -570,6 +636,7 @@
             "custom": "Custom"
         },
         "dock": {
+            "title": "Dock",
             "enabled": {
                 "title": "Enable dock",
                 "desc": "Enable floating application dock"
@@ -670,8 +737,12 @@
             "app_name": "Update",
             "action_open_guide": "Open guide",
             "update_available_title": "Update available: v{remote}",
-            "update_available_body": "Current version: v{local}. Click to view changelog and update."
-        }
+            "update_available_body": "Current version: v{local}. Click to view changelog and update.",
+            "action_open_updater": "Open updater"
+        },
+        "checking": "Checking for updates...",
+        "git_protected": "GIT PROTECTED",
+        "config_locked": "CONFIG LOCKED"
     },
     "polkit": {
         "title": "Authentication required",
@@ -685,7 +756,13 @@
         "placeholder": "Start with > for a command...",
         "calc_result": "Calculation result (Enter to copy)",
         "command_hint": "Type a command to execute",
-        "command_run": "Execute command: {cmd}"
+        "command_run": "Execute command: {cmd}",
+        "translating": "Translating: {text}...",
+        "translate": "Translate: {text}",
+        "translation_desc": "Translation to {lang} — Press Enter to copy result",
+        "looking_up": "Looking up: {word}...",
+        "dictionary": "Dictionary: {word}",
+        "dictionary_desc": "Dictionary Definition — Press Enter to copy"
     },
     "calendar": {
         "loading": "Loading...",
@@ -714,7 +791,10 @@
         "clear": "Clear",
         "empty": "Nothing found",
         "recent": "Recent",
-        "pinned": "Pinned"
+        "pinned": "Pinned",
+        "all": "All",
+        "text": "Text",
+        "images": "Images"
     },
     "lock": {
         "status": {
@@ -729,13 +809,15 @@
             "power_off": "Power off"
         },
         "default_user": "User",
-        "unknown": "Unknown"
+        "unknown": "Unknown",
+        "lock_action": "Lock"
     },
     "music": {
         "nothing_playing": "Nothing is playing",
         "loading": "Loading...",
         "by_artist": "By {artist}",
         "unknown_artist": "Unknown artist",
+        "unknown_track": "Unknown track",
         "speaker": "Speaker",
         "via_source": "Via {source}",
         "offline": "Offline",
@@ -867,7 +949,11 @@
             "recording_started_body": "Press your screenshot shortcut again to stop.",
             "screenshot_saved_title": "Screenshot saved",
             "screenshot_saved_body": "File: {file}\nFolder: {folder}"
-        }
+        },
+        "gallery_title": "Screenshot Gallery",
+        "found_count": "{count} screenshots found",
+        "no_screenshots": "No screenshots yet",
+        "take_hint": "Take a screenshot to see it here"
     },
     "start": {
         "title": "Lucretia",
@@ -949,14 +1035,49 @@
         }
     },
     "weather": {
+        "codes": {
+            "0": "Clear sky",
+            "1": "Mainly clear",
+            "2": "Partly cloudy",
+            "3": "Overcast",
+            "45": "Fog",
+            "48": "Depositing rime fog",
+            "51": "Light drizzle",
+            "53": "Moderate drizzle",
+            "55": "Dense drizzle",
+            "56": "Light freezing drizzle",
+            "57": "Dense freezing drizzle",
+            "61": "Slight rain",
+            "63": "Moderate rain",
+            "65": "Heavy rain",
+            "66": "Light freezing rain",
+            "67": "Heavy freezing rain",
+            "71": "Slight snow",
+            "73": "Moderate snow",
+            "75": "Heavy snow",
+            "77": "Snow grains",
+            "80": "Slight showers",
+            "81": "Moderate showers",
+            "82": "Violent showers",
+            "85": "Slight snow showers",
+            "86": "Heavy snow showers",
+            "95": "Thunderstorm",
+            "96": "Thunderstorm with slight hail",
+            "99": "Thunderstorm with heavy hail"
+        },
         "desc": {
             "sunny": "Sunny",
             "clear": "Clear",
             "cloudy": "Cloudy",
+            "partly_cloudy": "Partly cloudy",
+            "overcast": "Overcast",
             "mist": "Mist",
+            "fog": "Fog",
+            "drizzle": "Drizzle",
             "rainy": "Rainy",
             "snow": "Snow",
             "storm": "Storm",
+            "thunder": "Thunderstorm",
             "unknown": "Unknown",
             "offline": "Offline"
         },
@@ -989,7 +1110,8 @@
             "oct": "Oct",
             "nov": "Nov",
             "dec": "Dec"
-        }
+        },
+        "feels_like": "Feels like {temp}"
     },
     "widgets": {
         "wallpaper": {
@@ -1061,7 +1183,8 @@
             "bloc": "Daily Almanac",
             "bars": "Bars",
             "continuous": "Continuous",
-            "default": "Default"
+            "default": "Default",
+            "notebook": "Notebook"
         },
         "picker": {
             "select_app": "Select Application",
@@ -1086,7 +1209,14 @@
     "notes": {
         "add_task": "Add a task...",
         "no_tasks": "No tasks yet",
-        "all_done": "All tasks completed!"
+        "all_done": "All tasks completed!",
+        "title": "My Notes",
+        "placeholder": "Start writing your thoughts...",
+        "select_hint": "Select a note to view or edit",
+        "untitled": "Untitled Note",
+        "pinned": "Pinned",
+        "saving": "Saving...",
+        "saved": "Saved"
     },
     "cli": {
         "usage": "Usage: lucretia [command] [options...]",
@@ -1301,5 +1431,15 @@
     },
     "datetime": {
         "full_date": "dddd, MMMM dd"
+    },
+    "photobooth": {
+        "title": "Photo Booth",
+        "no_photos": "No photos yet"
+    },
+    "services": {
+        "title": "Services Dashboard",
+        "search_placeholder": "Search services...",
+        "user": "USER",
+        "system": "SYSTEM"
     }
 }

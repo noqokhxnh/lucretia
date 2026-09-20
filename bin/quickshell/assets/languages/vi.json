@@ -81,7 +81,72 @@
             "validation_key": "Vui lòng chọn hoặc ghi một phím!",
             "validation_action": "Vui lòng nhập lệnh thực thi!",
             "all_categories": "Tất cả",
-            "reloaded": "Đã nạp lại từ config.kdl"
+            "reloaded": "Đã nạp lại từ config.kdl",
+            "guide_badge": "Hướng dẫn",
+            "categories": {
+                "all": "Tất cả",
+                "basic": "Cơ bản",
+                "resize": "Đổi cỡ",
+                "move": "Di chuyển",
+                "focus": "Tiêu điểm",
+                "apps": "Ứng dụng",
+                "panels": "Bảng điều khiển",
+                "audio_light": "Âm thanh & Độ sáng",
+                "screenshots": "Chụp màn hình",
+                "lock_media": "Khóa & Đa phương tiện",
+                "workspaces": "Không gian làm việc"
+            },
+            "actions": {
+                "close_window": "Đóng cửa sổ",
+                "toggle_floating": "Bật/tắt cửa sổ nổi",
+                "fullscreen": "Toàn màn hình",
+                "toggle_overview": "Bật/tắt tổng quan",
+                "decrease_column_width": "Giảm độ rộng cột",
+                "increase_column_width": "Tăng độ rộng cột",
+                "decrease_window_height": "Giảm chiều cao cửa sổ",
+                "increase_window_height": "Tăng chiều cao cửa sổ",
+                "move_column_left": "Chuyển cột sang trái",
+                "move_column_right": "Chuyển cột sang phải",
+                "move_window_up": "Chuyển cửa sổ lên trên",
+                "move_window_down": "Chuyển cửa sổ xuống dưới",
+                "focus_column_left": "Tiêu điểm sang trái",
+                "focus_column_right": "Tiêu điểm sang phải",
+                "focus_up_monitor": "Tiêu điểm lên trên / Màn hình",
+                "focus_down_monitor": "Tiêu điểm xuống dưới / Màn hình",
+                "screenshot_full": "Chụp toàn màn hình",
+                "screenshot_edit": "Chụp và chỉnh sửa ảnh",
+                "screenshot_area": "Chụp một vùng màn hình",
+                "lock_screen": "Khóa màn hình",
+                "reload_quickshell": "Tải lại Quickshell",
+                "toggle_panel": "Bật/tắt {panel}",
+                "move_to_workspace": "Chuyển tới Không gian {num}",
+                "switch_to_workspace": "Chuyển sang Không gian {num}",
+                "terminal": "Cửa sổ lệnh (foot)",
+                "browser": "Trình duyệt Web (Zen)",
+                "files": "Quản lý tệp (Nautilus)",
+                "brightness_up": "Tăng độ sáng",
+                "brightness_down": "Giảm độ sáng",
+                "toggle_mic_mute": "Bật/tắt micro",
+                "toggle_audio_mute": "Bật/tắt âm thanh",
+                "volume_up": "Tăng âm lượng",
+                "volume_down": "Giảm âm lượng",
+                "play_pause_media": "Phát / Tạm dừng đa phương tiện",
+                "caps_lock_indicator": "Chỉ báo Caps Lock"
+            },
+            "preset_items": {
+                "toggle_guide": "Bật/tắt Hướng dẫn",
+                "close_window": "Đóng cửa sổ",
+                "toggle_floating": "Bật/tắt cửa sổ nổi",
+                "fullscreen": "Toàn màn hình",
+                "overview": "Tổng quan",
+                "terminal": "Dòng lệnh",
+                "browser": "Trình duyệt",
+                "files": "Tệp tin",
+                "launcher": "Trình khởi chạy",
+                "clipboard": "Bộ nhớ tạm",
+                "screenshot": "Chụp màn hình",
+                "lock_screen": "Khóa màn hình"
+            }
         },
         "launcher": {
             "position": {
@@ -672,8 +737,12 @@
             "app_name": "Cập nhật",
             "action_open_guide": "Mở Cài đặt",
             "update_available_title": "Có bản cập nhật mới: v{remote}",
-            "update_available_body": "Phiên bản hiện tại: v{local}. Nhấn để xem lịch sử thay đổi và cập nhật."
-        }
+            "update_available_body": "Phiên bản hiện tại: v{local}. Nhấn để xem lịch sử thay đổi và cập nhật.",
+            "action_open_updater": "Mở trình cập nhật"
+        },
+        "checking": "Đang kiểm tra cập nhật...",
+        "git_protected": "BẢO VỆ BỞI GIT",
+        "config_locked": "KHÓA CẤU HÌNH"
     },
     "polkit": {
         "title": "Yêu cầu xác thực quyền quản trị",
@@ -687,7 +756,13 @@
         "placeholder": "Tìm kiếm ứng dụng hoặc gõ lệnh > ...",
         "calc_result": "Kết quả tính toán (Nhấn Enter để sao chép)",
         "command_hint": "Nhập lệnh để thực thi",
-        "command_run": "Chạy lệnh: {cmd}"
+        "command_run": "Chạy lệnh: {cmd}",
+        "translating": "Đang dịch: {text}...",
+        "translate": "Dịch: {text}",
+        "translation_desc": "Dịch sang {lang} — Nhấn Enter để sao chép kết quả",
+        "looking_up": "Đang tra cứu: {word}...",
+        "dictionary": "Từ điển: {word}",
+        "dictionary_desc": "Định nghĩa từ điển — Nhấn Enter để sao chép"
     },
     "calendar": {
         "loading": "Đang tải...",
@@ -716,7 +791,10 @@
         "clear": "Xóa toàn bộ",
         "empty": "Lịch sử clipboard trống",
         "recent": "Gần đây",
-        "pinned": "Đã ghim"
+        "pinned": "Đã ghim",
+        "all": "Tất cả",
+        "text": "Văn bản",
+        "images": "Hình ảnh"
     },
     "lock": {
         "status": {
@@ -731,13 +809,15 @@
             "power_off": "Tắt máy"
         },
         "default_user": "Người dùng",
-        "unknown": "Không xác định"
+        "unknown": "Không xác định",
+        "lock_action": "Khóa màn hình"
     },
     "music": {
         "nothing_playing": "Không có gì đang phát",
         "loading": "Đang tải...",
         "by_artist": "Bởi {artist}",
         "unknown_artist": "Nghệ sĩ không xác định",
+        "unknown_track": "Bài hát không rõ",
         "speaker": "Loa",
         "via_source": "Qua {source}",
         "offline": "Ngoại tuyến",
@@ -869,7 +949,11 @@
             "recording_started_body": "Nhấn phím tắt chụp màn hình một lần nữa để kết thúc quay.",
             "screenshot_saved_title": "Đã lưu ảnh chụp màn hình",
             "screenshot_saved_body": "Tệp: {file}\nThư mục: {folder}"
-        }
+        },
+        "gallery_title": "Thư viện ảnh chụp",
+        "found_count": "Đã tìm thấy {count} ảnh chụp màn hình",
+        "no_screenshots": "Chưa có ảnh chụp màn hình nào",
+        "take_hint": "Chụp màn hình để xem ảnh tại đây"
     },
     "start": {
         "title": "Lucretia",
@@ -951,14 +1035,49 @@
         }
     },
     "weather": {
+        "codes": {
+            "0": "Trời quang đãng",
+            "1": "Ít mây",
+            "2": "Mây rải rác",
+            "3": "Trời âm u",
+            "45": "Sương mù",
+            "48": "Sương mù đóng băng",
+            "51": "Mưa phùn nhẹ",
+            "53": "Mưa phùn vừa",
+            "55": "Mưa phùn dày hạt",
+            "56": "Mưa phùn buốt giá nhẹ",
+            "57": "Mưa phùn buốt giá dày hạt",
+            "61": "Mưa nhỏ",
+            "63": "Mưa vừa",
+            "65": "Mưa to",
+            "66": "Mưa buốt giá nhẹ",
+            "67": "Mưa buốt giá to",
+            "71": "Tuyết rơi nhẹ",
+            "73": "Tuyết rơi vừa",
+            "75": "Tuyết rơi dày",
+            "77": "Hạt tuyết",
+            "80": "Mưa rào nhẹ",
+            "81": "Mưa rào vừa",
+            "82": "Mưa rào lớn",
+            "85": "Mưa tuyết nhẹ",
+            "86": "Mưa tuyết dày",
+            "95": "Giông bão",
+            "96": "Mưa đá có sấm giông",
+            "99": "Mưa đá có sấm giông dữ dội"
+        },
         "desc": {
             "sunny": "Trời nắng",
             "clear": "Trời quang",
             "cloudy": "Nhiều mây",
+            "partly_cloudy": "Mây rải rác",
+            "overcast": "Trời âm u",
             "mist": "Sương mù",
+            "fog": "Sương mù",
+            "drizzle": "Mưa phùn",
             "rainy": "Có mưa",
             "snow": "Có tuyết",
             "storm": "Có bão giông",
+            "thunder": "Có sấm sét",
             "unknown": "Không rõ",
             "offline": "Ngoại tuyến"
         },
@@ -991,7 +1110,8 @@
             "oct": "Thg 10",
             "nov": "Thg 11",
             "dec": "Thg 12"
-        }
+        },
+        "feels_like": "Cảm giác như {temp}"
     },
     "widgets": {
         "wallpaper": {
@@ -1063,7 +1183,8 @@
             "rounded": "Bo góc",
             "default": "Mặc định",
             "bars": "Cột sóng",
-            "continuous": "Sóng liên tục"
+            "continuous": "Sóng liên tục",
+            "notebook": "Sổ ghi chép"
         },
         "picker": {
             "select_app": "Chọn ứng dụng",
@@ -1088,7 +1209,14 @@
     "notes": {
         "add_task": "Thêm công việc...",
         "no_tasks": "Chưa có công việc nào",
-        "all_done": "Đã hoàn thành tất cả!"
+        "all_done": "Đã hoàn thành tất cả!",
+        "title": "Ghi chú của tôi",
+        "placeholder": "Bắt đầu viết suy nghĩ của bạn...",
+        "select_hint": "Chọn một ghi chú để xem hoặc chỉnh sửa",
+        "untitled": "Ghi chú không tên",
+        "pinned": "Đã ghim",
+        "saving": "Đang lưu...",
+        "saved": "Đã lưu"
     },
     "cli": {
         "usage": "Cách dùng: Lucretia [lệnh] [tùy chọn...]",
@@ -1303,5 +1431,15 @@
         "auto_paste_sub": "Nếu tắt — bản dịch chỉ được sao chép vào clipboard",
         "keep_clipboard": "Giữ bản dịch trong clipboard",
         "keep_clipboard_sub": "Nếu tắt — khôi phục nội dung clipboard ban đầu sau khi dán"
+    },
+    "photobooth": {
+        "title": "Photo Booth",
+        "no_photos": "Chưa có ảnh nào"
+    },
+    "services": {
+        "title": "Bảng điều khiển dịch vụ",
+        "search_placeholder": "Tìm kiếm dịch vụ...",
+        "user": "NGƯỜI DÙNG",
+        "system": "HỆ THỐNG"
     }
 }

@@ -654,7 +654,7 @@ Item {
                                     RowLayout {
                                         anchors.fill: parent
                                         anchors.leftMargin: root.s(15); anchors.rightMargin: root.s(15)
-                                        Text { text: "Lap " + (trueIdx + 1); color: root.cSubtext0; font.family: "JetBrains Mono"; font.pixelSize: root.s(12); font.bold: true; Layout.fillWidth: true }
+                                        Text { text: typeof I18n !== "undefined" ? I18n.t("quickactions.timer.stopwatch.lap", { number: trueIdx + 1 }) : ("Lap " + (trueIdx + 1)); color: root.cSubtext0; font.family: "JetBrains Mono"; font.pixelSize: root.s(12); font.bold: true; Layout.fillWidth: true }
                                         Text { text: lapItem ? "+" + root.formatTime(lapItem.diff, true) : ""; color: root.cMauve; font.family: "JetBrains Mono"; font.pixelSize: root.s(12) }
                                         Text { text: lapItem ? root.formatTime(lapItem.total, true) : ""; color: root.cText; font.family: "JetBrains Mono"; font.pixelSize: root.s(12); font.bold: true; Layout.alignment: Qt.AlignRight }
                                     }
@@ -802,14 +802,14 @@ Item {
 
                             Repeater {
                                 model: [
-                                    { label: "Work (m)", target: "pomoWorkLimit", step: 5, min: 5, max: 60 },
-                                    { label: "Short Break (m)", target: "pomoShortBreakLimit", step: 1, min: 1, max: 15 },
-                                    { label: "Long Break (m)", target: "pomoLongBreakLimit", step: 5, min: 5, max: 45 },
-                                    { label: "Sessions", target: "pomoTargetSessions", step: 1, min: 1, max: 10 }
+                                    { key: "work", target: "pomoWorkLimit", step: 5, min: 5, max: 60 },
+                                    { key: "short_break", target: "pomoShortBreakLimit", step: 1, min: 1, max: 15 },
+                                    { key: "long_break", target: "pomoLongBreakLimit", step: 5, min: 5, max: 45 },
+                                    { key: "sessions", target: "pomoTargetSessions", step: 1, min: 1, max: 10 }
                                 ]
                                 RowLayout {
                                     width: root.s(240)
-                                    Text { text: modelData.label; color: root.cSubtext0; font.family: "JetBrains Mono"; font.pixelSize: root.s(12); Layout.fillWidth: true }
+                                    Text { text: typeof I18n !== "undefined" ? I18n.t("quickactions.timer.pomodoro.settings." + modelData.key) : modelData.key; color: root.cSubtext0; font.family: "JetBrains Mono"; font.pixelSize: root.s(12); Layout.fillWidth: true }
                                     Rectangle {
                                         width: root.s(24); height: root.s(24); radius: root.s(6); color: root.cSurface1
                                         Text { anchors.centerIn: parent; text: "-"; color: root.cText; font.family: "JetBrains Mono"; font.pixelSize: root.s(14) }

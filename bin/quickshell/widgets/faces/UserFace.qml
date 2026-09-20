@@ -66,7 +66,7 @@ Item {
                         contentAlignment: Qt.AlignLeft
                         buttonIcon: ""
                         iconFontSize: Scaler.s(15)
-                        buttonText: SystemInfo.username !== "" ? SystemInfo.username : "User"
+                        buttonText: SystemInfo.username !== "" ? SystemInfo.username : (typeof I18n !== "undefined" ? I18n.t("widgets.types.user") : "User")
                         textFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
                         textColor: ThemeBackend.text
@@ -81,7 +81,7 @@ Item {
                         contentAlignment: Qt.AlignLeft
                         buttonIcon: ""
                         iconFontSize: Scaler.s(15)
-                        buttonText: "Lock"
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("lock.lock_action") : "Lock"
                         textFontSize: Scaler.s(12)
                         accentColor: ThemeBackend.surface1
                         textColor: ThemeBackend.mauve

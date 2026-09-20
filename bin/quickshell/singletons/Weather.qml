@@ -15,7 +15,40 @@ Item {
     property string currentHex: (data && data.hex) ? data.hex : "#89b4fa"
     property string unitSym: (data && data.unit_sym) ? data.unit_sym : "°C"
     property string city: (data && data.city) ? data.city : ""
-    property string description: (data && data.description) ? data.description : ""
+    property string description: {
+        let _lang = (typeof I18n !== "undefined") ? I18n.currentLang : "en";
+        return (data && (data.code !== undefined || data.description)) ? getLocalizedDesc(data.code, data.description) : "";
+    }
+
+    function getLocalizedDesc(code, fallbackDesc) {
+        let _lang = (typeof I18n !== "undefined") ? I18n.currentLang : "en";
+        if (typeof I18n === "undefined" || !I18n.isReady) {
+            return fallbackDesc || "";
+        }
+        let c = parseInt(code);
+        if (!isNaN(c) && c >= 0) {
+            let codeKey = "weather.codes." + c;
+            let trans = I18n.t(codeKey);
+            if (trans !== codeKey) {
+                return trans;
+            }
+        }
+        if (fallbackDesc) {
+            let lower = String(fallbackDesc).toLowerCase().trim();
+            if (lower.indexOf("clear") !== -1) return I18n.t("weather.desc.clear");
+            if (lower.indexOf("sun") !== -1) return I18n.t("weather.desc.sunny");
+            if (lower.indexOf("partly") !== -1) return I18n.t("weather.desc.partly_cloudy");
+            if (lower.indexOf("overcast") !== -1) return I18n.t("weather.desc.overcast");
+            if (lower.indexOf("cloud") !== -1) return I18n.t("weather.desc.cloudy");
+            if (lower.indexOf("drizzle") !== -1) return I18n.t("weather.desc.drizzle");
+            if (lower.indexOf("rain") !== -1 || lower.indexOf("shower") !== -1) return I18n.t("weather.desc.rainy");
+            if (lower.indexOf("snow") !== -1) return I18n.t("weather.desc.snow");
+            if (lower.indexOf("fog") !== -1 || lower.indexOf("mist") !== -1) return I18n.t("weather.desc.fog");
+            if (lower.indexOf("storm") !== -1 || lower.indexOf("thunder") !== -1) return I18n.t("weather.desc.storm");
+            return fallbackDesc;
+        }
+        return I18n.t("weather.desc.unknown");
+    }
 
     property bool isLoading: false
     property bool isReady: data && data.temp !== undefined
@@ -26,6 +59,13 @@ Item {
         target: QsDaemonClient
         function onWeatherReceived(weatherPayload) {
             root.data = weatherPayload;
+            root.weatherUpdated();
+        }
+    }
+
+    Connections {
+        target: typeof I18n !== "undefined" ? I18n : null
+        function onLanguageChanged() {
             root.weatherUpdated();
         }
     }

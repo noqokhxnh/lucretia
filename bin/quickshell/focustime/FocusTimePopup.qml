@@ -673,7 +673,7 @@ Item {
                                         font.weight: Font.DemiBold
                                         font.pixelSize: window.s(14)
                                         color: window.subtext0
-                                        text: "Daily average"
+                                        text: typeof I18n !== "undefined" ? I18n.t("guide.wellbeing.daily_average") : "Daily average"
                                     }
                                     Text {
                                         Layout.alignment: Qt.AlignHCenter
@@ -772,7 +772,7 @@ Item {
                                         font.weight: Font.DemiBold
                                         font.pixelSize: window.s(15)
                                         color: window.overlay0
-                                        text: (window.totalSeconds === 0 && window.yesterdaySeconds === 0) ? "No data" : "Same time"
+                                        text: (window.totalSeconds === 0 && window.yesterdaySeconds === 0) ? (typeof I18n !== "undefined" ? I18n.t("guide.wellbeing.no_data") : "No data") : (typeof I18n !== "undefined" ? I18n.t("guide.wellbeing.same_time") : "Same time")
                                         visible: (window.totalSeconds === 0 && window.yesterdaySeconds === 0) || window.totalSeconds === window.yesterdaySeconds
                                     }
                                 }
@@ -1100,7 +1100,7 @@ Item {
                                         font.weight: Font.DemiBold
                                         font.pixelSize: window.s(14)
                                         color: window.text
-                                        text: "Daily usage"
+                                        text: typeof I18n !== "undefined" ? I18n.t("guide.wellbeing.daily_usage") : "Daily usage"
                                     }
 
                                     RowLayout {
@@ -1312,7 +1312,7 @@ Item {
                                                 font.weight: Font.Medium
                                                 font.pixelSize: window.s(12)
                                                 color: window.subtext0
-                                                text: "Daily average"
+                                                text: typeof I18n !== "undefined" ? I18n.t("guide.wellbeing.daily_average") : "Daily average"
                                             }
                                             Text {
                                                 Layout.alignment: Qt.AlignHCenter
@@ -1341,7 +1341,7 @@ Item {
                                                 font.weight: Font.Medium
                                                 font.pixelSize: window.s(12)
                                                 color: window.subtext0
-                                                text: "Peak hours"
+                                                text: typeof I18n !== "undefined" ? I18n.t("guide.wellbeing.peak_hours") : "Peak hours"
                                             }
                                             Text {
                                                 Layout.alignment: Qt.AlignHCenter

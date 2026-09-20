@@ -320,7 +320,7 @@ Item {
             value: root.cpuUsage
             colorFill: Qt.lighter(root.cMauve, 1.4) 
             icon: "\uF2DB" 
-            title: "CPU"
+            title: typeof I18n !== "undefined" ? I18n.t("quickactions.systemusage.cpu") : "CPU"
             valueText: Math.round(root.cpuUsage * 100) + "%"
         }
 
@@ -333,7 +333,7 @@ Item {
             value: root.ramUsage
             colorFill: Qt.lighter(root.cMauve, 1.2) 
             icon: "\uF538" 
-            title: "RAM"
+            title: typeof I18n !== "undefined" ? I18n.t("quickactions.systemusage.ram") : "RAM"
             valueText: root.ramUsedGb.toFixed(1) + "G"
         }
 
@@ -346,7 +346,7 @@ Item {
             value: Math.max(0.0, Math.min(1.0, root.tempC / 100.0))
             colorFill: root.cMauve 
             icon: "\uF2C9"
-            title: "TEMP"
+            title: typeof I18n !== "undefined" ? I18n.t("quickactions.systemusage.temp") : "TEMP"
             valueText: Math.round(root.tempC) + "°"
         }
 
@@ -359,7 +359,7 @@ Item {
             value: root.diskUsagePercent
             colorFill: Qt.darker(root.cMauve, 1.2) 
             icon: "\uF0A0"
-            title: "DISK"
+            title: typeof I18n !== "undefined" ? I18n.t("quickactions.systemusage.disk") : "DISK"
             subText: root.diskUsageText
             valueText: Math.round(root.diskUsagePercent * 100) + "%"
         }
@@ -373,7 +373,7 @@ Item {
             value: 0.12 
             colorFill: Qt.darker(root.cMauve, 1.4) 
             icon: "󰤨"
-            title: "NET"
+            title: typeof I18n !== "undefined" ? I18n.t("quickactions.systemusage.net") : "NET"
             valueText: ""
 
             ColumnLayout {

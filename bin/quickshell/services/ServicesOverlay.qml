@@ -84,7 +84,7 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
                 Text {
-                    text: "󰒓 Services Dashboard"
+                    text: "󰒓 " + (typeof I18n !== "undefined" ? I18n.t("services.title") : "Services Dashboard")
                     font.family: "JetBrains Mono"
                     font.weight: Font.Bold
                     font.pixelSize: s(28)
@@ -131,7 +131,7 @@ Item {
                     TextField {
                         id: searchField
                         Layout.fillWidth: true
-                        placeholderText: "Search services..."
+                        placeholderText: typeof I18n !== "undefined" ? I18n.t("services.search_placeholder") : "Search services..."
                         font.family: "JetBrains Mono"
                         font.pixelSize: s(18)
                         color: theme.text
@@ -199,7 +199,7 @@ Item {
                                     Text {
                                         id: userText
                                         anchors.centerIn: parent
-                                        text: model.is_user ? "USER" : "SYSTEM"
+                                        text: model.is_user ? (typeof I18n !== "undefined" ? I18n.t("services.user") : "USER") : (typeof I18n !== "undefined" ? I18n.t("services.system") : "SYSTEM")
                                         font.family: "JetBrains Mono"
                                         font.pixelSize: s(12)
                                         color: model.is_user ? theme.blue : theme.mauve

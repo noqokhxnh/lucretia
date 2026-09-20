@@ -1058,7 +1058,7 @@ PanelWindow {
                         Layout.preferredHeight: clipboardWindow.s(28)
                         horizontalPadding: clipboardWindow.s(10)
                         cornerRadius: Math.min(ThemeBackend.borderRadius, clipboardWindow.s(8))
-                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.all", "All") : "All"
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.all") : "All"
                         buttonIcon: "󰏫"
                         iconFontSize: clipboardWindow.s(12)
                         textFontSize: clipboardWindow.s(10.5)
@@ -1075,7 +1075,7 @@ PanelWindow {
                         Layout.preferredHeight: clipboardWindow.s(28)
                         horizontalPadding: clipboardWindow.s(10)
                         cornerRadius: Math.min(ThemeBackend.borderRadius, clipboardWindow.s(8))
-                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.text", "Text") : "Text"
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.text") : "Text"
                         buttonIcon: "󰈙"
                         iconFontSize: clipboardWindow.s(12)
                         textFontSize: clipboardWindow.s(10.5)
@@ -1092,7 +1092,7 @@ PanelWindow {
                         Layout.preferredHeight: clipboardWindow.s(28)
                         horizontalPadding: clipboardWindow.s(10)
                         cornerRadius: Math.min(ThemeBackend.borderRadius, clipboardWindow.s(8))
-                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.images", "Images") : "Images"
+                        buttonText: typeof I18n !== "undefined" ? I18n.t("clipboard.images") : "Images"
                         buttonIcon: "󰋩"
                         iconFontSize: clipboardWindow.s(12)
                         textFontSize: clipboardWindow.s(10.5)

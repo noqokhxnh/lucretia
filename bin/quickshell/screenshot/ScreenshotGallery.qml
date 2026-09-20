@@ -106,7 +106,7 @@ Item {
             }
 
             Text {
-                text: "Screenshot Gallery"
+                text: typeof I18n !== "undefined" ? I18n.t("screenshot.gallery_title") : "Screenshot Gallery"
                 font.family: "Outfit"
                 font.pixelSize: s(26)
                 font.weight: Font.Bold
@@ -162,7 +162,7 @@ Item {
 
         // Info bar
         Text {
-            text: screenshotModel.count + " screenshots found"
+            text: typeof I18n !== "undefined" ? I18n.t("screenshot.found_count", { count: screenshotModel.count }) : (screenshotModel.count + " screenshots found")
             font.family: "JetBrains Mono"
             font.pixelSize: s(12)
             color: mocha.subtext0
@@ -187,7 +187,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
                 Text {
-                    text: "No screenshots yet"
+                    text: typeof I18n !== "undefined" ? I18n.t("screenshot.no_screenshots") : "No screenshots yet"
                     font.family: "Outfit"
                     font.pixelSize: s(20)
                     font.weight: Font.DemiBold
@@ -195,7 +195,7 @@ Item {
                     anchors.horizontalCenter: parent.horizontalCenter
                 }
                 Text {
-                    text: "Take a screenshot to see it here"
+                    text: typeof I18n !== "undefined" ? I18n.t("screenshot.take_hint") : "Take a screenshot to see it here"
                     font.family: "Outfit"
                     font.pixelSize: s(14)
                     color: mocha.overlay0

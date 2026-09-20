@@ -257,7 +257,7 @@ Item {
                             spacing: titleClip.marqueeSpacing
                             Text {
                                 id: titleTextMain
-                                text: root.isMediaActive ? (MprisController.trackTitle || "Unknown Track") : I18n.t("music.nothing_playing")
+                                text: root.isMediaActive ? (MprisController.trackTitle || I18n.t("music.unknown_track")) : I18n.t("music.nothing_playing")
                                 font.family: ThemeBackend.fontFamily
                                 font.weight: Font.Black
                                 font.pixelSize: root.titleSize
@@ -296,7 +296,7 @@ Item {
                 }
 
                 Text {
-                    text: root.isMediaActive ? (MprisController.trackArtist || "Unknown Artist") : ""
+                    text: root.isMediaActive ? (MprisController.trackArtist || I18n.t("music.unknown_artist")) : ""
                     font.family: ThemeBackend.fontFamily
                     font.weight: Font.Medium
                     font.pixelSize: root.subSize

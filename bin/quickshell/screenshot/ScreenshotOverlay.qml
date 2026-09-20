@@ -216,6 +216,9 @@ PanelWindow {
 
         root.isActive = true;
         root.isLoading = false;
+        if (!root.visible) {
+            root.visible = Qt.binding(function() { return root.isActive; });
+        }
 
         Qt.callLater(() => {
             root.animateChanges = true;
@@ -1507,7 +1510,6 @@ PanelWindow {
 
         captureTimer.pendingCmd = cmd;
         root.animateChanges = false;
-        root.visible = false;
         captureTimer.start();
         root.deactivate();
     }

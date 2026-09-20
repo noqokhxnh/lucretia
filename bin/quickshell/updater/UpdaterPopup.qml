@@ -252,7 +252,7 @@ Item {
                             anchors.centerIn: parent
                             spacing: window.s(6)
                             Text { text: window.isGitRepo ? "󰊢" : "󰒳"; font.family: "Iosevka Nerd Font"; color: window.mauve; font.pixelSize: window.s(14) }
-                            Text { text: window.isGitRepo ? "GIT PROTECTED" : "CONFIG LOCKED"; font.family: "JetBrains Mono"; font.weight: Font.Black; color: window.mauve; font.pixelSize: window.s(10) }
+                            Text { text: window.isGitRepo ? (typeof I18n !== "undefined" ? I18n.t("updater.git_protected") : "GIT PROTECTED") : (typeof I18n !== "undefined" ? I18n.t("updater.config_locked") : "CONFIG LOCKED"); font.family: "JetBrains Mono"; font.weight: Font.Black; color: window.mauve; font.pixelSize: window.s(10) }
                         }
                     }
                 }
@@ -371,7 +371,7 @@ Item {
 
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        text: "Checking for updates..."
+                        text: typeof I18n !== "undefined" ? I18n.t("updater.checking") : "Checking for updates..."
                         font.family: "JetBrains Mono"
                         font.pixelSize: window.s(13)
                         color: window.subtext0

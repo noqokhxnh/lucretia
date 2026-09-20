@@ -200,7 +200,7 @@ Item {
             if (cmd.length > 0) {
                 filtered.push({
                     name: "> " + cmd,
-                    description: "Execute command: " + cmd,
+                    description: typeof I18n !== "undefined" ? I18n.t("applauncher.command_run", { cmd: cmd }) : ("Execute command: " + cmd),
                     desktop_id: "",
                     icon: "",
                     fontIcon: "󰆍",
@@ -214,7 +214,7 @@ Item {
             } else {
                 filtered.push({
                     name: "> ...",
-                    description: "Type a command to execute",
+                    description: typeof I18n !== "undefined" ? I18n.t("applauncher.command_hint") : "Type a command to execute",
                     desktop_id: "",
                     icon: "",
                     fontIcon: "󰆍",
@@ -232,7 +232,7 @@ Item {
         if (mathResult !== null) {
             filtered.push({
                 name: rawTrimmed + " = " + mathResult,
-                description: "Calculation result (Enter to copy)",
+                description: typeof I18n !== "undefined" ? I18n.t("applauncher.calc_result") : "Calculation result (Enter to copy)",
                 desktop_id: "",
                 icon: "",
                 fontIcon: "󰃬",

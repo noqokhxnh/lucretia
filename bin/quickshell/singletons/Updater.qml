@@ -56,7 +56,7 @@ Item {
 
     function sendNotification() {
         let appName = I18n.t("updater.notification.app_name");
-        let actionText = I18n.t("updater.notification.action_open_updater", I18n.t("updater.notification.action_open_guide", "Open updater"));
+        let actionText = I18n.t("updater.notification.action_open_updater");
         let notifTitle = I18n.t("updater.notification.update_available_title", { "remote": root.remoteVersion });
         let notifBody = I18n.t("updater.notification.update_available_body", { "local": root.localVersion });
         let actionArg = "default=" + actionText;
