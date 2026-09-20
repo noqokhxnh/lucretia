@@ -12,6 +12,7 @@ Item {
     property string remoteVersion: ""
     property bool updateAvailable: false
     property string lastNotifiedVersion: ""
+    property string updaterBin: Quickshell.env("HOME") + "/.config/niri/bin/quickshell/updater/updater_backend"
 
     function parseVersion(v) {
         if (!v) return [0];
@@ -45,8 +46,7 @@ Item {
         if (typeof Caching === "undefined" || !Caching.lucretiaDir) return;
         let stateDir = Caching.getStateDir();
         Quickshell.execDetached([
-            "python3",
-            Caching.lucretiaDir + "/scripts/updater.py",
+            root.updaterBin,
             "--state-dir",
             stateDir,
             "--save-notified",
@@ -171,8 +171,7 @@ Item {
         id: checkDelayProc
         running: false
         command: [
-            "python3",
-            (typeof Caching !== "undefined" ? Caching.lucretiaDir : "") + "/scripts/updater.py",
+            root.updaterBin,
             "--state-dir",
             (typeof Caching !== "undefined" ? Caching.getStateDir() : ""),
             "--delay"
@@ -195,10 +194,10 @@ Item {
         id: updateProc
         running: false
         command: [
-            "python3",
-            (typeof Caching !== "undefined" ? Caching.lucretiaDir : "") + "/scripts/updater.py",
+            root.updaterBin,
             "--state-dir",
-            (typeof Caching !== "undefined" ? Caching.getStateDir() : "")
+            (typeof Caching !== "undefined" ? Caching.getStateDir() : ""),
+            "--check"
         ]
         stdout: StdioCollector {
             onStreamFinished: {
