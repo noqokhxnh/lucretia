@@ -238,7 +238,13 @@ Item {
                             fillDuration: 1200
 
                             onTriggered: {
-                                let cmd = "if command -v kitty >/dev/null 2>&1; then kitty --hold bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/master/install/install.sh)\"'; else ${TERM:-xterm} -hold -e bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/master/install/install.sh)\"'; fi";
+                                let scriptPath = Quickshell.env("HOME") + "/.config/niri/bin/updater.sh";
+                                let runner = "if [ -f \"" + scriptPath + "\" ]; then bash \"" + scriptPath + "\"; else bash -c 'eval \"$(curl -fsSL https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh)\"'; fi";
+                                let cmd = "if command -v foot >/dev/null 2>&1; then foot --hold bash -c '" + runner + "'; " +
+                                          "elif command -v kitty >/dev/null 2>&1; then kitty --hold bash -c '" + runner + "'; " +
+                                          "elif command -v ghostty >/dev/null 2>&1; then ghostty -e bash -c '" + runner + "; echo; read -n 1 -s -r -p \"Press any key to close...\"'; " +
+                                          "elif command -v alacritty >/dev/null 2>&1; then alacritty --hold -e bash -c '" + runner + "'; " +
+                                          "else ${TERM:-xterm} -hold -e bash -c '" + runner + "'; fi";
                                 Quickshell.execDetached(["bash", "-c", cmd]);
                                 Quickshell.execDetached(["bash", Quickshell.env("HOME") + "/.config/niri/bin/qs_manager.sh", "close"]);
                             }

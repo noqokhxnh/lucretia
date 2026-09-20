@@ -52,19 +52,22 @@ if [ "$IS_GIT" = true ]; then
     git -C "$REPO_DIR" fetch --quiet || warn "Không thể kết nối tới remote để fetch. Tiếp tục với phiên bản cục bộ..."
 
     # ─────────────────────────────────────────────
-    # Show changelog
+    # Resolve remote reference & check divergence
     # ─────────────────────────────────────────────
-    info "Các thay đổi mới nhất:"
-    echo ""
-    # Try @{u} first, then origin/main, then origin/<current_branch>
     current_branch=$(git -C "$REPO_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
     remote_ref=""
-    for ref in "@{u}" "origin/main" "origin/$current_branch"; do
-        if git -C "$REPO_DIR" rev-parse "$ref" &>/dev/null 2>&1; then
+    for ref in "@{u}" "origin/$current_branch" "origin/main"; do
+        if git -C "$REPO_DIR" rev-parse --verify "$ref" &>/dev/null 2>&1; then
             remote_ref="$ref"
             break
         fi
     done
+
+    # ─────────────────────────────────────────────
+    # Show changelog
+    # ─────────────────────────────────────────────
+    info "Các thay đổi mới nhất:"
+    echo ""
     if [ -n "$remote_ref" ]; then
         git -C "$REPO_DIR" log --oneline --decorate -10 "$remote_ref" 2>/dev/null || true
     else
@@ -72,56 +75,72 @@ if [ "$IS_GIT" = true ]; then
     fi
     echo ""
 
-    # Pause for user to read changelog
-    echo -e "${C_YELLOW}:: Nhấn Enter để tiếp tục cập nhật...${C_RESET}"
-    read -r || true
-    echo ""
-
-    # Get local and remote HEAD commit hashes for the active branch
-    local_head=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null || echo "")
-    # Check if there is an upstream tracking branch configured
-    upstream_branch=$(git -C "$REPO_DIR" rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "")
-    if [ -n "$upstream_branch" ]; then
-        remote_head=$(git -C "$REPO_DIR" rev-parse @{u} 2>/dev/null || echo "")
-    else
-        # Fallback to local HEAD if no upstream tracking branch
-        remote_head="$local_head"
+    # Pause for user to read changelog if running in an interactive terminal
+    if [ -t 0 ]; then
+        echo -e "${C_YELLOW}:: Nhấn Enter để tiếp tục cập nhật...${C_RESET}"
+        read -r || true
+        echo ""
     fi
 
-    # Check if we actually have updates to pull
-    has_updates=true
-    if [ "$local_head" = "$remote_head" ] && [ -n "$local_head" ]; then
-        has_updates=false
+    behind_count=0
+    ahead_count=0
+    if [ -n "$remote_ref" ]; then
+        behind_count=$(git -C "$REPO_DIR" rev-list --count HEAD.."$remote_ref" 2>/dev/null || echo 0)
+        ahead_count=$(git -C "$REPO_DIR" rev-list --count "$remote_ref"..HEAD 2>/dev/null || echo 0)
     fi
 
-    # Pull updates if any, stashing dirty changes if needed
+    has_updates=false
+    if [ "$behind_count" -gt 0 ]; then
+        has_updates=true
+        info "Phát hiện $behind_count commit mới từ remote ($remote_ref)."
+    elif [ "$ahead_count" -gt 0 ]; then
+        info "Cấu hình local của bạn đang có $ahead_count commit đi trước remote ($remote_ref)."
+    fi
+
+    # Pull updates if any, stashing dirty changes (including untracked) if needed
     if [ "$has_updates" = true ]; then
         info "Đang kéo (pull) cập nhật mới nhất từ GitHub remote..."
-        
-        # Check for dirty work tree
+
+        # Check for dirty work tree (including untracked files)
         stashed=false
-        if ! git -C "$REPO_DIR" diff-index --quiet HEAD -- 2>/dev/null; then
-            info "Phát hiện thay đổi chưa lưu (dirty working tree). Đang tự động lưu tạm (stash)..."
-            if git -C "$REPO_DIR" stash push -m "updater auto-stash" --quiet; then
+        if [ -n "$(git -C "$REPO_DIR" status --porcelain 2>/dev/null)" ]; then
+            info "Phát hiện thay đổi chưa lưu hoặc file mới. Đang tự động lưu tạm (stash)..."
+            if git -C "$REPO_DIR" stash push -u -m "updater auto-stash $(date +%s)" --quiet 2>/dev/null; then
                 stashed=true
+            else
+                warn "Không thể tự động stash. Tiếp tục thử pull..."
             fi
         fi
 
         # Pull updates
-        if git -C "$REPO_DIR" pull; then
-            success "Đã cập nhật repository thành công."
-        else
-            warn "Không thể tự động 'git pull'. Có thể có xung đột cấu hình cục bộ."
+        pull_success=true
+        if ! git -C "$REPO_DIR" pull; then
+            pull_success=false
+            error "Không thể tự động 'git pull'. Có thể do xung đột lịch sử commit hoặc mạng."
         fi
 
         # Restore dirty changes if stashed
         if [ "$stashed" = true ]; then
             info "Đang khôi phục các thay đổi cục bộ trước đó (stash pop)..."
-            git -C "$REPO_DIR" stash pop --quiet || warn "Có xung đột xảy ra khi khôi phục các thay đổi cục bộ của bạn."
+            if ! git -C "$REPO_DIR" stash pop --quiet; then
+                warn "Xung đột xảy ra khi khôi phục các thay đổi cục bộ của bạn!"
+                unmerged=$(git -C "$REPO_DIR" diff --name-only --diff-filter=U 2>/dev/null || true)
+                if [ -n "$unmerged" ]; then
+                    error "Các file đang gặp xung đột merge:"
+                    echo -e "${C_YELLOW}$unmerged${C_RESET}"
+                    die "ĐÃ DỪNG CẬP NHẬT để bảo vệ dữ liệu cấu hình. Vui lòng giải quyết xung đột thủ công trước khi chạy installer."
+                fi
+            fi
         fi
+
+        if [ "$pull_success" = false ]; then
+            die "Cập nhật bị hủy vì git pull thất bại. Dữ liệu của bạn được giữ an toàn."
+        fi
+
+        success "Đã cập nhật repository thành công."
     else
         success "Cấu hình local của bạn đã ở phiên bản mới nhất."
-        
+
         # Prompt if run interactively, otherwise exit early
         if [ -t 0 ]; then
             echo -n -e "${C_YELLOW}:: Bạn có muốn chạy lại trình cài đặt (reinstall) để sửa lỗi/áp dụng lại cấu hình không? (y/N): ${C_RESET}"
@@ -135,11 +154,11 @@ if [ "$IS_GIT" = true ]; then
             exit 0
         fi
     fi
-    
+
     # Run the updated local installer
     info "Đang chạy installer để build/áp dụng cấu hình..."
     echo ""
-    bash "$REPO_DIR/install.sh" "$@"
+    bash "$REPO_DIR/install.sh" --non-interactive "$@"
     exit 0
 fi
 

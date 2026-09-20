@@ -6,7 +6,7 @@ import time
 import urllib.request
 
 REPO = "noqokhxnh/lucretia"
-DEFAULT_VER = "1.4.3"
+DEFAULT_VER = "2.0.3"
 
 state_dir = os.path.expanduser("~/.local/state/lucretia")
 if "--state-dir" in sys.argv:
@@ -109,11 +109,16 @@ remote_ver = ""
 
 try:
     req = urllib.request.Request(
-        f"https://raw.githubusercontent.com/{REPO}/master/version.txt",
+        f"https://raw.githubusercontent.com/{REPO}/main/install.sh",
         headers={"User-Agent": "updater-script"}
     )
     res = urllib.request.urlopen(req, timeout=5)
-    remote_ver = res.read().decode("utf-8").strip()
+    content = res.read().decode("utf-8")
+    m = re.search(r'^(?:DOTS_VERSION|DOT_VERSION)=["\']?([^"\'\n]+)', content, re.MULTILINE)
+    if m:
+        remote_ver = m.group(1).strip()
+    else:
+        remote_ver = local_ver
 except Exception:
     remote_ver = local_ver
 

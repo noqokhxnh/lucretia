@@ -5,6 +5,13 @@ if ! tput colors &>/dev/null; then
     export TERM=xterm-256color
 fi
 
+# STDIN Self-Healing when piped via `curl ... | bash`
+if [ ! -t 0 ]; then
+    if [ -e /dev/tty ] && [ -r /dev/tty ]; then
+        exec < /dev/tty
+    fi
+fi
+
 # ==============================================================================
 # Premium Niri & Quickshell Desktop Environment Installer
 # ==============================================================================
@@ -140,10 +147,14 @@ WEATHER_UNIT=""
 FAILED_PKGS=()
 
 TARGET_BRANCH="main"
+NON_INTERACTIVE=false
+FAST_UPDATE_REQUESTED=false
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         --dev) TARGET_BRANCH="dev"; shift ;;
+        --non-interactive|--unattended|-y|--yes) NON_INTERACTIVE=true; shift ;;
+        --update) FAST_UPDATE_REQUESTED=true; NON_INTERACTIVE=true; shift ;;
         *) shift ;;
     esac
 done
@@ -1014,10 +1025,12 @@ prompt_optional_features_menu() {
 # ==============================================================================
 # FAST UPDATE PATH: Skip menu entirely for existing installations
 # ==============================================================================
-if [ "$LOCAL_VERSION" != "Not Installed" ] && [ -n "$LOCAL_VERSION" ]; then
+if { [ "$LOCAL_VERSION" != "Not Installed" ] && [ -n "$LOCAL_VERSION" ]; } || [ "$FAST_UPDATE_REQUESTED" = true ] || [ "$NON_INTERACTIVE" = true ]; then
     draw_header
     echo -e "${BOLD}${C_GREEN}=== FAST UPDATE MODE ===${RESET}"
-    echo -e "${C_CYAN}Detected existing installation (v${LOCAL_VERSION}).${RESET}"
+    LOCAL_VERSION="${LOCAL_VERSION:-$DOTS_VERSION}"
+    [ "$LOCAL_VERSION" = "Not Installed" ] && LOCAL_VERSION="$DOTS_VERSION"
+    echo -e "${C_CYAN}Detected existing installation or automated mode (v${LOCAL_VERSION}).${RESET}"
     echo -e "${C_CYAN}Skipping interactive menus. Using saved configuration.${RESET}\n"
 
     # Mark all sections as visited (reuse saved config)
@@ -1295,7 +1308,11 @@ BACKUP_DIR="$HOME/.config-backup-$(date +%Y%m%d_%H%M%S)"
 OLD_COMMIT=""
 NEW_COMMIT=""
 
-# Safety Backup of Existing Settings & Weather Config
+# Safety Backup of Existing Settings, Weather Config & config.kdl
+if [ -f "$TARGET_CONFIG_DIR/config.kdl" ]; then
+    mkdir -p "$BACKUP_DIR"
+    cp "$TARGET_CONFIG_DIR/config.kdl" "$BACKUP_DIR/config.kdl"
+fi
 if [ -f "$TARGET_CONFIG_DIR/settings.json" ]; then
     mkdir -p "$BACKUP_DIR"
     cp "$TARGET_CONFIG_DIR/settings.json" "$BACKUP_DIR/settings.json"
@@ -1306,10 +1323,23 @@ if [ -f "$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env" ]; then
 fi
 
 if [ -f "$(pwd)/install.sh" ] && [ -d "$(pwd)/.git" ] && [ "$(pwd)" != "$HOME" ]; then
-    REPO_DIR="$(pwd)"
-    echo "  -> Running from local repository at $REPO_DIR"
-    NEW_COMMIT=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)
+    SOURCE_DIR="$(pwd)"
+    echo "  -> Running from local repository at $SOURCE_DIR"
     OLD_COMMIT="$LAST_COMMIT"
+
+    # If running from outside ~/.config/niri (e.g. ~/Downloads/lucretia), sync files into TARGET_CONFIG_DIR
+    if [ "$SOURCE_DIR" != "$TARGET_CONFIG_DIR" ]; then
+        echo -e "  -> Synchronizing repository files to ${TARGET_CONFIG_DIR}..."
+        if [ -d "$TARGET_CONFIG_DIR" ]; then
+            mkdir -p "$BACKUP_DIR"
+            cp -a "$TARGET_CONFIG_DIR" "$BACKUP_DIR/niri" 2>/dev/null || true
+        fi
+        mkdir -p "$TARGET_CONFIG_DIR"
+        cp -a "$SOURCE_DIR/." "$TARGET_CONFIG_DIR/"
+    fi
+
+    REPO_DIR="$TARGET_CONFIG_DIR"
+    NEW_COMMIT=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)
 else
     OLD_COMMIT="$LAST_COMMIT"
     if [ -d "$TARGET_CONFIG_DIR" ]; then
@@ -1328,6 +1358,47 @@ else
     fi
     REPO_DIR="$TARGET_CONFIG_DIR"
     NEW_COMMIT=$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)
+fi
+
+# ------------------------------------------------------------------------------
+# 3.1. PRESERVE & 3-WAY MERGE CONFIG.KDL
+# ------------------------------------------------------------------------------
+if [ -f "$BACKUP_DIR/config.kdl" ] && [ -f "$TARGET_CONFIG_DIR/config.kdl" ]; then
+    if ! cmp -s "$BACKUP_DIR/config.kdl" "$TARGET_CONFIG_DIR/config.kdl"; then
+        echo -e "  -> Preserving and merging customized config.kdl..."
+        BASE_KDL=$(mktemp /tmp/base_config.XXXXXX.kdl 2>/dev/null || echo "")
+        MERGED_KDL=$(mktemp /tmp/merged_config.XXXXXX.kdl 2>/dev/null || echo "")
+
+        has_base=false
+        if [ -n "$OLD_COMMIT" ] && [ -d "$TARGET_CONFIG_DIR/.git" ]; then
+            if git -C "$TARGET_CONFIG_DIR" show "$OLD_COMMIT:config.kdl" > "$BASE_KDL" 2>/dev/null && [ -s "$BASE_KDL" ]; then
+                has_base=true
+            fi
+        fi
+
+        merged_clean=false
+        if [ "$has_base" = true ] && command -v git &>/dev/null; then
+            if git merge-file -p "$BACKUP_DIR/config.kdl" "$BASE_KDL" "$TARGET_CONFIG_DIR/config.kdl" > "$MERGED_KDL" 2>/dev/null; then
+                cp "$MERGED_KDL" "$TARGET_CONFIG_DIR/config.kdl"
+                merged_clean=true
+                printf "  -> config.kdl 3-way merged successfully %-10s ${C_GREEN}[ OK ]${RESET}\n" ""
+            fi
+        fi
+
+        if [ "$merged_clean" = false ]; then
+            # If 3-way merge was not possible or had conflicts, preserve the user's config.kdl as active
+            # and save the new upstream version alongside it
+            cp "$TARGET_CONFIG_DIR/config.kdl" "$TARGET_CONFIG_DIR/config.kdl.upstream"
+            if [ -s "$MERGED_KDL" ]; then
+                cp "$MERGED_KDL" "$TARGET_CONFIG_DIR/config.kdl.conflict"
+            fi
+            cp "$BACKUP_DIR/config.kdl" "$TARGET_CONFIG_DIR/config.kdl"
+            echo -e "  ${C_YELLOW}→ Custom config.kdl restored. Upstream saved as config.kdl.upstream${RESET}"
+        fi
+
+        [ -n "$BASE_KDL" ] && rm -f "$BASE_KDL"
+        [ -n "$MERGED_KDL" ] && rm -f "$MERGED_KDL"
+    fi
 fi
 
 # Deploy Upstream Optional Packages (Neovim/Fish)
@@ -1438,50 +1509,58 @@ else
     echo "  -> Generating fresh configuration from upstream defaults..."
 fi
 
-# Pure jq merge logic
-jq -n --slurpfile local "$OLD_JSON" --slurpfile up "$UPSTREAM_JSON" \
+TMP_SETTINGS=$(mktemp "${SETTINGS_FILE}.tmp.XXXXXX" 2>/dev/null || echo "${SETTINGS_FILE}.tmp")
+
+if jq -n --slurpfile local "$OLD_JSON" --slurpfile up "$UPSTREAM_JSON" \
    --arg langs "$KB_LAYOUTS" \
    --arg wpdir "$WALLPAPER_DIR" \
    --arg kbopt "$KB_OPTIONS" \
    --arg ovr_kb "$OPT_OVERRIDE_KEYBINDS" \
    --arg ovr_su "$OPT_OVERRIDE_STARTUPS" '
-   
+
    $up[0] as $u |
    (if ($local | length > 0) then $local[0] else $u end) as $l |
-   
-   ($u + $l) | 
+
+   ($u + $l) |
    .language = $langs |
    .wallpaperDir = $wpdir |
    .kbOptions = $kbopt |
-   
+
    .keybinds = (
-       if $ovr_kb == "true" then 
-           $u.keybinds 
-       else 
+       if $ovr_kb == "true" then
+           $u.keybinds
+       else
            ($l.keybinds | map(((.mods // "") + "|" + (.key // "")))) as $local_keys |
            ($l.keybinds | map(.command)) as $local_cmds |
-           
+
            ($u.keybinds | map(select(
                (((.mods // "") + "|" + (.key // "")) as $k | ($local_keys | index($k)) == null) and
                (.command as $cmd | ($local_cmds | index($cmd)) == null)
            ))) as $new_upstream |
-           
+
            ($l.keybinds + $new_upstream)
        end
    ) |
-   
+
    .startup = (
-       if $ovr_su == "true" then 
-           $u.startup 
-       else 
+       if $ovr_su == "true" then
+           $u.startup
+       else
            ($l.startup | map(.command)) as $local_startups |
            ($u.startup | map(select(.command as $cmd | ($local_startups | index($cmd)) == null))) as $new_upstream_startups |
            ($l.startup + $new_upstream_startups)
        end
    )
-' > "$SETTINGS_FILE"
-
-printf "  -> Configuration merged %-23s ${C_GREEN}[ OK ]${RESET}\n" ""
+' > "$TMP_SETTINGS" && [ -s "$TMP_SETTINGS" ] && jq -e . "$TMP_SETTINGS" >/dev/null 2>&1; then
+    mv -f "$TMP_SETTINGS" "$SETTINGS_FILE"
+    printf "  -> Configuration merged %-23s ${C_GREEN}[ OK ]${RESET}\n" ""
+else
+    rm -f "$TMP_SETTINGS"
+    echo -e "  ${C_RED}[ WARN ] jq merge failed or produced empty file. Preserving existing settings.${RESET}"
+    if [ -f "$BACKUP_DIR/settings.json" ]; then
+        cp "$BACKUP_DIR/settings.json" "$SETTINGS_FILE"
+    fi
+fi
 
 # Ensure ~/.config/lucretia/settings.json is synchronized via symlink
 mkdir -p "$HOME/.config/lucretia"
