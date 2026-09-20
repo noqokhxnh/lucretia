@@ -15,10 +15,10 @@ Item {
     property bool isHovered: false
     property bool isFullscreen: false
 
-    readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
+    readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Audio.getVolume(Audio.defaultSink, Audio.defaultSink.audio.volume) : 0
     readonly property bool sysMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
 
-    readonly property real sysMicVolume: Audio.defaultSource && Audio.defaultSource.audio ? Math.round(Audio.defaultSource.audio.volume * 100) : 0
+    readonly property real sysMicVolume: Audio.defaultSource && Audio.defaultSource.audio ? Audio.getVolume(Audio.defaultSource, Audio.defaultSource.audio.volume) : 0
     readonly property bool sysMicMuted: Audio.defaultSource && Audio.defaultSource.audio ? Audio.defaultSource.audio.muted : false
 
     property int sysBrightness: 0

@@ -43,11 +43,11 @@ PanelWindow {
     property int briVal: OsdController.briVal
 
     readonly property PwNode activeSink: Audio.defaultSink || (Audio.outputs && Audio.outputs.length > 0 ? Audio.outputs[0] : null)
-    readonly property int volVal: activeSink && activeSink.audio ? Math.round(activeSink.audio.volume * 100) : 0
+    readonly property int volVal: activeSink && activeSink.audio ? Audio.getVolume(activeSink, activeSink.audio.volume) : 0
     readonly property bool isMuted: activeSink && activeSink.audio ? activeSink.audio.muted : false
 
     readonly property PwNode activeSource: Audio.defaultSource || (Audio.inputs && Audio.inputs.length > 0 ? Audio.inputs[0] : null)
-    readonly property int micVal: activeSource && activeSource.audio ? Math.round(activeSource.audio.volume * 100) : 0
+    readonly property int micVal: activeSource && activeSource.audio ? Audio.getVolume(activeSource, activeSource.audio.volume) : 0
     readonly property bool isMicMuted: activeSource && activeSource.audio ? activeSource.audio.muted : false
 
     readonly property bool isMutedState: {
@@ -529,7 +529,7 @@ PanelWindow {
 
                 IconButton {
                     Layout.alignment: Qt.AlignHCenter
-                    size: osdWindow.s(26)
+                    size: osdWindow.s(30)
                     iconOffsetX: (osdWindow.kind === "volume" || osdWindow.kind === "mic") ? -1 : -3
                     cornerRadius: osdWindow.s(8)
                     buttonIcon: {
@@ -541,7 +541,7 @@ PanelWindow {
                             return osdWindow.briVal > 66 ? "󰃠" : (osdWindow.briVal > 33 ? "󰃟" : "󰃞");
                         }
                     }
-                    iconFontSize: osdWindow.s(15)
+                    iconFontSize: osdWindow.s(22)
                     accentColor: ThemeBackend.surface1
                     textColor: {
                         if (isHoveredOrHighlighted) return ThemeBackend.text;
@@ -578,7 +578,7 @@ PanelWindow {
                     Layout.preferredWidth: osdWindow.s(16)
                     Layout.alignment: Qt.AlignHCenter
                     from: 0.0
-                    to: osdWindow.kind === "volume" ? 150.0 : 100.0
+                    to: 100.0
                     value: osdWindow.currentVal
                     backgroundColor: ThemeBackend.surface1
 
@@ -608,8 +608,7 @@ PanelWindow {
                     onDragFinished: OsdController.restartTimer()
                     onMoved: val => {
                         OsdController.restartTimer();
-                        let maxVal = osdWindow.kind === "volume" ? 150 : 100;
-                        let pct = Math.max(0, Math.min(maxVal, Math.round(val)));
+                        let pct = Math.max(0, Math.min(100, Math.round(val)));
                         if (osdWindow.kind !== "volume" && osdWindow.kind !== "mic") {
                             OsdController.briVal = pct;
                         }
@@ -631,7 +630,7 @@ PanelWindow {
 
                     IconButton {
                         anchors.centerIn: parent
-                        size: osdWindow.s(30)
+                        size: osdWindow.s(36)
                         cornerRadius: osdWindow.s(8)
                         iconOffsetX: (osdWindow.kind === "volume" || osdWindow.kind === "mic") ? -1 : -3
                         buttonIcon: {
@@ -643,7 +642,7 @@ PanelWindow {
                                 return osdWindow.briVal > 66 ? "󰃠" : (osdWindow.briVal > 33 ? "󰃟" : "󰃞");
                             }
                         }
-                        iconFontSize: osdWindow.s(15)
+                        iconFontSize: osdWindow.s(22)
                         accentColor: ThemeBackend.surface1
                         textColor: {
                             if (isHoveredOrHighlighted) return ThemeBackend.text;
@@ -682,7 +681,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
 
                     from: 0.0
-                    to: osdWindow.kind === "volume" ? 150.0 : 100.0
+                    to: 100.0
                     value: osdWindow.currentVal
                     backgroundColor: ThemeBackend.surface1
 
@@ -712,8 +711,7 @@ PanelWindow {
                     onDragFinished: OsdController.restartTimer()
                     onMoved: val => {
                         OsdController.restartTimer();
-                        let maxVal = osdWindow.kind === "volume" ? 150 : 100;
-                        let pct = Math.max(0, Math.min(maxVal, Math.round(val)));
+                        let pct = Math.max(0, Math.min(100, Math.round(val)));
                         if (osdWindow.kind !== "volume" && osdWindow.kind !== "mic") {
                             OsdController.briVal = pct;
                         }

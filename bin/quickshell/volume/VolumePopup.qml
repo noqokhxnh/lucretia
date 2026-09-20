@@ -114,7 +114,7 @@ Item {
         return Audio.getNodeSubDesc(activeNode);
     }
 
-    readonly property int activeVol: activeNode && activeNode.audio ? Math.round(activeNode.audio.volume * 100) : 0
+    readonly property int activeVol: activeNode && activeNode.audio ? Audio.getVolume(activeNode, activeNode.audio.volume) : 0
     readonly property bool activeMute: activeNode && activeNode.audio ? activeNode.audio.muted : false
 
     readonly property string activeIcon: {
@@ -380,7 +380,7 @@ Item {
                                 onWheel: (wheel) => {
                                     if (!window.activeNode) return;
                                     let delta = wheel.angleDelta.y > 0 ? 5 : -5;
-                                    let newVol = Math.max(0, Math.min(150, window.activeVol + delta));
+                                    let newVol = Math.max(0, Math.min(100, window.activeVol + delta));
                                     if (newVol > 0 && window.activeMute) {
                                         Audio.toggleMute(window.activeNode);
                                     }
@@ -431,7 +431,7 @@ Item {
                                 Layout.preferredHeight: window.s(16)
                                 Layout.alignment: Qt.AlignVCenter
                                 from: 0.0
-                                to: 150.0
+                                to: 100.0
                                 value: window.activeVol
                                 backgroundColor: ThemeBackend.surface1
                                 accentColor: window.activeMute ? ThemeBackend.surface2 : window.tabColor
@@ -447,7 +447,7 @@ Item {
                                 handleBorderColor: Qt.rgba(0, 0, 0, 0.2)
 
                                 onMoved: (val) => {
-                                    let pct = Math.max(0, Math.min(150, Math.round(val)));
+                                    let pct = Math.max(0, Math.min(100, Math.round(val)));
                                     if (pct > 0 && window.activeMute) Audio.toggleMute(window.activeNode);
                                     Audio.setVolume(window.activeNode, pct);
                                 }
@@ -527,7 +527,7 @@ Item {
 
                             readonly property PwNode node: modelData
                             readonly property bool isActiveNode: window.activeTab === "outputs" ? (node === Audio.defaultSink) : (window.activeTab === "inputs" ? (node === Audio.defaultSource) : false)
-                            readonly property int nodeVol: node && node.audio ? Math.round(node.audio.volume * 100) : 0
+                            readonly property int nodeVol: node && node.audio ? Audio.getVolume(node, node.audio.volume) : 0
                             readonly property bool nodeMute: node && node.audio ? node.audio.muted : false
                             readonly property string nodeDesc: window.activeTab === "apps" ? Audio.getNodeAppName(node) : Audio.getNodeName(node)
                             readonly property string nodeNameStr: Audio.getNodeSubDesc(node)
@@ -654,7 +654,7 @@ Item {
                                         Layout.preferredHeight: window.s(16)
                                         Layout.alignment: Qt.AlignVCenter
                                         from: 0.0
-                                        to: 150.0
+                                        to: 100.0
                                         value: delegateRoot.nodeVol
                                         backgroundColor: ThemeBackend.surface1
                                         accentColor: delegateRoot.nodeMute ? ThemeBackend.surface2 : window.tabColor
@@ -670,7 +670,7 @@ Item {
                                         handleBorderColor: Qt.rgba(0, 0, 0, 0.2)
 
                                         onMoved: (val) => {
-                                            let pct = Math.max(0, Math.min(150, Math.round(val)));
+                                            let pct = Math.max(0, Math.min(100, Math.round(val)));
                                             if (pct > 0 && delegateRoot.nodeMute) Audio.toggleMute(delegateRoot.node);
                                             Audio.setVolume(delegateRoot.node, pct);
                                         }
