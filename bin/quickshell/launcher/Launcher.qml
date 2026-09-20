@@ -673,8 +673,8 @@ PanelWindow {
             }
 
             filtered.push({
-                name: toolLoading ? ("Translating: " + text + "...") : (toolResult !== "" ? toolResult : ("Translate: " + text)),
-                description: "Translation to " + targetLang.toUpperCase() + " — Press Enter to copy result",
+                name: toolLoading ? (typeof I18n !== "undefined" ? I18n.t("applauncher.translating", { text: text }) : ("Translating: " + text + "...")) : (toolResult !== "" ? toolResult : (typeof I18n !== "undefined" ? I18n.t("applauncher.translate", { text: text }) : ("Translate: " + text))),
+                description: typeof I18n !== "undefined" ? I18n.t("applauncher.translation_desc", { lang: targetLang.toUpperCase() }) : ("Translation to " + targetLang.toUpperCase() + " — Press Enter to copy result"),
                 desktop_id: "",
                 icon: "",
                 fontIcon: "󰗊",
@@ -709,8 +709,8 @@ PanelWindow {
             }
 
             filtered.push({
-                name: toolLoading ? ("Looking up: " + word + "...") : (toolResult !== "" ? toolResult : ("Dictionary: " + word)),
-                description: "Dictionary Definition — Press Enter to copy",
+                name: toolLoading ? (typeof I18n !== "undefined" ? I18n.t("applauncher.looking_up", { word: word }) : ("Looking up: " + word + "...")) : (toolResult !== "" ? toolResult : (typeof I18n !== "undefined" ? I18n.t("applauncher.dictionary", { word: word }) : ("Dictionary: " + word))),
+                description: typeof I18n !== "undefined" ? I18n.t("applauncher.dictionary_desc") : "Dictionary Definition — Press Enter to copy",
                 desktop_id: "",
                 icon: "",
                 fontIcon: "󰤧",

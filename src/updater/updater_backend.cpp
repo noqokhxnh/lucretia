@@ -1,9 +1,11 @@
 #include <iostream>
 #include <string>
-#include <vector>
 #include <regex>
 #include <cstdlib>
 #include <fstream>
+#include <filesystem>
+#include <ctime>
+#include <algorithm>
 #include <curl/curl.h>
 #include <nlohmann/json.hpp>
 
@@ -55,49 +57,173 @@ CurlResponse fetch_url(CURL* curl, const std::string& url, bool head_only = fals
 const std::tuple<int,int,int> ZERO_VER = {0, 0, 0};
 
 std::tuple<int,int,int> parse_ver(const std::string& v) {
-    std::regex re("(\\d+)\\.(\\d+)\\.(\\d+)");
+    std::regex re("(\\d+)(?:\\.(\\d+))?(?:\\.(\\d+))?");
     std::smatch m;
     if (std::regex_search(v, m, re)) {
-        return {std::stoi(m[1]), std::stoi(m[2]), std::stoi(m[3])};
+        int major = m[1].matched ? std::stoi(m[1]) : 0;
+        int minor = m[2].matched ? std::stoi(m[2]) : 0;
+        int patch = m[3].matched ? std::stoi(m[3]) : 0;
+        return {major, minor, patch};
     }
     return {0, 0, 0};
 }
 
-std::string read_local_version() {
+std::string read_local_version(const std::string& state_dir) {
     const char* home = std::getenv("HOME");
-    if (!home) return "0.0.0";
-    std::ifstream f(std::string(home) + "/.local/state/lucretia-version");
-    if (!f.is_open()) return "0.0.0";
-    std::string line;
-    while (std::getline(f, line)) {
-        if (line.rfind("LOCAL_VERSION=", 0) == 0) {
-            auto val = line.substr(14);
-            if (!val.empty() && val.front() == '"') val.erase(0, 1);
-            if (!val.empty() && val.back() == '"') val.pop_back();
-            return val;
+    std::string home_str = home ? home : "";
+
+    // 1. Check install.sh for DOTS_VERSION or DOT_VERSION
+    if (!home_str.empty()) {
+        std::ifstream fi(home_str + "/.config/niri/install.sh");
+        if (fi.is_open()) {
+            std::string line;
+            while (std::getline(fi, line)) {
+                if (line.rfind("DOTS_VERSION=", 0) == 0 || line.rfind("DOT_VERSION=", 0) == 0) {
+                    auto val = line.substr(line.find('=') + 1);
+                    while (!val.empty() && (val.front() == '"' || val.front() == '\'')) val.erase(0, 1);
+                    while (!val.empty() && (val.back() == '"' || val.back() == '\'')) val.pop_back();
+                    if (!val.empty()) return val;
+                }
+            }
         }
     }
-    return "0.0.0";
+
+    // 2. Check lucretia-version
+    if (!home_str.empty()) {
+        std::ifstream f(home_str + "/.local/state/lucretia-version");
+        if (f.is_open()) {
+            std::string line;
+            while (std::getline(f, line)) {
+                if (line.rfind("LOCAL_VERSION=", 0) == 0) {
+                    auto val = line.substr(14);
+                    while (!val.empty() && (val.front() == '"' || val.front() == '\'')) val.erase(0, 1);
+                    while (!val.empty() && (val.back() == '"' || val.back() == '\'')) val.pop_back();
+                    if (!val.empty() && val != "Not Installed") return val;
+                }
+            }
+        }
+    }
+
+    // 3. Check version file in state_dir
+    std::ifstream fv(state_dir + "/version");
+    if (fv.is_open()) {
+        std::string line;
+        while (std::getline(fv, line)) {
+            if (line.rfind("SERPANTINUM_VERSION=", 0) == 0) {
+                auto val = line.substr(20);
+                while (!val.empty() && (val.front() == '"' || val.front() == '\'')) val.erase(0, 1);
+                while (!val.empty() && (val.back() == '"' || val.back() == '\'')) val.pop_back();
+                if (!val.empty()) return val;
+            }
+        }
+    }
+
+    return "2.0.4";
+}
+
+std::string get_last_notified(const std::string& state_dir) {
+    std::ifstream f(state_dir + "/last_notified");
+    if (f.is_open()) {
+        std::string line;
+        if (std::getline(f, line)) {
+            while (!line.empty() && (line.back() == '\r' || line.back() == '\n' || line.back() == ' ')) {
+                line.pop_back();
+            }
+            return line;
+        }
+    }
+    return "";
+}
+
+std::string fetch_remote_version(CURL* curl) {
+    auto resp = fetch_url(curl,
+        "https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh");
+    if (resp.status_code == 200 && !resp.data.empty()) {
+        std::regex re("(?:^|\n)(?:DOTS_VERSION|DOT_VERSION)=[\"']?([^\"'\r\n]+)");
+        std::smatch m;
+        if (std::regex_search(resp.data, m, re)) {
+            return m[1];
+        }
+    }
+    return "";
 }
 
 // ─────────────────────────────────────────────
 // --version: fetch remote DOTS_VERSION from install.sh
 // ─────────────────────────────────────────────
 void cmd_version(CURL* curl) {
-    auto resp = fetch_url(curl,
-        "https://raw.githubusercontent.com/noqokhxnh/lucretia/main/install.sh");
-    std::regex re("\nDOTS_VERSION=\"([^\"]+)\"");
-    std::smatch m;
-    if (std::regex_search(resp.data, m, re)) {
-        std::cout << m[1] << std::endl;
+    std::string ver = fetch_remote_version(curl);
+    if (!ver.empty()) {
+        std::cout << ver << std::endl;
     }
+}
+
+// ─────────────────────────────────────────────
+// --check: output complete status JSON
+// ─────────────────────────────────────────────
+void cmd_check(CURL* curl, const std::string& state_dir) {
+    std::string local_ver = read_local_version(state_dir);
+    std::string remote_ver = fetch_remote_version(curl);
+    if (remote_ver.empty()) {
+        remote_ver = local_ver;
+    }
+
+    bool has_update = parse_ver(remote_ver) > parse_ver(local_ver);
+    std::string last_notified = get_last_notified(state_dir);
+
+    try {
+        std::filesystem::create_directories(state_dir);
+        std::ofstream fc(state_dir + "/last_check");
+        if (fc.is_open()) {
+            fc << std::time(nullptr);
+        }
+    } catch (...) {}
+
+    json out = {
+        {"local", local_ver},
+        {"remote", remote_ver},
+        {"has_update", has_update},
+        {"last_notified", last_notified}
+    };
+    std::cout << out.dump() << std::endl;
+}
+
+// ─────────────────────────────────────────────
+// --delay: output remaining ms delay
+// ─────────────────────────────────────────────
+void cmd_delay(const std::string& state_dir) {
+    std::string path = state_dir + "/last_check";
+    std::ifstream f(path);
+    if (f.is_open()) {
+        double last_ts = 0;
+        if (f >> last_ts) {
+            double elapsed = std::difftime(std::time(nullptr), static_cast<std::time_t>(last_ts));
+            long long remaining = static_cast<long long>(std::max(0.0, 3600.0 - elapsed) * 1000.0);
+            std::cout << remaining << std::endl;
+            return;
+        }
+    }
+    std::cout << 0 << std::endl;
+}
+
+// ─────────────────────────────────────────────
+// --save-notified: persist notified version
+// ─────────────────────────────────────────────
+void cmd_save_notified(const std::string& state_dir, const std::string& ver) {
+    try {
+        std::filesystem::create_directories(state_dir);
+        std::ofstream f(state_dir + "/last_notified");
+        if (f.is_open()) {
+            f << ver;
+        }
+    } catch (...) {}
 }
 
 // ─────────────────────────────────────────────
 // --video: resolve the best video URL from updates.json
 // ─────────────────────────────────────────────
-void cmd_video(CURL* curl) {
-    auto local = read_local_version();
+void cmd_video(CURL* curl, const std::string& state_dir) {
+    auto local = read_local_version(state_dir);
     auto local_v = parse_ver(local);
 
     auto resp = fetch_url(curl,
@@ -130,9 +256,9 @@ void cmd_video(CURL* curl) {
 // ─────────────────────────────────────────────
 // --commits: fetch commit log since last release
 // ─────────────────────────────────────────────
-void cmd_commits(CURL* curl) {
+void cmd_commits(CURL* curl, const std::string& state_dir) {
     std::string repo = "noqokhxnh/lucretia";
-    auto local = read_local_version();
+    auto local = read_local_version(state_dir);
     auto local_v = parse_ver(local);
 
     std::string found_ref;
@@ -219,16 +345,47 @@ void cmd_commits(CURL* curl) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc < 2) return 1;
-    std::string cmd = argv[1];
+    const char* home = std::getenv("HOME");
+    std::string state_dir = home ? std::string(home) + "/.local/state/lucretia" : "/tmp";
+
+    std::string cmd = "";
+    std::string save_ver = "";
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--state-dir" && i + 1 < argc) {
+            state_dir = argv[++i];
+        } else if (arg == "--save-notified" && i + 1 < argc) {
+            cmd = "--save-notified";
+            save_ver = argv[++i];
+        } else if (arg == "--delay" || arg == "--check" || arg == "--version" || arg == "--video" || arg == "--commits") {
+            cmd = arg;
+        }
+    }
+
+    if (cmd == "--save-notified") {
+        cmd_save_notified(state_dir, save_ver);
+        return 0;
+    }
+    if (cmd == "--delay") {
+        cmd_delay(state_dir);
+        return 0;
+    }
 
     curl_global_init(CURL_GLOBAL_ALL);
     CURL* curl = curl_easy_init();
     if (!curl) return 1;
 
-    if (cmd == "--version") cmd_version(curl);
-    else if (cmd == "--video") cmd_video(curl);
-    else if (cmd == "--commits") cmd_commits(curl);
+    if (cmd == "--version") {
+        cmd_version(curl);
+    } else if (cmd == "--video") {
+        cmd_video(curl, state_dir);
+    } else if (cmd == "--commits") {
+        cmd_commits(curl, state_dir);
+    } else {
+        // Default or --check
+        cmd_check(curl, state_dir);
+    }
 
     curl_easy_cleanup(curl);
     curl_global_cleanup();

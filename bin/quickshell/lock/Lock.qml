@@ -1839,7 +1839,7 @@ Scope {
                                             }
 
                                             Text {
-                                                text: "Feels like " + screenRoot.getFeelsLike()
+                                                text: typeof I18n !== "undefined" ? I18n.t("weather.feels_like", { temp: screenRoot.getFeelsLike() }) : ("Feels like " + screenRoot.getFeelsLike())
                                                 font.family: ThemeBackend.fontFamily
                                                 font.pixelSize: weatherBoxFaceContainer.textFeels
                                                 font.weight: Font.Medium
@@ -1872,7 +1872,13 @@ Scope {
                                             }
 
                                             Text {
-                                                text: Weather.data && Weather.data.forecast && Weather.data.forecast[0] && Weather.data.forecast[0].desc ? Weather.data.forecast[0].desc : (Weather.data && Weather.data.desc ? Weather.data.desc : "")
+                                                text: {
+                                                    let _lang = typeof I18n !== "undefined" ? I18n.currentLang : "en";
+                                                    let fc0 = Weather.data && Weather.data.forecast && Weather.data.forecast[0] ? Weather.data.forecast[0] : null;
+                                                    let c = fc0 && fc0.code !== undefined ? fc0.code : (Weather.data && Weather.data.code !== undefined ? Weather.data.code : -1);
+                                                    let d = fc0 && (fc0.desc || fc0.description) ? (fc0.desc || fc0.description) : (Weather.data && (Weather.data.desc || Weather.data.description) ? (Weather.data.desc || Weather.data.description) : "");
+                                                    return Weather.getLocalizedDesc(c, d);
+                                                }
                                                 font.family: ThemeBackend.fontFamily
                                                 font.pixelSize: weatherBoxFaceContainer.textDesc
                                                 font.weight: Font.Medium

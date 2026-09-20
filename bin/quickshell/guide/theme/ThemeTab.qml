@@ -742,7 +742,7 @@ Item {
                     Text {
                         id: deleteText
                         anchors.centerIn: parent
-                        text: "Delete"
+                        text: I18n.t("guide.theme.delete_theme")
                         font.family: ThemeBackend.fontFamily
                         font.pixelSize: rootObj.s(11)
                         font.weight: Font.Medium
@@ -979,7 +979,7 @@ Item {
                         horizontalPadding: rootObj.s(14)
                         buttonIcon: "󰸉"
                         iconFontSize: rootObj.s(15)
-                        buttonText: "Select wallpaper"
+                        buttonText: I18n.t("guide.theme.wallpaper.select_wallpaper")
                         textFontSize: rootObj.s(11)
                         accentColor: ThemeBackend.mauve
                         textColor: ThemeBackend.base

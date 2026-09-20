@@ -61,16 +61,24 @@ Item {
     readonly property string second: secondFormat !== "" ? Qt.formatDateTime(timeNow, secondFormat) : ""
     readonly property string amPm: amPmFormat !== "" ? Qt.formatDateTime(timeNow, amPmFormat) : ""
 
-    readonly property string fullDate: Qt.formatDateTime(dateNow, "dddd, MMMM dd")
-    readonly property string shortDate: Qt.formatDateTime(dateNow, "d MMM")
-    readonly property string dateBadge: Qt.formatDateTime(dateNow, "d MMM").toUpperCase()
+    readonly property bool isVi: typeof I18n !== "undefined" && I18n.currentLang === "vi"
+
+    readonly property var viDays: ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"]
+    readonly property var viDaysShort: ["CN", "T2", "T3", "T4", "T5", "T6", "T7"]
+    readonly property var viMonths: ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"]
+    readonly property var viMonthsShort: ["Th1", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7", "Th8", "Th9", "Th10", "Th11", "Th12"]
+
     readonly property string day: Qt.formatDateTime(dateNow, "dd")
     readonly property string dayShort: Qt.formatDateTime(dateNow, "d")
-    readonly property string dayName: Qt.formatDateTime(dateNow, "dddd")
-    readonly property string dayNameShort: Qt.formatDateTime(dateNow, "ddd")
-    readonly property string month: Qt.formatDateTime(dateNow, "MMMM")
-    readonly property string monthShort: Qt.formatDateTime(dateNow, "MMM")
+    readonly property string dayName: isVi ? viDays[dateNow.getDay()] : Qt.formatDateTime(dateNow, "dddd")
+    readonly property string dayNameShort: isVi ? viDaysShort[dateNow.getDay()] : Qt.formatDateTime(dateNow, "ddd")
+    readonly property string month: isVi ? viMonths[dateNow.getMonth()] : Qt.formatDateTime(dateNow, "MMMM")
+    readonly property string monthShort: isVi ? viMonthsShort[dateNow.getMonth()] : Qt.formatDateTime(dateNow, "MMM")
     readonly property string year: Qt.formatDateTime(dateNow, "yyyy")
+
+    readonly property string fullDate: isVi ? (dayName + ", " + dateNow.getDate() + " " + month.toLowerCase()) : Qt.formatDateTime(dateNow, "dddd, MMMM dd")
+    readonly property string shortDate: isVi ? (dateNow.getDate() + " " + monthShort) : Qt.formatDateTime(dateNow, "d MMM")
+    readonly property string dateBadge: shortDate.toUpperCase()
 
     function format(pattern, dateObj) {
         return Qt.formatDateTime(dateObj || timeNow, pattern);

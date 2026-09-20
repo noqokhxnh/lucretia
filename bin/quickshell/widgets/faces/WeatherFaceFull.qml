@@ -205,7 +205,7 @@ Item {
                     }
 
                     Text {
-                        text: "Feels like " + root.getFeelsLike()
+                        text: typeof I18n !== "undefined" ? I18n.t("weather.feels_like", { temp: root.getFeelsLike() }) : ("Feels like " + root.getFeelsLike())
                         font.family: ThemeBackend.fontFamily
                         font.pixelSize: root.textFeels
                         font.weight: Font.Medium
@@ -238,7 +238,13 @@ Item {
                     }
 
                     Text {
-                        text: root.weatherData && root.weatherData.forecast && root.weatherData.forecast[0] && root.weatherData.forecast[0].desc ? root.weatherData.forecast[0].desc : (Weather.data && Weather.data.desc ? Weather.data.desc : "")
+                        text: {
+                            let _lang = typeof I18n !== "undefined" ? I18n.currentLang : "en";
+                            let fc0 = root.weatherData && root.weatherData.forecast && root.weatherData.forecast[0] ? root.weatherData.forecast[0] : null;
+                            let c = fc0 && fc0.code !== undefined ? fc0.code : (Weather.data && Weather.data.code !== undefined ? Weather.data.code : -1);
+                            let d = fc0 && (fc0.desc || fc0.description) ? (fc0.desc || fc0.description) : (Weather.data && (Weather.data.desc || Weather.data.description) ? (Weather.data.desc || Weather.data.description) : "");
+                            return Weather.getLocalizedDesc(c, d);
+                        }
                         font.family: ThemeBackend.fontFamily
                         font.pixelSize: root.textDesc
                         font.weight: Font.Medium

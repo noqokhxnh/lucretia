@@ -95,64 +95,64 @@ Item {
         let act = action.trim();
 
         if (act.indexOf("close-window") !== -1) {
-            title = "Close Window";
+            title = I18n.t("guide.keybinds.actions.close_window");
             icon = "󰅖";
         } else if (act.indexOf("toggle-window-floating") !== -1) {
-            title = "Toggle Floating";
+            title = I18n.t("guide.keybinds.actions.toggle_floating");
             icon = "󰉈";
         } else if (act.indexOf("fullscreen-window") !== -1) {
-            title = "Fullscreen";
+            title = I18n.t("guide.keybinds.actions.fullscreen");
             icon = "󰊓";
         } else if (act.indexOf("toggle-overview") !== -1) {
-            title = "Toggle Overview";
+            title = I18n.t("guide.keybinds.actions.toggle_overview");
             icon = "󰕰";
         } else if (act.indexOf("set-column-width") !== -1) {
             let isMinus = act.indexOf("-") !== -1;
-            title = isMinus ? "Decrease Column Width" : "Increase Column Width";
+            title = isMinus ? I18n.t("guide.keybinds.actions.decrease_column_width") : I18n.t("guide.keybinds.actions.increase_column_width");
             icon = "󰤻";
         } else if (act.indexOf("set-window-height") !== -1) {
             let isMinus = act.indexOf("-") !== -1;
-            title = isMinus ? "Decrease Window Height" : "Increase Window Height";
+            title = isMinus ? I18n.t("guide.keybinds.actions.decrease_window_height") : I18n.t("guide.keybinds.actions.increase_window_height");
             icon = "󰤻";
         } else if (act.indexOf("move-column-left") !== -1) {
-            title = "Move Column Left";
+            title = I18n.t("guide.keybinds.actions.move_column_left");
             icon = "󰁍";
         } else if (act.indexOf("move-column-right") !== -1) {
-            title = "Move Column Right";
+            title = I18n.t("guide.keybinds.actions.move_column_right");
             icon = "󰁔";
         } else if (act.indexOf("move-window-up") !== -1) {
-            title = "Move Window Up";
+            title = I18n.t("guide.keybinds.actions.move_window_up");
             icon = "󰁝";
         } else if (act.indexOf("move-window-down") !== -1) {
-            title = "Move Window Down";
+            title = I18n.t("guide.keybinds.actions.move_window_down");
             icon = "󰁅";
         } else if (act.indexOf("focus-column-left") !== -1) {
-            title = "Focus Column Left";
+            title = I18n.t("guide.keybinds.actions.focus_column_left");
             icon = "󰁍";
         } else if (act.indexOf("focus-column-right") !== -1) {
-            title = "Focus Column Right";
+            title = I18n.t("guide.keybinds.actions.focus_column_right");
             icon = "󰁔";
         } else if (act.indexOf("focus-window-or-monitor-up") !== -1) {
-            title = "Focus Up / Monitor";
+            title = I18n.t("guide.keybinds.actions.focus_up_monitor");
             icon = "󰁝";
         } else if (act.indexOf("focus-window-or-monitor-down") !== -1) {
-            title = "Focus Down / Monitor";
+            title = I18n.t("guide.keybinds.actions.focus_down_monitor");
             icon = "󰁅";
         } else if (act.indexOf("screenshot.sh") !== -1) {
-            if (act.indexOf("--full") !== -1) title = "Screenshot (Full Screen)";
-            else if (act.indexOf("--edit") !== -1) title = "Screenshot (Edit)";
-            else title = "Screenshot (Area)";
+            if (act.indexOf("--full") !== -1) title = I18n.t("guide.keybinds.actions.screenshot_full");
+            else if (act.indexOf("--edit") !== -1) title = I18n.t("guide.keybinds.actions.screenshot_edit");
+            else title = I18n.t("guide.keybinds.actions.screenshot_area");
             icon = "󰹑";
         } else if (act.indexOf("lock.sh") !== -1) {
-            title = "Lock Screen";
+            title = I18n.t("guide.keybinds.actions.lock_screen");
             icon = "󰌾";
         } else if (act.indexOf("reload.sh") !== -1) {
-            title = "Reload Quickshell";
+            title = I18n.t("guide.keybinds.actions.reload_quickshell");
             icon = "󰑐";
         } else if (act.indexOf("qs_manager.sh toggle") !== -1) {
             let m = act.match(/toggle\s+([a-zA-Z0-9_-]+)/);
             let panel = m ? m[1] : "Panel";
-            title = "Toggle " + panel.charAt(0).toUpperCase() + panel.slice(1);
+            title = I18n.t("guide.keybinds.actions.toggle_panel", { panel: panel.charAt(0).toUpperCase() + panel.slice(1) });
             if (panel === "clipboard") icon = "󰅌";
             else if (panel === "applauncher") icon = "󱓞";
             else if (panel === "settings") icon = "󰒓";
@@ -173,40 +173,40 @@ Item {
             if (m) {
                 let wsNum = m[1];
                 let isMove = !!m[2];
-                title = isMove ? ("Move to Workspace " + wsNum) : ("Switch to Workspace " + wsNum);
+                title = isMove ? I18n.t("guide.keybinds.actions.move_to_workspace", { num: wsNum }) : I18n.t("guide.keybinds.actions.switch_to_workspace", { num: wsNum });
                 icon = isMove ? "󰒭" : "󱂬";
             }
         } else if (act.indexOf("spawn \"foot\"") !== -1) {
-            title = "Terminal (foot)";
+            title = I18n.t("guide.keybinds.actions.terminal");
             icon = "󰆍";
         } else if (act.indexOf("spawn \"zen-browser\"") !== -1) {
-            title = "Web Browser (Zen)";
+            title = I18n.t("guide.keybinds.actions.browser");
             icon = "󰖟";
         } else if (act.indexOf("spawn \"nautilus\"") !== -1) {
-            title = "File Manager (Nautilus)";
+            title = I18n.t("guide.keybinds.actions.files");
             icon = "󰝰";
         } else if (act.indexOf("brightnessctl") !== -1) {
-            title = act.indexOf("5%+") !== -1 ? "Brightness Up" : "Brightness Down";
+            title = act.indexOf("5%+") !== -1 ? I18n.t("guide.keybinds.actions.brightness_up") : I18n.t("guide.keybinds.actions.brightness_down");
             icon = act.indexOf("5%+") !== -1 ? "󰃠" : "󰃞";
         } else if (act.indexOf("wpctl") !== -1) {
             if (act.indexOf("@DEFAULT_AUDIO_SOURCE@") !== -1) {
-                title = "Toggle Microphone Mute";
+                title = I18n.t("guide.keybinds.actions.toggle_mic_mute");
                 icon = "󰍬";
             } else if (act.indexOf("toggle") !== -1) {
-                title = "Toggle Audio Mute";
+                title = I18n.t("guide.keybinds.actions.toggle_audio_mute");
                 icon = "󰝟";
             } else if (act.indexOf("5%+") !== -1) {
-                title = "Volume Up";
+                title = I18n.t("guide.keybinds.actions.volume_up");
                 icon = "󰕾";
             } else {
-                title = "Volume Down";
+                title = I18n.t("guide.keybinds.actions.volume_down");
                 icon = "󰕿";
             }
         } else if (act.indexOf("playerctl") !== -1) {
-            title = "Play / Pause Media";
+            title = I18n.t("guide.keybinds.actions.play_pause_media");
             icon = "󰐊";
         } else if (act.indexOf("swayosd-client --caps-lock") !== -1) {
-            title = "Caps Lock Indicator";
+            title = I18n.t("guide.keybinds.actions.caps_lock_indicator");
             icon = "󰘲";
         }
 
@@ -217,17 +217,17 @@ Item {
     }
 
     function getCategoryInfo(cat) {
-        if (cat === "All") return { label: I18n.t("guide.keybinds.all_categories", "All"), icon: "󰌌" };
-        if (cat === "Basic Keybinds") return { label: "Basic", icon: "󰅖" };
-        if (cat === "Window resizing") return { label: "Resize", icon: "󰤻" };
-        if (cat === "Window movement") return { label: "Move", icon: "󰁔" };
-        if (cat === "Focus movement") return { label: "Focus", icon: "󰁍" };
-        if (cat === "Application Launchers") return { label: "Apps", icon: "󰆍" };
-        if (cat === "Quickshell Panel Toggles") return { label: "Panels", icon: "󱓞" };
-        if (cat === "Audio and Brightness Controls") return { label: "Audio & Light", icon: "󰕾" };
-        if (cat === "Screenshot Controls") return { label: "Screenshots", icon: "󰹑" };
-        if (cat === "Lock and Media Controls") return { label: "Lock & Media", icon: "󰌾" };
-        if (cat === "Workspaces navigation & column move") return { label: "Workspaces", icon: "󱂬" };
+        if (cat === "All") return { label: I18n.t("guide.keybinds.categories.all"), icon: "󰌌" };
+        if (cat === "Basic Keybinds") return { label: I18n.t("guide.keybinds.categories.basic"), icon: "󰅖" };
+        if (cat === "Window resizing") return { label: I18n.t("guide.keybinds.categories.resize"), icon: "󰤻" };
+        if (cat === "Window movement") return { label: I18n.t("guide.keybinds.categories.move"), icon: "󰁔" };
+        if (cat === "Focus movement") return { label: I18n.t("guide.keybinds.categories.focus"), icon: "󰁍" };
+        if (cat === "Application Launchers") return { label: I18n.t("guide.keybinds.categories.apps"), icon: "󰆍" };
+        if (cat === "Quickshell Panel Toggles") return { label: I18n.t("guide.keybinds.categories.panels"), icon: "󱓞" };
+        if (cat === "Audio and Brightness Controls") return { label: I18n.t("guide.keybinds.categories.audio_light"), icon: "󰕾" };
+        if (cat === "Screenshot Controls") return { label: I18n.t("guide.keybinds.categories.screenshots"), icon: "󰹑" };
+        if (cat === "Lock and Media Controls") return { label: I18n.t("guide.keybinds.categories.lock_media"), icon: "󰌾" };
+        if (cat === "Workspaces navigation & column move") return { label: I18n.t("guide.keybinds.categories.workspaces"), icon: "󱂬" };
         return { label: cat, icon: "󰌌" };
     }
 
@@ -1019,7 +1019,7 @@ Item {
                                     Text {
                                         id: guideBadgeText
                                         anchors.centerIn: parent
-                                        text: "★ Guide"
+                                        text: "★ " + I18n.t("guide.keybinds.guide_badge")
                                         font.family: ThemeBackend.fontFamily
                                         font.weight: Font.Bold
                                         font.pixelSize: rootObj.s(9)
@@ -1666,18 +1666,18 @@ Item {
 
                                         Repeater {
                                             model: [
-                                                { label: "Toggle Guide", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle guide";' },
-                                                { label: "Close Window", act: "close-window;" },
-                                                { label: "Toggle Floating", act: "toggle-window-floating;" },
-                                                { label: "Fullscreen", act: "fullscreen-window;" },
-                                                { label: "Overview", act: "toggle-overview;" },
-                                                { label: "Terminal", act: 'spawn "foot";' },
-                                                { label: "Browser", act: 'spawn "zen-browser";' },
-                                                { label: "Files", act: 'spawn "nautilus";' },
-                                                { label: "Launcher", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle applauncher";' },
-                                                { label: "Clipboard", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle clipboard";' },
-                                                { label: "Screenshot", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh";' },
-                                                { label: "Lock Screen", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh";' }
+                                                { key: "toggle_guide", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle guide";' },
+                                                { key: "close_window", act: "close-window;" },
+                                                { key: "toggle_floating", act: "toggle-window-floating;" },
+                                                { key: "fullscreen", act: "fullscreen-window;" },
+                                                { key: "overview", act: "toggle-overview;" },
+                                                { key: "terminal", act: 'spawn "foot";' },
+                                                { key: "browser", act: 'spawn "zen-browser";' },
+                                                { key: "files", act: 'spawn "nautilus";' },
+                                                { key: "launcher", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle applauncher";' },
+                                                { key: "clipboard", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle clipboard";' },
+                                                { key: "screenshot", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh";' },
+                                                { key: "lock_screen", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/lock.sh";' }
                                             ]
                                             delegate: Rectangle {
                                                 property bool isCurPreset: keybindsTabRoot.editingAction.trim() === modelData.act.trim()
@@ -1690,7 +1690,7 @@ Item {
                                                 Text {
                                                     id: pText
                                                     anchors.centerIn: parent
-                                                    text: modelData.label
+                                                    text: I18n.t("guide.keybinds.preset_items." + modelData.key)
                                                     font.family: ThemeBackend.fontFamily
                                                     font.pixelSize: rootObj.s(10)
                                                     color: isCurPreset ? ThemeBackend.crust : ThemeBackend.subtext0

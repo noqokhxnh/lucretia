@@ -9,7 +9,7 @@ import urllib.parse
 from concurrent.futures import ThreadPoolExecutor
 
 try:
-    from PIL import Image
+    from PIL import Image, ImageOps
     HAS_PIL = True
 except ImportError:
     HAS_PIL = False
@@ -125,31 +125,74 @@ def generate_video_poster(video_path, poster_path):
             continue
     return False
 
+def generate_image_poster(image_path, poster_path, force=False):
+    if not force and os.path.exists(poster_path) and os.path.getsize(poster_path) > 512:
+        return True
+    os.makedirs(os.path.dirname(poster_path), exist_ok=True)
+    tmp_poster = f"{poster_path}.tmp.jpg"
+    if HAS_PIL:
+        try:
+            with Image.open(image_path) as im:
+                im = ImageOps.exif_transpose(im)
+                if im.mode in ("RGBA", "LA") or (im.mode == "P" and "transparency" in im.info):
+                    bg = Image.new("RGB", im.size, (30, 30, 46))
+                    im_rgba = im.convert("RGBA")
+                    bg.paste(im_rgba, mask=im_rgba.split()[3])
+                    im = bg
+                else:
+                    im = im.convert("RGB")
+                im.thumbnail((960, 600), Image.Resampling.LANCZOS)
+                im.save(tmp_poster, "JPEG", quality=85, optimize=True)
+            if os.path.exists(tmp_poster) and os.path.getsize(tmp_poster) > 512:
+                os.replace(tmp_poster, poster_path)
+                return True
+        except Exception:
+            pass
+
+    for cmd in ["magick", "convert"]:
+        try:
+            subprocess.run(
+                [cmd, f"{image_path}[0]", "-resize", "960x600>", "-quality", "85", tmp_poster],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True, timeout=8
+            )
+            if os.path.exists(tmp_poster) and os.path.getsize(tmp_poster) > 512:
+                os.replace(tmp_poster, poster_path)
+                return True
+        except Exception:
+            continue
+
+    try:
+        if os.path.exists(tmp_poster):
+            os.remove(tmp_poster)
+    except OSError:
+        pass
+    return False
+
 def process_entry(entry_tuple, poster_dir, cached_items):
     fname, fpath, mtime, size, is_video = entry_tuple
     furl = f"file://{fpath}"
 
     existing = cached_items.get(fname)
     if existing and existing.get("mtime") == mtime and existing.get("size") == size:
-        if is_video:
-            p_path = existing.get("posterPath", "")
-            if p_path and os.path.exists(p_path) and os.path.getsize(p_path) > 512:
-                return existing
-        else:
+        p_path = existing.get("posterPath", "")
+        if p_path and os.path.exists(p_path) and os.path.getsize(p_path) > 512:
             return existing
 
+    is_modified = existing is not None and (existing.get("mtime") != mtime or existing.get("size") != size)
+    poster_name = f"{hashlib.sha256(fname.encode('utf-8')).hexdigest()[:16]}.jpg"
+    poster_path = os.path.join(poster_dir, poster_name)
+
     if is_video:
-        poster_name = f"{hashlib.sha256(fname.encode('utf-8')).hexdigest()[:16]}.jpg"
-        poster_path = os.path.join(poster_dir, poster_name)
         generate_video_poster(fpath, poster_path)
-        poster_url = f"file://{poster_path}"
-        hex_color = extract_color(poster_path) if os.path.exists(poster_path) else "#808080"
+        has_poster = os.path.exists(poster_path) and os.path.getsize(poster_path) > 512
+        poster_url = f"file://{poster_path}" if has_poster else ""
+        hex_color = extract_color(poster_path) if has_poster else "#808080"
         return {
             "fileName": fname,
             "filePath": fpath,
             "fileUrl": furl,
             "isVideo": True,
-            "posterPath": poster_path,
+            "posterPath": poster_path if has_poster else "",
             "posterUrl": poster_url,
             "hex": hex_color,
             "bucket": "Video",
@@ -157,15 +200,18 @@ def process_entry(entry_tuple, poster_dir, cached_items):
             "size": size
         }
     else:
-        hex_color = extract_color(fpath)
+        generate_image_poster(fpath, poster_path, force=is_modified)
+        has_poster = os.path.exists(poster_path) and os.path.getsize(poster_path) > 512
+        poster_url = f"file://{poster_path}" if has_poster else ""
+        hex_color = extract_color(poster_path) if has_poster else extract_color(fpath)
         bucket = get_color_bucket(hex_color)
         return {
             "fileName": fname,
             "filePath": fpath,
             "fileUrl": furl,
             "isVideo": False,
-            "posterPath": "",
-            "posterUrl": "",
+            "posterPath": poster_path if has_poster else "",
+            "posterUrl": poster_url,
             "hex": hex_color,
             "bucket": bucket,
             "mtime": mtime,

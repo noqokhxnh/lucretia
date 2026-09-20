@@ -484,7 +484,7 @@ Item {
 
                 Text {
                     anchors.centerIn: parent
-                    text: "Photo Booth"
+                    text: typeof I18n !== "undefined" ? I18n.t("photobooth.title") : "Photo Booth"
                     font.family: "Inter"
                     font.pixelSize: 14
                     font.weight: Font.DemiBold
@@ -597,7 +597,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                         }
                         Text {
-                            text: "No photos yet"
+                            text: typeof I18n !== "undefined" ? I18n.t("photobooth.no_photos") : "No photos yet"
                             font.family: "Inter"
                             font.pixelSize: 13
                             color: window.mauve
