@@ -189,7 +189,10 @@ Rectangle {
 
             property real targetWidth: implicitWidth
             width: targetWidth
-            Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutQuint } }
+            Behavior on width {
+                enabled: barWindow && barWindow.startupCascadeFinished
+                NumberAnimation { duration: 480; easing.type: Easing.OutQuint }
+            }
 
             Timer { running: wifiWidgetRoot.moduleActive && wifiWidgetRoot.showLayout && !wifiPill.initAnimTrigger; interval: 130; onTriggered: wifiPill.initAnimTrigger = true }
             opacity: initAnimTrigger ? 1.0 : 0.0

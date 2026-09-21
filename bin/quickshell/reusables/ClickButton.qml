@@ -20,8 +20,21 @@ Item {
     property int maxWidth: 0
     property int contentAlignment: Qt.AlignHCenter
 
+    property real maxAllowedTextWidth: {
+        let limit = Number.POSITIVE_INFINITY;
+        if (root.maxTextWidth > 0) {
+            limit = Math.min(limit, root.maxTextWidth);
+        }
+        if (root.maxWidth > 0) {
+            let iconSpace = iconLabel.visible ? (iconLabel.implicitWidth + (textCol.visible ? mainRow.spacing : 0)) : 0;
+            let maxFromMaxWidth = Math.max(0, root.maxWidth - (root.horizontalPadding * 2) - iconSpace);
+            limit = Math.min(limit, maxFromMaxWidth);
+        }
+        return limit;
+    }
+
     property real rawTextWidth: Math.max(mainLabel.visible ? mainLabel.implicitWidth : 0, subLabel.visible ? subLabel.implicitWidth : 0)
-    property real boundedTextWidth: root.maxTextWidth > 0 ? Math.min(rawTextWidth, root.maxTextWidth) : rawTextWidth
+    property real boundedTextWidth: isFinite(root.maxAllowedTextWidth) ? Math.min(rawTextWidth, root.maxAllowedTextWidth) : rawTextWidth
 
     property real calculatedContentWidth: (iconLabel.visible ? iconLabel.implicitWidth : 0)
                                          + (iconLabel.visible && textCol.visible ? mainRow.spacing : 0)
@@ -31,7 +44,7 @@ Item {
     implicitWidth: root.maxWidth > 0 ? Math.min(desiredWidth, root.maxWidth) : desiredWidth
     implicitHeight: 30
 
-    property real availableTextWidth: Math.max(0, root.width - (root.horizontalPadding * 2) - (iconLabel.visible ? (iconLabel.implicitWidth + mainRow.spacing) : 0))
+    property real availableTextWidth: isFinite(root.maxAllowedTextWidth) ? root.maxAllowedTextWidth : Math.max(0, root.width - (root.horizontalPadding * 2) - (iconLabel.visible ? (iconLabel.implicitWidth + (textCol.visible ? mainRow.spacing : 0)) : 0))
 
     property color accentColor: "#313244"
     property color textColor: "#cdd6f4"
@@ -105,7 +118,7 @@ Item {
                     font.pixelSize: root.textFontSize
                     color: root.textColor
                     elide: (root.maxTextWidth > 0 || root.maxWidth > 0) ? Text.ElideRight : Text.ElideNone
-                    Layout.maximumWidth: (root.maxTextWidth > 0) ? root.maxTextWidth : ((root.maxWidth > 0) ? root.availableTextWidth : Number.POSITIVE_INFINITY)
+                    Layout.maximumWidth: (root.maxTextWidth > 0 || root.maxWidth > 0) ? root.maxAllowedTextWidth : Number.POSITIVE_INFINITY
                 }
 
                 Text {
@@ -117,7 +130,7 @@ Item {
                     color: root.textColor
                     opacity: 0.75
                     elide: (root.maxTextWidth > 0 || root.maxWidth > 0) ? Text.ElideRight : Text.ElideNone
-                    Layout.maximumWidth: (root.maxTextWidth > 0) ? root.maxTextWidth : ((root.maxWidth > 0) ? root.availableTextWidth : Number.POSITIVE_INFINITY)
+                    Layout.maximumWidth: (root.maxTextWidth > 0 || root.maxWidth > 0) ? root.maxAllowedTextWidth : Number.POSITIVE_INFINITY
                 }
             }
         }
