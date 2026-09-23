@@ -37,22 +37,44 @@ Item {
 
     // --- JSON Operations ---
     function getSetting(key, fallbackValue) {
-        return rawSettings.hasOwnProperty(key) ? rawSettings[key] : fallbackValue;
+        if (!rawSettings || typeof rawSettings !== "object") return fallbackValue;
+        if (rawSettings.hasOwnProperty(key)) return rawSettings[key];
+        if (typeof key === "string" && key.indexOf(".") !== -1) {
+            let parts = key.split(".");
+            let cur = rawSettings;
+            for (let i = 0; i < parts.length; i++) {
+                if (cur && typeof cur === "object" && cur.hasOwnProperty(parts[i])) {
+                    cur = cur[parts[i]];
+                } else {
+                    return fallbackValue;
+                }
+            }
+            return (cur !== undefined && cur !== null) ? cur : fallbackValue;
+        }
+        return fallbackValue;
+    }
+
+    function setNestedValue(obj, path, value) {
+        let parts = typeof path === "string" ? path.split(".") : [path];
+        let cur = obj;
+        for (let i = 0; i < parts.length - 1; i++) {
+            let p = parts[i];
+            if (!cur[p] || typeof cur[p] !== "object") {
+                cur[p] = {};
+            }
+            cur = cur[p];
+        }
+        cur[parts[parts.length - 1]] = value;
     }
 
     function setSetting(key, value) {
-        rawSettings[key] = value;
-        let safeValue = typeof value === "string" ? `"${value}"` : value;
-        if (typeof value === "object") safeValue = JSON.stringify(value).replace(/'/g, "'\\''");
-
-        let lockPath = settingsJsonPath + ".lock";
-        let cmd = `( flock 9; ` +
-                  `mkdir -p "$(dirname '${settingsJsonPath}')"; ` +
-                  `[ ! -s '${settingsJsonPath}' ] && echo '{}' > '${settingsJsonPath}'; ` +
-                  `jq '. + {"${key}": ${safeValue}}' '${settingsJsonPath}' > '${settingsJsonPath}.tmp' && ` +
-                  `mv '${settingsJsonPath}.tmp' '${settingsJsonPath}' ` +
-                  `) 9>'${lockPath}'`;
-        sh(cmd);
+        let obj = {};
+        if (typeof key === "string" && key.indexOf(".") !== -1) {
+            setNestedValue(obj, key, value);
+        } else {
+            obj[key] = value;
+        }
+        updateJsonBulk(obj);
     }
 
     function updateJsonBulk(dataObj) {
@@ -61,12 +83,19 @@ Item {
         let cmd = `( flock 9; ` +
                   `mkdir -p "$(dirname '${settingsJsonPath}')"; ` +
                   `[ ! -s '${settingsJsonPath}' ] && echo '{}' > '${settingsJsonPath}'; ` +
-                  `jq '. + ${jsonStr}' '${settingsJsonPath}' > '${settingsJsonPath}.tmp' && ` +
-                  `mv '${settingsJsonPath}.tmp' '${settingsJsonPath}' ` +
+                  `jq '. * ${jsonStr}' '${settingsJsonPath}' > '${settingsJsonPath}.tmp' && ` +
+                  `(cp -f '${settingsJsonPath}.tmp' '${settingsJsonPath}' 2>/dev/null || mv '${settingsJsonPath}.tmp' '${settingsJsonPath}') && ` +
+                  `rm -f '${settingsJsonPath}.tmp' ` +
                   `) 9>'${lockPath}'`;
         sh(cmd);
-        
-        for (let key in dataObj) rawSettings[key] = dataObj[key];
+
+        for (let key in dataObj) {
+            if (typeof key === "string" && key.indexOf(".") !== -1) {
+                setNestedValue(rawSettings, key, dataObj[key]);
+            } else {
+                rawSettings[key] = dataObj[key];
+            }
+        }
     }
 
     // --- Env Operations ---

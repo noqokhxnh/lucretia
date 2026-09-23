@@ -75,6 +75,30 @@ QtObject {
                     row: "top",
                     accentColor: "surface0",
                     textColor: "mauve"
+                },
+                {
+                    id: "toggleRotateLeft",
+                    action: "toggleRotateLeft",
+                    row: "top",
+                    isText: true,
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                },
+                {
+                    id: "toggleRotateRight",
+                    action: "toggleRotateRight",
+                    row: "top",
+                    isText: true,
+                    accentColor: "surface0",
+                    textColor: "mauve"
+                },
+                {
+                    id: "toggleInverted",
+                    action: "toggleInverted",
+                    row: "top",
+                    isText: true,
+                    accentColor: "surface0",
+                    textColor: "mauve"
                 }
             ]
         },

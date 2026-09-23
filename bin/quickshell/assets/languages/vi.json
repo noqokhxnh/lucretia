@@ -1152,7 +1152,15 @@
             "done": "Xong",
             "widget_singular": "tiện ích",
             "widgets_plural": "tiện ích",
-            "widgets_short": "w"
+            "widgets_short": "w",
+            "rotate": "Xoay",
+            "rotate_horizontal": "Xoay ngang",
+            "rotate_vertical": "Xoay dọc",
+            "rotate_left": "Xoay trái",
+            "rotate_right": "Xoay phải",
+            "invert": "Lật",
+            "invert_flip": "Lật ngược",
+            "invert_normal": "Lật xuôi"
         },
         "types": {
             "clock": "Đồng hồ",

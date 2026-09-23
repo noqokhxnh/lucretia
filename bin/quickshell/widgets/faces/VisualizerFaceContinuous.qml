@@ -32,6 +32,15 @@ Item {
         if (isVisVisible) Cava.unregisterConsumer();
     }
 
+    readonly property bool isHorizontal: (typeof Cava !== "undefined" && (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left"))
+    readonly property bool isHorizontalLeft: (typeof Cava !== "undefined" && Cava.orientation === "horizontal_left")
+    readonly property bool isInverted: (typeof Cava !== "undefined" && Boolean(Cava.inverted))
+    readonly property bool isRightBase: (isHorizontalLeft && !isInverted) || (!isHorizontalLeft && isInverted)
+
+    onIsHorizontalChanged: waveCanvas.requestPaint()
+    onIsHorizontalLeftChanged: waveCanvas.requestPaint()
+    onIsInvertedChanged: waveCanvas.requestPaint()
+
     property int sampleCount: 40
     property var rawBarLevels: Cava.barLevels
     property var smoothLevels: []
@@ -154,26 +163,98 @@ Item {
             let count = levels.length;
             if (count < 2) return;
 
+            let isHoriz = root.isHorizontal;
+            let isInv = root.isInverted;
+
             ctx.beginPath();
-            ctx.moveTo(0, h);
 
-            let step = w / (count - 1);
-            let prevX = 0;
-            let prevY = h - (levels[0] * h * 0.92);
-            ctx.lineTo(prevX, prevY);
+            if (!isHoriz) {
+                // Vertical layout
+                let step = w / (count - 1);
+                if (!isInv) {
+                    // Normal (grows up from bottom baseline)
+                    ctx.moveTo(0, h);
+                    let prevX = 0;
+                    let prevY = h - (levels[0] * h * 0.92);
+                    ctx.lineTo(prevX, prevY);
 
-            for (let i = 1; i < count; i++) {
-                let currX = i * step;
-                let currY = h - (levels[i] * h * 0.92);
-                let mx = (prevX + currX) * 0.5;
-                let my = (prevY + currY) * 0.5;
-                ctx.quadraticCurveTo(prevX, prevY, mx, my);
-                prevX = currX;
-                prevY = currY;
+                    for (let i = 1; i < count; i++) {
+                        let currX = i * step;
+                        let currY = h - (levels[i] * h * 0.92);
+                        let mx = (prevX + currX) * 0.5;
+                        let my = (prevY + currY) * 0.5;
+                        ctx.quadraticCurveTo(prevX, prevY, mx, my);
+                        prevX = currX;
+                        prevY = currY;
+                    }
+
+                    ctx.lineTo(w, prevY);
+                    ctx.lineTo(w, h);
+                } else {
+                    // Inverted (grows down from top baseline)
+                    ctx.moveTo(0, 0);
+                    let prevX = 0;
+                    let prevY = levels[0] * h * 0.92;
+                    ctx.lineTo(prevX, prevY);
+
+                    for (let i = 1; i < count; i++) {
+                        let currX = i * step;
+                        let currY = levels[i] * h * 0.92;
+                        let mx = (prevX + currX) * 0.5;
+                        let my = (prevY + currY) * 0.5;
+                        ctx.quadraticCurveTo(prevX, prevY, mx, my);
+                        prevX = currX;
+                        prevY = currY;
+                    }
+
+                    ctx.lineTo(w, prevY);
+                    ctx.lineTo(w, 0);
+                }
+            } else {
+                // Horizontal layout
+                let step = h / (count - 1);
+                let isRight = root.isRightBase;
+                if (!isRight) {
+                    // Normal (grows right from left baseline)
+                    ctx.moveTo(0, 0);
+                    let prevY = 0;
+                    let prevX = levels[0] * w * 0.92;
+                    ctx.lineTo(prevX, prevY);
+
+                    for (let i = 1; i < count; i++) {
+                        let currY = i * step;
+                        let currX = levels[i] * w * 0.92;
+                        let mx = (prevX + currX) * 0.5;
+                        let my = (prevY + currY) * 0.5;
+                        ctx.quadraticCurveTo(prevX, prevY, mx, my);
+                        prevX = currX;
+                        prevY = currY;
+                    }
+
+                    ctx.lineTo(prevX, h);
+                    ctx.lineTo(0, h);
+                } else {
+                    // Grows left from right baseline
+                    ctx.moveTo(w, 0);
+                    let prevY = 0;
+                    let prevX = w - (levels[0] * w * 0.92);
+                    ctx.lineTo(prevX, prevY);
+
+                    for (let i = 1; i < count; i++) {
+                        let currY = i * step;
+                        let currX = w - (levels[i] * w * 0.92);
+                        let mx = (prevX + currX) * 0.5;
+                        let my = (prevY + currY) * 0.5;
+                        ctx.quadraticCurveTo(prevX, prevY, mx, my);
+                        prevX = currX;
+                        prevY = currY;
+                    }
+
+                    ctx.lineTo(prevX, h);
+                    ctx.lineTo(w, h);
+                }
             }
 
-            ctx.lineTo(w, prevY);
-            ctx.lineTo(w, h);
             ctx.closePath();
 
             let c = (typeof ThemeBackend !== "undefined" && ThemeBackend.mauve) ? ThemeBackend.mauve : "#cba6f7";

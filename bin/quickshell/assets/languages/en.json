@@ -1152,7 +1152,15 @@
             "done": "Done",
             "widget_singular": "widget",
             "widgets_plural": "widgets",
-            "widgets_short": "w"
+            "widgets_short": "w",
+            "rotate": "Rotate",
+            "rotate_horizontal": "Horizontal",
+            "rotate_vertical": "Vertical",
+            "rotate_left": "Rotate Left",
+            "rotate_right": "Rotate Right",
+            "invert": "Invert",
+            "invert_flip": "Invert",
+            "invert_normal": "Normal"
         },
         "types": {
             "clock": "Clock",
