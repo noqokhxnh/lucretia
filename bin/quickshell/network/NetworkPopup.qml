@@ -14,6 +14,10 @@ Item {
     id: window
     focus: true
 
+    // WAYLAND ANTI-DEADLOCK: Guarantee the initial frame is never 0x0.
+    implicitWidth: window.s(900)
+    implicitHeight: window.s(700)
+
     property var btDevicesSnapshot: []
 
     Timer {
