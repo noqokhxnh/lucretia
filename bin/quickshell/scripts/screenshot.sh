@@ -12,6 +12,7 @@ MIC_MUTE="false"
 MIC_DEVICE=""
 VIDEO_BACKEND="gpu-screen-recorder"
 TARGET_MON=""
+USER_SCALE=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -20,6 +21,7 @@ while [[ "$#" -gt 0 ]]; do
         --record) RECORD_MODE=true; shift ;;
         --scan-qr) SCAN_QR_MODE=true; shift ;;
         --geometry) GEOMETRY="$2"; shift 2 ;;
+        --scale) USER_SCALE="$2"; shift 2 ;;
         --desk-vol) DESK_VOL="$2"; shift 2 ;;
         --desk-mute) DESK_MUTE="$2"; shift 2 ;;
         --mic-vol) MIC_VOL="$2"; shift 2 ;;
@@ -148,6 +150,61 @@ get_active_monitor() {
         mon=$(bash "$SCRIPT_DIR/monitors_detect.sh" 2>/dev/null | head -n 1)
     fi
     echo "$mon"
+}
+
+get_target_scale() {
+    local mon="$1"
+    local mon_scale=""
+    if command -v niri &>/dev/null; then
+        if [ -n "$mon" ]; then
+            mon_scale=$(niri msg -j outputs 2>/dev/null | jq -r --arg m "$mon" '.[$m].logical.scale // empty' 2>/dev/null)
+        fi
+        [ -z "$mon_scale" ] && mon_scale=$(niri msg -j focused-output 2>/dev/null | jq -r '.logical.scale // empty' 2>/dev/null)
+    fi
+    if [ -z "$mon_scale" ] && [ -n "$HYPRLAND_INSTANCE_SIGNATURE" ] && command -v hyprctl &>/dev/null; then
+        if [ -n "$mon" ]; then
+            mon_scale=$(hyprctl monitors -j 2>/dev/null | jq -r --arg m "$mon" '.[] | select(.name == $m) | .scale' 2>/dev/null)
+        fi
+        [ -z "$mon_scale" ] && mon_scale=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused == true) | .scale' 2>/dev/null)
+    fi
+    echo "${mon_scale:-1.0}"
+}
+
+resolve_screenshot_scale() {
+    # 1. User CLI flag
+    if [ -n "$USER_SCALE" ]; then
+        echo "$USER_SCALE"
+        return
+    fi
+    # 2. Environment variable
+    if [ -n "$QS_SCREENSHOT_SCALE" ]; then
+        echo "$QS_SCREENSHOT_SCALE"
+        return
+    fi
+    if [ -n "$SCREENSHOT_SCALE" ]; then
+        echo "$SCREENSHOT_SCALE"
+        return
+    fi
+    # 3. User settings.json
+    local cfg_scale=""
+    local sfile="${QS_SETTINGS:-$HOME/.config/lucretia/settings.json}"
+    if [ -f "$sfile" ]; then
+        cfg_scale=$(jq -r '.general.screenshotScale // .screenshotScale // empty' "$sfile" 2>/dev/null)
+    fi
+    if [ -n "$cfg_scale" ] && [ "$cfg_scale" != "null" ]; then
+        echo "$cfg_scale"
+        return
+    fi
+    # 4. Smart default based on display scale:
+    # If monitor scale is < 1.5 (e.g. 1.0 on standard 1080p), use 2.0x supersampling for crisp Retina quality.
+    # If monitor scale is >= 1.5 (already HiDPI), use the monitor scale.
+    local mon_scale
+    mon_scale=$(get_target_scale "$TARGET_MON")
+    if awk -v s="$mon_scale" 'BEGIN { exit (s < 1.5) ? 0 : 1 }'; then
+        echo "2"
+    else
+        echo "$mon_scale"
+    fi
 }
 
 if [ -z "$TARGET_MON" ] && [ -z "$GEOMETRY" ]; then
@@ -342,32 +399,38 @@ if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
     fi
 
     mkdir -p "$SAVE_DIR"
+    SCREENSHOT_SCALE=$(resolve_screenshot_scale)
+    GRIM_SCALE_ARG=()
+    if [ -n "$SCREENSHOT_SCALE" ] && [ "$SCREENSHOT_SCALE" != "1" ] && [ "$SCREENSHOT_SCALE" != "1.0" ]; then
+        GRIM_SCALE_ARG=(-s "$SCREENSHOT_SCALE")
+    fi
+
     if [ -n "$GEOMETRY" ]; then
         if [ "$EDIT_MODE" = true ]; then
             TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
-            grim -l 0 -g "$GEOMETRY" "$TMP_SCREENSHOT"
+            grim "${GRIM_SCALE_ARG[@]}" -l 1 -g "$GEOMETRY" "$TMP_SCREENSHOT"
             GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
             rm -f "$TMP_SCREENSHOT"
         else
-            grim -l 0 -g "$GEOMETRY" "$FILENAME"
+            grim "${GRIM_SCALE_ARG[@]}" -l 1 -g "$GEOMETRY" "$FILENAME"
         fi
     elif [ -n "$TARGET_MON" ]; then
         if [ "$EDIT_MODE" = true ]; then
             TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
-            grim -o "$TARGET_MON" -l 0 "$TMP_SCREENSHOT" 2>/dev/null || grim -l 0 "$TMP_SCREENSHOT"
+            grim -o "$TARGET_MON" "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT" 2>/dev/null || grim "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT"
             GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
             rm -f "$TMP_SCREENSHOT"
         else
-            grim -o "$TARGET_MON" -l 0 "$FILENAME" 2>/dev/null || grim -l 0 "$FILENAME"
+            grim -o "$TARGET_MON" "${GRIM_SCALE_ARG[@]}" -l 1 "$FILENAME" 2>/dev/null || grim "${GRIM_SCALE_ARG[@]}" -l 1 "$FILENAME"
         fi
     else
         if [ "$EDIT_MODE" = true ]; then
             TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
-            grim -l 0 "$TMP_SCREENSHOT"
+            grim "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT"
             GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
             rm -f "$TMP_SCREENSHOT"
         else
-            grim -l 0 "$FILENAME"
+            grim "${GRIM_SCALE_ARG[@]}" -l 1 "$FILENAME"
         fi
     fi
 

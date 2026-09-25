@@ -161,7 +161,8 @@
     "weatherInterval": 30,
     "weatherUnit": "metric",
     "quickactions": true,
-    "screenshotCaptureOnRelease": false
+    "screenshotCaptureOnRelease": false,
+    "screenshotScale": 2
   },
   "widgets": {
     "hideBarInRedactor": true
