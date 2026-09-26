@@ -1160,7 +1160,9 @@
             "rotate_right": "Xoay phải",
             "invert": "Lật",
             "invert_flip": "Lật ngược",
-            "invert_normal": "Lật xuôi"
+            "invert_normal": "Lật xuôi",
+            "layer_top": "Đè lên trên",
+            "layer_bottom": "Ở nền"
         },
         "types": {
             "clock": "Đồng hồ",

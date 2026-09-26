@@ -1160,7 +1160,9 @@
             "rotate_right": "Rotate Right",
             "invert": "Invert",
             "invert_flip": "Invert",
-            "invert_normal": "Normal"
+            "invert_normal": "Normal",
+            "layer_top": "On Top",
+            "layer_bottom": "On Desktop"
         },
         "types": {
             "clock": "Clock",

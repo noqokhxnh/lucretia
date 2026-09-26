@@ -99,6 +99,14 @@ QtObject {
                     isText: true,
                     accentColor: "surface0",
                     textColor: "mauve"
+                },
+                {
+                    id: "toggleOnTop",
+                    action: "toggleOnTop",
+                    row: "top",
+                    isText: true,
+                    accentColor: "surface0",
+                    textColor: "mauve"
                 }
             ]
         },

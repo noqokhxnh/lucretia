@@ -19,6 +19,17 @@ Item {
 
     property bool inverted: Config.getSetting("visualizer.inverted", Config.getSetting("cava.inverted", false))
     property string orientation: Config.getSetting("visualizer.orientation", Config.getSetting("cava.orientation", "vertical"))
+    property bool onTop: Config.getSetting("visualizer.onTop", Config.getSetting("cava.onTop", true))
+
+    function setOnTop(val) {
+        let b = Boolean(val);
+        root.onTop = b;
+        Config.setSetting("visualizer.onTop", b);
+    }
+
+    function toggleOnTop() {
+        setOnTop(!root.onTop);
+    }
 
     function setInverted(val) {
         let b = Boolean(val);
@@ -79,6 +90,7 @@ Item {
         function onSettingsLoaded() {
             root.inverted = Config.getSetting("visualizer.inverted", Config.getSetting("cava.inverted", false));
             root.orientation = Config.getSetting("visualizer.orientation", Config.getSetting("cava.orientation", "vertical"));
+            root.onTop = Config.getSetting("visualizer.onTop", Config.getSetting("cava.onTop", true));
         }
     }
 
