@@ -762,7 +762,15 @@
         "translation_desc": "Translation to {lang} — Press Enter to copy result",
         "looking_up": "Looking up: {word}...",
         "dictionary": "Dictionary: {word}",
-        "dictionary_desc": "Dictionary Definition — Press Enter to copy"
+        "dictionary_desc": "Dictionary Definition — Press Enter to copy",
+        "pomo_title": "Pomodoro Focus Timer",
+        "pomo_desc": "Open Pomodoro countdown timer in FocusTime",
+        "searching_files": "Searching: {query}...",
+        "no_files_found": "No files or folders found",
+        "kill_hint_title": "kill <process> or kill :<port>",
+        "kill_hint_desc": "Type a process name or port number (e.g. :3000) to terminate",
+        "searching_proc": "Searching processes: {query}...",
+        "no_proc_found": "No matching processes or ports found"
     },
     "calendar": {
         "loading": "Loading...",
@@ -1227,6 +1235,19 @@
         "pinned": "Pinned",
         "saving": "Saving...",
         "saved": "Saved"
+    },
+    "focustime": {
+        "tab_stats": "Analytics",
+        "tab_pomodoro": "Pomodoro",
+        "focus_time": "Focus Time",
+        "short_break": "Short Break",
+        "long_break": "Long Break",
+        "session": "Session {current} of {total}",
+        "start": "Start",
+        "pause": "Pause",
+        "reset": "Reset",
+        "skip": "Skip",
+        "minutes": "{m} min"
     },
     "cli": {
         "usage": "Usage: lucretia [command] [options...]",

@@ -762,7 +762,15 @@
         "translation_desc": "Dịch sang {lang} — Nhấn Enter để sao chép kết quả",
         "looking_up": "Đang tra cứu: {word}...",
         "dictionary": "Từ điển: {word}",
-        "dictionary_desc": "Định nghĩa từ điển — Nhấn Enter để sao chép"
+        "dictionary_desc": "Định nghĩa từ điển — Nhấn Enter để sao chép",
+        "pomo_title": "Đồng hồ Pomodoro",
+        "pomo_desc": "Mở đồng hồ đếm ngược Pomodoro trong FocusTime",
+        "searching_files": "Đang tìm: {query}...",
+        "no_files_found": "Không tìm thấy tệp hoặc thư mục nào",
+        "kill_hint_title": "kill <tên tiến trình> hoặc kill :<cổng>",
+        "kill_hint_desc": "Nhập tên tiến trình hoặc số cổng (vd: :3000) để dừng",
+        "searching_proc": "Đang tìm tiến trình: {query}...",
+        "no_proc_found": "Không tìm thấy tiến trình hoặc cổng phù hợp"
     },
     "calendar": {
         "loading": "Đang tải...",
@@ -1227,6 +1235,19 @@
         "pinned": "Đã ghim",
         "saving": "Đang lưu...",
         "saved": "Đã lưu"
+    },
+    "focustime": {
+        "tab_stats": "Thống kê",
+        "tab_pomodoro": "Pomodoro",
+        "focus_time": "Thời gian tập trung",
+        "short_break": "Nghỉ ngắn",
+        "long_break": "Nghỉ dài",
+        "session": "Phiên {current} / {total}",
+        "start": "Bắt đầu",
+        "pause": "Tạm dừng",
+        "reset": "Đặt lại",
+        "skip": "Bỏ qua",
+        "minutes": "{m} phút"
     },
     "cli": {
         "usage": "Cách dùng: Lucretia [lệnh] [tùy chọn...]",

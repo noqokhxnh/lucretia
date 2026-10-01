@@ -8,3 +8,4 @@ singleton Cava 1.0 Cava.qml
 singleton Scaler 1.0 Scaler.qml
 singleton Notes 1.0 Notes.qml
 singleton Config 1.0 Config.qml
+singleton PomodoroService 1.0 PomodoroService.qml
