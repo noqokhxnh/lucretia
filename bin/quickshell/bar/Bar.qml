@@ -14,9 +14,10 @@ Variants {
     delegate: Component {
         PanelWindow {
             id: barWindow
-            property var modelData: null
+            required property var modelData
+            screen: modelData
             property bool fastPollerLoaded: false
-            visible: barConfigReady && !shouldHideForRedact
+            visible: barConfigReady && !shouldHideForRedact && !isMirroredTarget
 
             property bool pendingReload: false
             property bool startupFilesReady: false
@@ -142,7 +143,7 @@ Variants {
             }
 
             property bool isRevealed: {
-                if (shouldHideForRedact) return false;
+                if (shouldHideForRedact || isMirroredTarget) return false;
                 if (!autohide) return true;
                 if (barHover.hovered) return true;
                 if (hideTimer.running) return true;
@@ -267,11 +268,11 @@ Variants {
                 right: isFill ? 0 : (barPosition === "left" ? 0 : (autohide ? 0 : s(4)))
             }
 
-            exclusiveZone: (!barConfigReady || autohide || shouldHideForRedact) ? 0 : barHeight
+            exclusiveZone: (!barConfigReady || autohide || shouldHideForRedact || isMirroredTarget) ? 0 : barHeight
             color: "transparent"
 
-            property real activeMaskHeight: shouldHideForRedact ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? barWindow.height : (effectiveBarHeight + edgePadding * 2)) : (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding))))
-            property real activeMaskWidth: shouldHideForRedact ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding)) : (isFill ? barWindow.width : (effectiveBarWidth + edgePadding * 2))))
+            property real activeMaskHeight: (shouldHideForRedact || isMirroredTarget) ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? barWindow.height : (effectiveBarHeight + edgePadding * 2)) : (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding))))
+            property real activeMaskWidth: (shouldHideForRedact || isMirroredTarget) ? 0 : ((autohide && !isRevealed) ? s(4) : (isVertical ? (isFill ? (barHeight + cornerRadius) : (barHeight + edgePadding)) : (isFill ? barWindow.width : (effectiveBarWidth + edgePadding * 2))))
 
             mask: Region {
                 Region {
@@ -348,6 +349,28 @@ Variants {
                 onFileChanged: reload()
                 onLoaded: {
                     barWindow.isRedacting = text().trim() === "1"
+                }
+            }
+
+            property string mirrorTarget: ""
+            property bool isMirroredTarget: {
+                let myName = (barWindow.screen && barWindow.screen.name) ? barWindow.screen.name : "";
+                if (barWindow.mirrorTarget !== "" && myName !== "" && barWindow.mirrorTarget === myName) return true;
+                if (activeToplevel && (activeToplevel.appId === "at.yrlf.wl_mirror" || activeToplevel.appId === "wl-mirror")) {
+                    if (activeToplevel.screens && activeToplevel.screens.length > 0 && barWindow.screen) {
+                        if (activeToplevel.screens.indexOf(barWindow.screen) !== -1) return true;
+                    }
+                }
+                return false;
+            }
+
+            FileView {
+                id: mirrorWatcher
+                path: (typeof Caching !== "undefined" && Caching.runDir) ? (Caching.runDir + "/mirror_target") : ""
+                watchChanges: true
+                onFileChanged: reload()
+                onLoaded: {
+                    barWindow.mirrorTarget = text().trim();
                 }
             }
 
