@@ -2956,7 +2956,11 @@ Item {
                                 });
                             }
 
-                            Component.onCompleted: ensureLoaded()
+                            Component.onCompleted: {
+                                if (root.currentTab === tabContentWrapper.parentTabIndex && !tabContentWrapper.hasSubtabs) {
+                                    singleTabLoader.ensureLoaded();
+                                }
+                            }
 
                             Connections {
                                 target: root
@@ -3022,7 +3026,11 @@ Item {
                                     });
                                 }
 
-                                Component.onCompleted: ensureLoaded()
+                                Component.onCompleted: {
+                                    if (root.currentTab === tabContentWrapper.parentTabIndex && root.currentSubTab === subIndex) {
+                                        subTabLoader.ensureLoaded();
+                                    }
+                                }
 
                                 Connections {
                                     target: root

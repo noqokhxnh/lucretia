@@ -76,9 +76,19 @@ if [[ "$ACTION" == "widgetredactor" || "$ACTION" == "widgets" || "$TARGET" == "w
     exit 0
 fi
 
+# -----------------------------------------------------------------------------
+# FAST PATH: SIMPLE WIDGET TOGGLES (Guide, Volume, Music, Calendar, Notes, etc.)
+# If quickshell is already alive, skip slow sourcing/caching.
+# -----------------------------------------------------------------------------
+if [[ ("$ACTION" == "open" || "$ACTION" == "toggle") && "$TARGET" != "network" && "$TARGET" != "wallpaper" ]]; then
+    if pgrep -x quickshell >/dev/null 2>&1; then
+        quickshell -p "$SHELL_QML_PATH" ipc call main handleCommand "$ACTION" "$TARGET" "$SUBTARGET" >/dev/null 2>&1
+        exit 0
+    fi
+fi
 
 # -----------------------------------------------------------------------------
-# SLOW PATH: Everything below only runs for non-workspace actions
+# SLOW PATH: Everything below only runs for complex actions (network, wallpaper)
 # -----------------------------------------------------------------------------
 
 source "$(dirname "${BASH_SOURCE[0]}")/caching.sh"
