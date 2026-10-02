@@ -43,7 +43,9 @@
             "display_general": "General",
             "osd": "On-Screen Display",
             "dock": "Dock",
-            "widgets": "Widgets"
+            "widgets": "Widgets",
+            "bar_general": "General",
+            "bar_modules": "Modules"
         },
         "keybinds": {
             "desc": "View, configure, and customize keyboard shortcuts",
@@ -383,7 +385,19 @@
             "modules": {
                 "vis": "Visualizer (Cava)",
                 "actions": "Actions",
-                "workspaces": "Workspaces",
+                "workspaces": {
+                    "name": "Workspaces",
+                    "style": {
+                        "pills": "Minimal pill indicators",
+                        "numbers": "Numbered indices",
+                        "pacman": "Animated arcade dots",
+                        "name": {
+                            "pills": "Pills",
+                            "numbers": "Numbers",
+                            "pacman": "Pacman"
+                        }
+                    }
+                },
                 "media": "Media",
                 "tray": "Tray",
                 "keyboard": "Keyboard",
@@ -393,7 +407,19 @@
                 "battery": "Battery",
                 "focus": "Focus",
                 "sysmon": "System monitor",
-                "timedate": "Time/Date",
+                "timedate": {
+                    "name": "Time/Date",
+                    "style": {
+                        "classic": "Clean stacked time and date",
+                        "material": "Diagonal bold accent numbers",
+                        "badge": "Pill-capsule segmented cards",
+                        "name": {
+                            "classic": "Classic",
+                            "material": "Material",
+                            "badge": "Badge"
+                        }
+                    }
+                },
                 "info": "Recording/Timer",
                 "weather": "Weather"
             },
@@ -416,7 +442,15 @@
             "workspaces": {
                 "title": "Choose an amount of workspaces to display",
                 "disc": "Note: this doesn't affect the actual amount of workspaces in the compositor",
-                "desc": "Note: this doesn't affect the actual amount of workspaces in the compositor"
+                "desc": "Note: this doesn't affect the actual amount of workspaces in the compositor",
+                "hide_empty": {
+                    "title": "Hide empty workspaces",
+                    "desc": "Show only occupied workspaces and the active one"
+                },
+                "style": {
+                    "title": "Workspaces Style",
+                    "desc": "Choose the visual style for workspace indicators"
+                }
             },
             "opacity": {
                 "title": "Bar opacity",
@@ -457,6 +491,20 @@
             "distinct_pills": {
                 "title": "Enable a modular and compact style for widgets",
                 "desc": "Makes bar's modules have an outlining rectangle and shrink their size to fit the modular look"
+            },
+            "height": {
+                "title": "Bar height",
+                "desc": "Set the height of the bar in pixels"
+            },
+            "timedate": {
+                "show_date": {
+                    "title": "Show Date",
+                    "desc": "Display the date text alongside the clock"
+                },
+                "style": {
+                    "title": "Time & Date Style",
+                    "desc": "Choose the visual style for the clock and date display"
+                }
             }
         },
         "theme": {
@@ -626,11 +674,16 @@
             "orientation": {
                 "horizontal": "Horizontal",
                 "vertical": "Vertical"
-            }
+            },
+            "caps_lock": "Caps Lock",
+            "num_lock": "Num Lock",
+            "airplane_mode": "Airplane Mode"
         },
         "common": {
             "show_bar": "Show bar",
-            "unavailable": "Unavailable"
+            "unavailable": "Unavailable",
+            "on": "ON",
+            "off": "OFF"
         },
         "position": {
             "custom": "Custom"
@@ -719,6 +772,12 @@
                 "title": "Place dock on top of windows",
                 "desc": "Keep the dock visible above application windows"
             }
+        },
+        "settings": "Settings",
+        "search": {
+            "no_results": "No settings found",
+            "placeholder": "Search settings...",
+            "prompt": "Type to search settings..."
         }
     },
     "sysnotif": {

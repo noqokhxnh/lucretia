@@ -43,7 +43,9 @@
             "display_widgets": "Widgets",
             "dock": "Dock",
             "osd": "On-Screen Display",
-            "widgets": "Widgets"
+            "widgets": "Widgets",
+            "bar_general": "Chung",
+            "bar_modules": "Mô-đun"
         },
         "keybinds": {
             "desc": "Xem, quản lý và tùy chỉnh các tổ hợp phím tắt",
@@ -383,7 +385,19 @@
             "modules": {
                 "vis": "Trực quan hoá âm thanh (Cava)",
                 "actions": "Tác vụ",
-                "workspaces": "Không gian làm việc",
+                "workspaces": {
+                    "name": "Workspace",
+                    "style": {
+                        "pills": "Các chỉ báo viên thuốc tối giản",
+                        "numbers": "Chỉ số được đánh số",
+                        "pacman": "Các chấm arcade chuyển động",
+                        "name": {
+                            "pills": "Viên thuốc (Pills)",
+                            "numbers": "Chữ số (Numbers)",
+                            "pacman": "Pacman"
+                        }
+                    }
+                },
                 "media": "Trình phát nhạc",
                 "tray": "Khay hệ thống",
                 "keyboard": "Bàn phím",
@@ -393,7 +407,19 @@
                 "battery": "Pin",
                 "focus": "Tiêu điểm ứng dụng",
                 "sysmon": "Giám sát hệ thống",
-                "timedate": "Thời gian / Ngày",
+                "timedate": {
+                    "name": "Thời gian/Ngày",
+                    "style": {
+                        "classic": "Thời gian và ngày xếp chồng gọn gàng",
+                        "material": "Chữ số điểm nhấn chéo đậm nét",
+                        "badge": "Thẻ phân đoạn dạng con nhộng",
+                        "name": {
+                            "classic": "Cổ điển (Classic)",
+                            "material": "Material",
+                            "badge": "Huy hiệu (Badge)"
+                        }
+                    }
+                },
                 "info": "Ghi âm / Hẹn giờ",
                 "weather": "Thời tiết"
             },
@@ -416,7 +442,15 @@
             "workspaces": {
                 "title": "Chọn số lượng không gian làm việc hiển thị",
                 "desc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor",
-                "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
+                "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor",
+                "hide_empty": {
+                    "title": "Ẩn workspace trống",
+                    "desc": "Chỉ hiển thị các workspace có ứng dụng và workspace đang hoạt động"
+                },
+                "style": {
+                    "title": "Kiểu hiển thị Workspace",
+                    "desc": "Chọn kiểu hiển thị cho các chỉ báo workspace"
+                }
             },
             "opacity": {
                 "title": "Độ mờ / trong suốt",
@@ -457,6 +491,20 @@
             "distinct_pills": {
                 "title": "Kiểu dạng khối viên thuốc nhỏ gọn",
                 "desc": "Bọc các module của thanh bar trong các khối bo tròn riêng biệt và thu nhỏ kích thước"
+            },
+            "height": {
+                "title": "Chiều cao thanh bar",
+                "desc": "Đặt chiều cao của thanh bar theo pixel"
+            },
+            "timedate": {
+                "show_date": {
+                    "title": "Hiển thị ngày",
+                    "desc": "Hiển thị ngày tháng bên cạnh đồng hồ"
+                },
+                "style": {
+                    "title": "Kiểu hiển thị thời gian & ngày",
+                    "desc": "Chọn kiểu hiển thị cho đồng hồ và ngày tháng"
+                }
             }
         },
         "theme": {
@@ -598,7 +646,9 @@
         "update_available": "Có bản cập nhật mới",
         "common": {
             "show_bar": "Hiện thanh bar",
-            "unavailable": "Không khả dụng"
+            "unavailable": "Không khả dụng",
+            "on": "BẬT",
+            "off": "TẮT"
         },
         "dock": {
             "title": "Thanh Dock",
@@ -715,10 +765,19 @@
                 "bottom_left": "Góc dưới bên trái",
                 "bottom_right": "Góc dưới bên phải"
             },
-            "test": "Thử nghiệm OSD"
+            "test": "Thử nghiệm OSD",
+            "caps_lock": "Caps Lock",
+            "num_lock": "Num Lock",
+            "airplane_mode": "Chế độ máy bay"
         },
         "position": {
             "custom": "Tùy chỉnh"
+        },
+        "settings": "Cài đặt",
+        "search": {
+            "no_results": "Không tìm thấy cài đặt",
+            "placeholder": "Tìm kiếm cài đặt...",
+            "prompt": "Nhập để tìm kiếm cài đặt..."
         }
     },
     "sysnotif": {

@@ -1,16 +1,18 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
-import "../"
-import "../reusables"
+import "../../"
+import "../../reusables"
+import "../../reusables/guide"
 
 Item {
     id: barTabRoot
     required property var rootObj
     required property int tabIndex
+    property int subTabIndex: 0
 
     anchors.fill: parent
-    visible: rootObj.currentTab === tabIndex
+    visible: rootObj.currentTab === tabIndex && (rootObj.currentSubTab === undefined || rootObj.currentSubTab === subTabIndex)
     opacity: visible ? 1.0 : 0.0
     property real slideY: visible ? 0 : rootObj.s(10)
 
@@ -31,30 +33,6 @@ Item {
         }
     }
 
-    property var defaultLauncherSettings: ({
-        "position": "top",
-        "width": 600,
-        "itemCount": 6,
-        "terminalCommand": "kitty -e",
-        "smartRanking": true
-    })
-    property string launcherPosition: {
-        let s = (typeof Config !== "undefined" && Config.rawSettings) ? Config.rawSettings["launcher"] : undefined;
-        if (s && s.position !== undefined) return s.position;
-        if (typeof Config !== "undefined" && typeof Config.getSetting === "function") {
-            let ls = Config.getSetting("launcher", defaultLauncherSettings);
-            if (ls && ls.position !== undefined) return ls.position;
-        }
-        return "top";
-    }
-
-    function updateLauncherPosition(pos) {
-        let current = JSON.parse(JSON.stringify(Config.getSetting("launcher", defaultLauncherSettings) || defaultLauncherSettings));
-        current["position"] = pos;
-        Config.setSetting("launcher", current);
-        barTabRoot.launcherPosition = pos;
-    }
-
     property var defaultBarSettings: {
         "position": "top",
         "width": 100,
@@ -64,7 +42,6 @@ Item {
         "time": {"format": "HH:mm:ss"},
         "autohide": false,
         "autohideTimeout": 1000,
-        "workspaceCount": 8,
         "groupColors": {},
         "modules": {
             "left": ["left", "workspaces", "media"],
@@ -87,10 +64,8 @@ Item {
         return "modular";
     }
     property bool distinctPills: barSettings.distinctPills !== undefined ? barSettings.distinctPills : false
-    property string timeFormat: barSettings.time && barSettings.time.format !== undefined ? barSettings.time.format : "HH:mm:ss"
     property bool autohide: barSettings.autohide !== undefined ? barSettings.autohide : false
     property int autohideTimeout: barSettings.autohideTimeout !== undefined ? barSettings.autohideTimeout : 1000
-    property int workspaceCount: barSettings.workspaceCount !== undefined ? barSettings.workspaceCount : 8
 
     ListModel { id: leftModel }
     ListModel { id: centerModel }
@@ -105,6 +80,18 @@ Item {
     property var assignedGroupColors: barSettings.groupColors || ({})
 
     property string lastSavedModulesString: ""
+
+    property string launcherPosition: {
+        let ls = Config.getSetting("launcher", {});
+        return (ls && ls.position !== undefined) ? ls.position : "top";
+    }
+
+    function updateLauncherPosition(pos) {
+        barTabRoot.launcherPosition = pos;
+        let ls = Config.getSetting("launcher", {});
+        ls.position = pos;
+        Config.setSetting("launcher", ls);
+    }
 
     Timer {
         id: barWidthDebounceTimer
@@ -224,9 +211,9 @@ Item {
     function getModuleInfo(id) {
         let labels = {
             "left": I18n.t("guide.bar.modules.actions"),
-            "workspaces": I18n.t("guide.bar.modules.workspaces"),
+            "workspaces": I18n.t("guide.bar.modules.workspaces.name"),
             "focus": I18n.t("guide.bar.modules.focus"),
-            "timedate": I18n.t("guide.bar.modules.timedate"),
+            "timedate": I18n.t("guide.bar.modules.timedate.name"),
             "info": I18n.t("guide.bar.modules.info"),
             "weather": I18n.t("guide.bar.modules.weather"),
             "media": I18n.t("guide.bar.modules.media"),
@@ -362,16 +349,20 @@ Item {
                     var gId = "g_" + arr[i][0];
                     barTabRoot.assignGroupColor(gId);
                     for (var j = 0; j < arr[i].length; j++) {
-                        var info = getModuleInfo(arr[i][j]);
+                        var gModuleId = arr[i][j];
+                        if (used[gModuleId]) continue;
+                        var info = getModuleInfo(gModuleId);
                         info.groupId = gId;
                         model.append(info);
-                        used[arr[i][j]] = true;
+                        used[gModuleId] = true;
                     }
                 } else {
-                    var info = getModuleInfo(arr[i]);
+                    var sModuleId = arr[i];
+                    if (used[sModuleId]) continue;
+                    var info = getModuleInfo(sModuleId);
                     info.groupId = "";
                     model.append(info);
-                    used[arr[i]] = true;
+                    used[sModuleId] = true;
                 }
             }
         }
@@ -445,10 +436,8 @@ Item {
         let current = Config.getSetting("bar", barTabRoot.defaultBarSettings);
         current.modules = JSON.parse(JSON.stringify(barTabRoot.defaultBarSettings.modules));
         current.groupColors = {};
-        current.workspaceCount = barTabRoot.defaultBarSettings.workspaceCount;
         current.distinctPills = barTabRoot.defaultBarSettings.distinctPills;
         barTabRoot.assignedGroupColors = {};
-        barTabRoot.workspaceCount = barTabRoot.defaultBarSettings.workspaceCount;
         barTabRoot.distinctPills = barTabRoot.defaultBarSettings.distinctPills;
         barTabRoot.lastSavedModulesString = barTabRoot.getModulesString(current.modules);
         Config.setSetting("bar", current);
@@ -742,17 +731,12 @@ Item {
             barTabRoot.barStyle = "modular";
         }
         barTabRoot.distinctPills = ts.distinctPills !== undefined ? ts.distinctPills : false;
-        barTabRoot.timeFormat = ts.time && ts.time.format !== undefined ? ts.time.format : "HH:mm:ss";
         barTabRoot.autohide = ts.autohide !== undefined ? ts.autohide : false;
         barTabRoot.autohideTimeout = ts.autohideTimeout !== undefined ? ts.autohideTimeout : 1000;
-        barTabRoot.workspaceCount = ts.workspaceCount !== undefined ? ts.workspaceCount : 8;
         if (ts.groupColors) {
             barTabRoot.assignedGroupColors = ts.groupColors;
         }
         barTabRoot.barSettings = ts;
-
-        let ls = Config.getSetting("launcher", barTabRoot.defaultLauncherSettings);
-        barTabRoot.launcherPosition = (ls && ls.position !== undefined) ? ls.position : "top";
     }
 
     Component.onCompleted: {
@@ -782,11 +766,8 @@ Item {
         current.opacity = barTabRoot.currentBarOpacity;
         current.style = barTabRoot.barStyle;
         current.distinctPills = barTabRoot.distinctPills;
-        if (!current.time) current.time = {};
-        current.time.format = barTabRoot.timeFormat;
         current.autohide = barTabRoot.autohide;
         current.autohideTimeout = barTabRoot.autohideTimeout;
-        current.workspaceCount = barTabRoot.workspaceCount;
         if (!current.modules) current.modules = barTabRoot.defaultBarSettings.modules;
         current.groupColors = barTabRoot.assignedGroupColors;
 
@@ -802,7 +783,7 @@ Item {
             Layout.preferredWidth: 1
             Layout.fillHeight: lName !== "available"
             implicitHeight: Math.max(rootObj.s(lName === "available" ? 68 : 90), titleText.implicitHeight + (flowList.childrenRect.height > 0 ? flowList.childrenRect.height : flowList.implicitHeight) + rootObj.s(20))
-            color: ThemeBackend.mantle
+            color: ThemeBackend.base
             radius: barTabRoot.cardRadius
             border.width: 1
             border.color: Qt.alpha(ThemeBackend.surface1, 0.4)
@@ -881,9 +862,9 @@ Item {
                         property string moduleId: model.moduleId
                         property string moduleLabel: {
                             if (moduleId === "left") return I18n.t("guide.bar.modules.actions");
-                            if (moduleId === "workspaces") return I18n.t("guide.bar.modules.workspaces");
+                            if (moduleId === "workspaces") return I18n.t("guide.bar.modules.workspaces.name");
                             if (moduleId === "focus") return I18n.t("guide.bar.modules.focus");
-                            if (moduleId === "timedate") return I18n.t("guide.bar.modules.timedate");
+                            if (moduleId === "timedate") return I18n.t("guide.bar.modules.timedate.name");
                             if (moduleId === "info") return I18n.t("guide.bar.modules.info");
                             if (moduleId === "weather") return I18n.t("guide.bar.modules.weather");
                             if (moduleId === "media") return I18n.t("guide.bar.modules.media");
@@ -1080,10 +1061,10 @@ Item {
 
     Flickable {
         anchors.fill: parent
-        anchors.topMargin: rootObj.s(4)
+        anchors.topMargin: rootObj.s(8)
         anchors.leftMargin: rootObj.s(8)
         anchors.rightMargin: rootObj.s(8)
-        anchors.bottomMargin: rootObj.s(4)
+        anchors.bottomMargin: rootObj.s(8)
         contentHeight: settingsCol.implicitHeight
         clip: true
         boundsBehavior: Flickable.StopAtBounds
@@ -1104,722 +1085,424 @@ Item {
         ColumnLayout {
             id: settingsCol
             width: parent.width
-            spacing: 0
+            spacing: rootObj.s(6)
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: 0
+            SettingsRow {
+                rootObj: barTabRoot.rootObj
+                icon: "󱂬"
+                title: I18n.t("guide.bar.position.title")
+                description: I18n.t("guide.bar.position.desc")
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: row0Layout.implicitHeight + rootObj.s(18)
-                    color: "transparent"
+                Dropdown {
+                    id: barPosDropdown
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    implicitWidth: rootObj.s(180)
+                    implicitHeight: rootObj.s(32)
+                    options: [I18n.t("guide.bar.position.top"), I18n.t("guide.bar.position.bottom"), I18n.t("guide.bar.position.left"), I18n.t("guide.bar.position.right")]
+                    currentIndex: barTabRoot.barPosition === "bottom" ? 1 : (barTabRoot.barPosition === "left" ? 2 : (barTabRoot.barPosition === "right" ? 3 : 0))
+                    accentColor: ThemeBackend.mauve
+                    baseColor: ThemeBackend.surface0
+                    hoverColor: ThemeBackend.surface1
+                    dropdownColor: ThemeBackend.surface0
+                    borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                    textColor: ThemeBackend.text
+                    activeTextColor: ThemeBackend.crust
+                    cornerRadius: ThemeBackend.borderRadius
+                    fontPixelSize: rootObj.s(11)
+                    onValueChanged: function(index, value) {
+                        barTabRoot.clearPendingGroup();
+                        if (index === 0) barTabRoot.barPosition = "top";
+                        else if (index === 1) barTabRoot.barPosition = "bottom";
+                        else if (index === 2) barTabRoot.barPosition = "left";
+                        else if (index === 3) barTabRoot.barPosition = "right";
+                        barTabRoot.updateBarSettings();
+                    }
+                }
+            }
 
-                    RowLayout {
-                        id: row0Layout
-                        anchors.left: parent.left
-                        anchors.leftMargin: rootObj.s(12)
-                        anchors.right: parent.right
-                        anchors.rightMargin: rootObj.s(12)
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: rootObj.s(16)
+            SettingsRow {
+                rootObj: barTabRoot.rootObj
+                icon: "󱓞"
+                title: I18n.t("guide.bar.launcher_position.title", "App Launcher Position")
+                description: I18n.t("guide.bar.launcher_position.desc", "Select where the app launcher appears on screen")
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: rootObj.s(2)
-                            Text { text: I18n.t("guide.bar.position.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                            Text { text: I18n.t("guide.bar.position.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                        }
+                Dropdown {
+                    id: launcherPosDropdown
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    implicitWidth: rootObj.s(180)
+                    implicitHeight: rootObj.s(32)
+                    options: [
+                        I18n.t("guide.launcher.position.top", "Top"),
+                        I18n.t("guide.launcher.position.bottom", "Bottom"),
+                        I18n.t("guide.launcher.position.left", "Left"),
+                        I18n.t("guide.launcher.position.right", "Right"),
+                        I18n.t("guide.launcher.position.center", "Center")
+                    ]
+                    currentIndex: {
+                        if (barTabRoot.launcherPosition === "bottom") return 1;
+                        if (barTabRoot.launcherPosition === "left") return 2;
+                        if (barTabRoot.launcherPosition === "right") return 3;
+                        if (barTabRoot.launcherPosition === "center") return 4;
+                        return 0;
+                    }
+                    accentColor: ThemeBackend.mauve
+                    baseColor: ThemeBackend.surface0
+                    hoverColor: ThemeBackend.surface1
+                    dropdownColor: ThemeBackend.surface0
+                    borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                    textColor: ThemeBackend.text
+                    activeTextColor: ThemeBackend.crust
+                    cornerRadius: ThemeBackend.borderRadius
+                    fontPixelSize: rootObj.s(11)
+                    onValueChanged: function(index, value) {
+                        let pos = "top";
+                        if (index === 1) pos = "bottom";
+                        else if (index === 2) pos = "left";
+                        else if (index === 3) pos = "right";
+                        else if (index === 4) pos = "center";
+                        barTabRoot.updateLauncherPosition(pos);
+                    }
+                }
+            }
 
-                        Dropdown {
-                            id: barPosDropdown
+            SettingsGroup {
+                rootObj: barTabRoot.rootObj
+                icon: "󰏘"
+                title: I18n.t("guide.bar.style.title")
+                description: I18n.t("guide.bar.style.desc")
+                expanded: barTabRoot.barStyle === "solid" || barTabRoot.barStyle === "fill"
+
+                Switch {
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    implicitWidth: rootObj.s(210)
+                    implicitHeight: rootObj.s(32)
+                    options: [I18n.t("guide.bar.style.modular"), I18n.t("guide.bar.style.solid"), I18n.t("guide.bar.style.fill")]
+                    currentIndex: barTabRoot.barStyle === "fill" ? 2 : (barTabRoot.barStyle === "solid" ? 1 : 0)
+                    accentColor: ThemeBackend.mauve
+                    baseColor: ThemeBackend.surface0
+                    textColor: ThemeBackend.subtext0
+                    activeTextColor: ThemeBackend.crust
+                    cornerRadius: ThemeBackend.borderRadius
+                    fontPixelSize: rootObj.s(11)
+                    onToggled: function(index) {
+                        barTabRoot.clearPendingGroup();
+                        if (index === 0) barTabRoot.barStyle = "modular";
+                        else if (index === 1) barTabRoot.barStyle = "solid";
+                        else if (index === 2) barTabRoot.barStyle = "fill";
+                        barTabRoot.updateBarSettings();
+                    }
+                }
+
+                subSettings: [
+                    SettingsRow {
+                        rootObj: barTabRoot.rootObj
+                        icon: "󰍜"
+                        title: I18n.t("guide.bar.distinct_pills.title")
+                        description: I18n.t("guide.bar.distinct_pills.desc")
+
+                        Toggle {
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            implicitWidth: rootObj.s(180)
-                            implicitHeight: rootObj.s(32)
-                            options: [I18n.t("guide.bar.position.top"), I18n.t("guide.bar.position.bottom"), I18n.t("guide.bar.position.left"), I18n.t("guide.bar.position.right")]
-                            currentIndex: barTabRoot.barPosition === "bottom" ? 1 : (barTabRoot.barPosition === "left" ? 2 : (barTabRoot.barPosition === "right" ? 3 : 0))
+                            checked: barTabRoot.distinctPills
                             accentColor: ThemeBackend.mauve
-                            baseColor: ThemeBackend.surface0
-                            hoverColor: ThemeBackend.surface1
-                            dropdownColor: ThemeBackend.surface0
-                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
-                            textColor: ThemeBackend.text
-                            activeTextColor: ThemeBackend.crust
-                            cornerRadius: ThemeBackend.borderRadius
-                            fontPixelSize: rootObj.s(11)
-                            onValueChanged: function(index, value) {
+                            baseColor: ThemeBackend.surface1
+                            handleColor: ThemeBackend.crust
+                            handleOffColor: ThemeBackend.text
+                            onToggled: function(c) {
                                 barTabRoot.clearPendingGroup();
-                                if (index === 0) barTabRoot.barPosition = "top";
-                                else if (index === 1) barTabRoot.barPosition = "bottom";
-                                else if (index === 2) barTabRoot.barPosition = "left";
-                                else if (index === 3) barTabRoot.barPosition = "right";
+                                barTabRoot.distinctPills = c;
                                 barTabRoot.updateBarSettings();
                             }
                         }
                     }
+                ]
+            }
+
+            Item {
+                id: widthSectionWrapper
+                Layout.fillWidth: true
+                property bool isOpen: barTabRoot.barStyle !== "fill"
+                clip: true
+                visible: implicitHeight > 0
+                opacity: isOpen ? 1.0 : 0.0
+                implicitHeight: isOpen ? widthInnerBox.implicitHeight : 0
+
+                Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+                Behavior on implicitHeight { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
+
+                SettingsRow {
+                    id: widthInnerBox
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    rootObj: barTabRoot.rootObj
+                    icon: "󰘖"
+                    title: {
+                        if (barTabRoot.barPosition === "left" || barTabRoot.barPosition === "right") {
+                            let h = I18n.t("guide.bar.height.title");
+                            if (h && h !== "guide.bar.height.title") return h;
+                            let w = I18n.t("guide.bar.width.title");
+                            if (w && w.indexOf("Width") !== -1) return w.replace("Width", "Height");
+                            if (w && w.indexOf("width") !== -1) return w.replace("width", "height");
+                            return w;
+                        }
+                        return I18n.t("guide.bar.width.title");
+                    }
+                    description: {
+                        if (barTabRoot.barPosition === "left" || barTabRoot.barPosition === "right") {
+                            let h = I18n.t("guide.bar.height.desc");
+                            if (h && h !== "guide.bar.height.desc") return h;
+                            let w = I18n.t("guide.bar.width.desc");
+                            if (w && w.indexOf("Width") !== -1) return w.replace("Width", "Height");
+                            if (w && w.indexOf("width") !== -1) return w.replace("width", "height");
+                            return w;
+                        }
+                        return I18n.t("guide.bar.width.desc");
+                    }
+
+                    Draggable {
+                        id: barWidthSlider
+                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                        Layout.rightMargin: rootObj.s(8)
+                        implicitWidth: rootObj.s(220)
+                        implicitHeight: rootObj.s(18)
+                        from: 5
+                        to: 100
+                        stepSize: 1
+                        defaultValue: 100
+                        showValueBubble: true
+                        valueFormatter: function(v) { return Math.round(v) + "%" }
+                        value: barTabRoot.currentBarWidth
+                        backgroundColor: ThemeBackend.surface0
+                        accentColor: ThemeBackend.mauve
+                        handleColor: ThemeBackend.text
+                        handleBorderColor: ThemeBackend.mantle
+                        onMoved: function(val) {
+                            barTabRoot.clearPendingGroup();
+                            let rounded = Math.round(val);
+                            if (barTabRoot.currentBarWidth !== rounded) {
+                                barTabRoot.currentBarWidth = rounded;
+                                barWidthDebounceTimer.restart();
+                            }
+                        }
+                        onDragFinished: {
+                            barWidthDebounceTimer.stop();
+                            barTabRoot.updateBarSettings();
+                        }
+                    }
+                }
+            }
+
+            SettingsRow {
+                rootObj: barTabRoot.rootObj
+                icon: "󰃟"
+                title: I18n.t("guide.bar.opacity.title")
+                description: I18n.t("guide.bar.opacity.desc")
+
+                Draggable {
+                    id: barOpacitySlider
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    Layout.rightMargin: rootObj.s(8)
+                    implicitWidth: rootObj.s(220)
+                    implicitHeight: rootObj.s(18)
+                    from: 1
+                    to: 100
+                    stepSize: 1
+                    defaultValue: 100
+                    showValueBubble: true
+                    valueFormatter: function(v) { return Math.round(v) + "%" }
+                    value: barTabRoot.currentBarOpacity
+                    backgroundColor: ThemeBackend.surface0
+                    accentColor: ThemeBackend.mauve
+                    handleColor: ThemeBackend.text
+                    handleBorderColor: ThemeBackend.mantle
+                    onMoved: function(val) {
+                        barTabRoot.clearPendingGroup();
+                        let rounded = Math.round(val);
+                        if (barTabRoot.currentBarOpacity !== rounded) {
+                            barTabRoot.currentBarOpacity = rounded;
+                            barWidthDebounceTimer.restart();
+                        }
+                    }
+                    onDragFinished: {
+                        barWidthDebounceTimer.stop();
+                        barTabRoot.updateBarSettings();
+                    }
+                }
+            }
+
+            SettingsGroup {
+                rootObj: barTabRoot.rootObj
+                icon: "󰈉"
+                title: I18n.t("guide.bar.autohide.title")
+                description: I18n.t("guide.bar.autohide.desc")
+                expanded: barTabRoot.autohide
+
+                Toggle {
+                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                    checked: barTabRoot.autohide
+                    accentColor: ThemeBackend.mauve
+                    baseColor: ThemeBackend.surface1
+                    handleColor: ThemeBackend.crust
+                    handleOffColor: ThemeBackend.text
+                    onToggled: function(c) {
+                        barTabRoot.clearPendingGroup();
+                        barTabRoot.autohide = c;
+                        barTabRoot.updateBarSettings();
+                    }
                 }
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.2); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
+                subSettings: [
+                    SettingsRow {
+                        rootObj: barTabRoot.rootObj
+                        icon: "󰔛"
+                        title: I18n.t("guide.bar.timeout.title")
+                        description: I18n.t("guide.bar.timeout.desc")
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: rowLauncherPosLayout.implicitHeight + rootObj.s(18)
-                    color: "transparent"
+                        Draggable {
+                            id: timeoutSlider
+                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
+                            Layout.rightMargin: rootObj.s(8)
+                            implicitWidth: rootObj.s(220)
+                            implicitHeight: rootObj.s(18)
+                            from: 250
+                            to: 10000
+                            stepSize: 50
+                            defaultValue: 1000
+                            showValueBubble: true
+                            valueFormatter: function(v) { return Math.round(v) + " ms" }
+                            value: barTabRoot.autohideTimeout
+                            backgroundColor: ThemeBackend.surface0
+                            accentColor: ThemeBackend.mauve
+                            handleColor: ThemeBackend.text
+                            handleBorderColor: ThemeBackend.mantle
+                            onMoved: function(val) {
+                                barTabRoot.clearPendingGroup();
+                                let rounded = Math.round(val);
+                                if (barTabRoot.autohideTimeout !== rounded) {
+                                    barTabRoot.autohideTimeout = rounded;
+                                    barWidthDebounceTimer.restart();
+                                }
+                            }
+                            onDragFinished: {
+                                barWidthDebounceTimer.stop();
+                                barTabRoot.updateBarSettings();
+                            }
+                        }
+                    }
+                ]
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: barConfigCol.implicitHeight + rootObj.s(24)
+                radius: ThemeBackend.borderRadius
+                color: Qt.alpha(ThemeBackend.surface0, 0.4)
+                border.width: 0
+
+                ColumnLayout {
+                    id: barConfigCol
+                    anchors.fill: parent
+                    anchors.margins: rootObj.s(12)
+                    spacing: rootObj.s(14)
 
                     RowLayout {
-                        id: rowLauncherPosLayout
-                        anchors.left: parent.left
-                        anchors.leftMargin: rootObj.s(12)
-                        anchors.right: parent.right
-                        anchors.rightMargin: rootObj.s(12)
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: rootObj.s(16)
+                        Layout.fillWidth: true
+                        spacing: rootObj.s(12)
+
+                        IconButton {
+                            enabled: false
+                            size: rootObj.s(32)
+                            Layout.preferredWidth: rootObj.s(32)
+                            Layout.preferredHeight: rootObj.s(32)
+                            Layout.alignment: Qt.AlignVCenter
+                            cornerRadius: ThemeBackend.borderRadius
+                            buttonIcon: "󰒓"
+                            iconFontSize: rootObj.s(16)
+                            accentColor: ThemeBackend.surface0
+                            textColor: "#ffffff"
+                        }
 
                         ColumnLayout {
                             Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
                             spacing: rootObj.s(2)
                             Text {
-                                text: I18n.t("guide.bar.launcher_position.title", "App Launcher Position")
+                                Layout.fillWidth: true
+                                text: I18n.t("guide.bar.config.title")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(13)
                                 color: ThemeBackend.text
                             }
                             Text {
-                                text: I18n.t("guide.bar.launcher_position.desc", "Select where the app launcher appears on screen")
+                                text: I18n.t("guide.bar.config.desc")
                                 font.family: ThemeBackend.fontFamily
                                 font.pixelSize: rootObj.s(11)
                                 color: ThemeBackend.subtext0
+                                Layout.fillWidth: true
+                                wrapMode: Text.WordWrap
                             }
                         }
 
-                        Dropdown {
-                            id: launcherPosDropdown
+                        ClickButton {
                             Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            implicitWidth: rootObj.s(180)
                             implicitHeight: rootObj.s(32)
-                            options: [
-                                I18n.t("guide.launcher.position.top", "Top"),
-                                I18n.t("guide.launcher.position.bottom", "Bottom"),
-                                I18n.t("guide.launcher.position.left", "Left"),
-                                I18n.t("guide.launcher.position.right", "Right"),
-                                I18n.t("guide.launcher.position.center", "Center")
-                            ]
-                            currentIndex: {
-                                if (barTabRoot.launcherPosition === "bottom") return 1;
-                                if (barTabRoot.launcherPosition === "left") return 2;
-                                if (barTabRoot.launcherPosition === "right") return 3;
-                                if (barTabRoot.launcherPosition === "center") return 4;
-                                return 0;
-                            }
-                            accentColor: ThemeBackend.mauve
-                            baseColor: ThemeBackend.surface0
-                            hoverColor: ThemeBackend.surface1
-                            dropdownColor: ThemeBackend.surface0
-                            borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
+                            buttonText: I18n.t("guide.bar.config.reset")
+                            buttonIcon: "↺"
+                            accentColor: ThemeBackend.surface0
                             textColor: ThemeBackend.text
-                            activeTextColor: ThemeBackend.crust
                             cornerRadius: ThemeBackend.borderRadius
-                            fontPixelSize: rootObj.s(11)
-                            onValueChanged: function(index, value) {
-                                let pos = "top";
-                                if (index === 1) pos = "bottom";
-                                else if (index === 2) pos = "left";
-                                else if (index === 3) pos = "right";
-                                else if (index === 4) pos = "center";
-                                barTabRoot.updateLauncherPosition(pos);
+                            horizontalPadding: rootObj.s(12)
+                            textFontSize: rootObj.s(11)
+                            onClicked: function() {
+                                barTabRoot.resetBarSettings();
                             }
                         }
                     }
-                }
 
-                Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.2); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: rowStyleLayout.implicitHeight + rootObj.s(18)
-                    color: "transparent"
-                    RowLayout {
-                        id: rowStyleLayout
-                        anchors.left: parent.left
-                        anchors.leftMargin: rootObj.s(12)
-                        anchors.right: parent.right
-                        anchors.rightMargin: rootObj.s(12)
-                        anchors.verticalCenter: parent.verticalCenter
-                        spacing: rootObj.s(16)
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: rootObj.s(2)
-                            Text { text: I18n.t("guide.bar.style.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                            Text { text: I18n.t("guide.bar.style.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                        }
-                        Switch {
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            implicitWidth: rootObj.s(210); implicitHeight: rootObj.s(32)
-                            options: [I18n.t("guide.bar.style.modular"), I18n.t("guide.bar.style.solid"), I18n.t("guide.bar.style.fill")]
-                            currentIndex: barTabRoot.barStyle === "fill" ? 2 : (barTabRoot.barStyle === "solid" ? 1 : 0)
-                            accentColor: ThemeBackend.mauve; baseColor: ThemeBackend.surface0; textColor: ThemeBackend.subtext0; activeTextColor: ThemeBackend.crust
-                            cornerRadius: ThemeBackend.borderRadius; fontPixelSize: rootObj.s(11)
-                            onToggled: function(index) {
-                                barTabRoot.clearPendingGroup();
-                                if (index === 0) barTabRoot.barStyle = "modular";
-                                else if (index === 1) barTabRoot.barStyle = "solid";
-                                else if (index === 2) barTabRoot.barStyle = "fill";
-                                barTabRoot.updateBarSettings();
-                            }
+                    Loader {
+                        Layout.fillWidth: true
+                        sourceComponent: dragBoxComp
+                        onLoaded: {
+                            item.listModel = availableModel;
+                            item.lName = "available";
                         }
                     }
-                }
-
-                Item {
-                    id: widthSectionWrapper
-                    Layout.fillWidth: true
-                    property bool isOpen: barTabRoot.barStyle !== "fill"
-                    clip: true
-                    visible: implicitHeight > 0
-                    opacity: isOpen ? 1.0 : 0.0
-                    implicitHeight: isOpen ? widthInnerCol.implicitHeight : 0
-
-                    Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                    Behavior on implicitHeight { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-
-                    ColumnLayout {
-                        id: widthInnerCol
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        spacing: 0
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            height: 1
-                            color: Qt.alpha(ThemeBackend.surface1, 0.2)
-                            Layout.topMargin: rootObj.s(5)
-                            Layout.bottomMargin: rootObj.s(5)
-                        }
-
-                        Rectangle {
-                            Layout.fillWidth: true
-                            implicitHeight: rowWidthLayout.implicitHeight + rootObj.s(18)
-                            color: "transparent"
-
-                            RowLayout {
-                                id: rowWidthLayout
-                                anchors.left: parent.left
-                                anchors.leftMargin: rootObj.s(12)
-                                anchors.right: parent.right
-                                anchors.rightMargin: rootObj.s(12)
-                                anchors.verticalCenter: parent.verticalCenter
-                                spacing: rootObj.s(16)
-
-                                ColumnLayout {
-                                    Layout.fillWidth: true
-                                    spacing: rootObj.s(2)
-                                    Text { text: I18n.t("guide.bar.width.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                                    Text { text: I18n.t("guide.bar.width.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                                }
-
-                                RowLayout {
-                                    Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                    spacing: rootObj.s(12)
-                                    Layout.rightMargin: rootObj.s(8)
-
-                                    Draggable {
-                                        id: barWidthSlider
-                                        implicitWidth: rootObj.s(220)
-                                        implicitHeight: rootObj.s(18)
-                                        from: 20
-                                        to: 100
-                                        stepSize: 1
-                                        defaultValue: 100
-                                        showValueBubble: true
-                                        valueFormatter: function(v) { return Math.round(v) + "%" }
-                                        value: barTabRoot.currentBarWidth
-                                        backgroundColor: ThemeBackend.surface0
-                                        accentColor: ThemeBackend.mauve
-                                        handleColor: ThemeBackend.text
-                                        handleBorderColor: ThemeBackend.mantle
-                                        onMoved: function(val) {
-                                            barTabRoot.clearPendingGroup();
-                                            let rounded = Math.round(val);
-                                            if (barTabRoot.currentBarWidth !== rounded) {
-                                                barTabRoot.currentBarWidth = rounded;
-                                                barWidthDebounceTimer.restart();
-                                            }
-                                        }
-                                        onDragFinished: {
-                                            barWidthDebounceTimer.stop();
-                                            barTabRoot.updateBarSettings();
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Item {
-                    id: distinctPillsSectionWrapper
-                    Layout.fillWidth: true
-                    property bool isOpen: barTabRoot.barStyle === "solid" || barTabRoot.barStyle === "fill"
-                    clip: true
-                    visible: implicitHeight > 0
-                    opacity: isOpen ? 1.0 : 0.0
-                    implicitHeight: isOpen ? distinctPillsInnerBox.implicitHeight : 0
-
-                    Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                    Behavior on implicitHeight { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-
-                    Rectangle {
-                        id: distinctPillsInnerBox
-                        anchors.left: parent.left
-                        anchors.right: parent.right
-                        anchors.top: parent.top
-                        implicitHeight: rowDistinctPillsLayout.implicitHeight + rootObj.s(24)
-                        radius: ThemeBackend.borderRadius
-                        color: Qt.alpha(ThemeBackend.surface0, 0.4)
-                        border.width: 0
-
-                        RowLayout {
-                            id: rowDistinctPillsLayout
-                            anchors.left: parent.left
-                            anchors.leftMargin: rootObj.s(14)
-                            anchors.right: parent.right
-                            anchors.rightMargin: rootObj.s(14)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: rootObj.s(12)
-
-                            IconButton {
-                                enabled: false
-                                size: rootObj.s(32)
-                                Layout.preferredWidth: rootObj.s(32)
-                                Layout.preferredHeight: rootObj.s(32)
-                                Layout.alignment: Qt.AlignVCenter
-                                cornerRadius: ThemeBackend.borderRadius
-                                buttonIcon: "󰍜"
-                                iconFontSize: rootObj.s(16)
-                                accentColor: ThemeBackend.surface0
-                                textColor: "#ffffff"
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                Layout.alignment: Qt.AlignVCenter
-                                spacing: rootObj.s(2)
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: I18n.t("guide.bar.distinct_pills.title")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: rootObj.s(13)
-                                    color: ThemeBackend.text
-                                }
-                                Text {
-                                    Layout.fillWidth: true
-                                    text: I18n.t("guide.bar.distinct_pills.desc")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: rootObj.s(11)
-                                    color: ThemeBackend.subtext0
-                                }
-                            }
-
-                            Toggle {
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                checked: barTabRoot.distinctPills
-                                accentColor: ThemeBackend.mauve
-                                baseColor: ThemeBackend.surface1
-                                handleColor: ThemeBackend.crust
-                                handleOffColor: ThemeBackend.text
-                                onToggled: function(c) {
-                                    barTabRoot.clearPendingGroup();
-                                    barTabRoot.distinctPills = c;
-                                    barTabRoot.updateBarSettings();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.2); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: rowOpacityLayout.implicitHeight + rootObj.s(18)
-                    color: "transparent"
 
                     RowLayout {
-                        id: rowOpacityLayout
-                        anchors.left: parent.left
-                        anchors.leftMargin: rootObj.s(12)
-                        anchors.right: parent.right
-                        anchors.rightMargin: rootObj.s(12)
-                        anchors.verticalCenter: parent.verticalCenter
+                        Layout.fillWidth: true
+                        Layout.minimumHeight: rootObj.s(130)
                         spacing: rootObj.s(16)
 
-                        ColumnLayout {
+                        Loader {
                             Layout.fillWidth: true
-                            spacing: rootObj.s(2)
-                            Text { text: I18n.t("guide.bar.opacity.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                            Text { text: I18n.t("guide.bar.opacity.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                        }
-
-                        RowLayout {
-                            Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                            spacing: rootObj.s(12)
-                            Layout.rightMargin: rootObj.s(8)
-
-                            Draggable {
-                                id: barOpacitySlider
-                                implicitWidth: rootObj.s(220)
-                                implicitHeight: rootObj.s(18)
-                                from: 1
-                                to: 100
-                                stepSize: 1
-                                defaultValue: 100
-                                showValueBubble: true
-                                valueFormatter: function(v) { return Math.round(v) + "%" }
-                                value: barTabRoot.currentBarOpacity
-                                backgroundColor: ThemeBackend.surface0
-                                accentColor: ThemeBackend.mauve
-                                handleColor: ThemeBackend.text
-                                handleBorderColor: ThemeBackend.mantle
-                                onMoved: function(val) {
-                                    barTabRoot.clearPendingGroup();
-                                    let rounded = Math.round(val);
-                                    if (barTabRoot.currentBarOpacity !== rounded) {
-                                        barTabRoot.currentBarOpacity = rounded;
-                                        barWidthDebounceTimer.restart();
-                                    }
-                                }
-                                onDragFinished: {
-                                    barWidthDebounceTimer.stop();
-                                    barTabRoot.updateBarSettings();
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.4); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-                    spacing: 0
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: rowTimeLayout.implicitHeight + rootObj.s(18)
-                        color: "transparent"
-                        RowLayout {
-                            id: rowTimeLayout
-                            anchors.left: parent.left
-                            anchors.leftMargin: rootObj.s(12)
-                            anchors.right: parent.right
-                            anchors.rightMargin: rootObj.s(12)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: rootObj.s(16)
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: rootObj.s(2)
-                                Text { text: I18n.t("guide.bar.time.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                                Text { text: I18n.t("guide.bar.time.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                            }
-                            Input {
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                implicitWidth: rootObj.s(140)
-                                implicitHeight: rootObj.s(32)
-                                text: barTabRoot.timeFormat
-                                placeholderText: "HH:mm:ss"
-                                baseColor: ThemeBackend.surface0
-                                accentColor: ThemeBackend.mauve
-                                textColor: ThemeBackend.text
-                                subTextColor: ThemeBackend.subtext0
-                                borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
-                                cornerRadius: ThemeBackend.borderRadius
-                                fontPixelSize: rootObj.s(11)
-                                onTextEdited: function(newText) {
-                                    barTabRoot.clearPendingGroup();
-                                    barTabRoot.timeFormat = newText;
-                                    barTabRoot.updateBarSettings();
-                                }
-                                onAccepted: function(finalText) {
-                                    barTabRoot.clearPendingGroup();
-                                    barTabRoot.timeFormat = finalText;
-                                    barTabRoot.updateBarSettings();
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.2); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: rowAutohideLayout.implicitHeight + rootObj.s(18)
-                        color: "transparent"
-                        RowLayout {
-                            id: rowAutohideLayout
-                            anchors.left: parent.left
-                            anchors.leftMargin: rootObj.s(12)
-                            anchors.right: parent.right
-                            anchors.rightMargin: rootObj.s(12)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: rootObj.s(16)
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: rootObj.s(2)
-                                Text { text: I18n.t("guide.bar.autohide.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                                Text { text: I18n.t("guide.bar.autohide.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                            }
-                            Toggle {
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                checked: barTabRoot.autohide
-                                accentColor: ThemeBackend.mauve; baseColor: ThemeBackend.surface1; handleColor: ThemeBackend.crust; handleOffColor: ThemeBackend.text
-                                onToggled: function(c) {
-                                    barTabRoot.clearPendingGroup();
-                                    barTabRoot.autohide = c;
-                                    barTabRoot.updateBarSettings();
-                                }
-                            }
-                        }
-                    }
-
-                    Item {
-                        id: timeoutSectionWrapper
-                        Layout.fillWidth: true
-                        property bool isOpen: barTabRoot.autohide
-                        clip: true
-                        visible: implicitHeight > 0
-                        opacity: isOpen ? 1.0 : 0.0
-                        implicitHeight: isOpen ? timeoutInnerCol.implicitHeight : 0
-
-                        Behavior on opacity { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                        Behavior on implicitHeight { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-
-                        ColumnLayout {
-                            id: timeoutInnerCol
-                            anchors.left: parent.left
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                            spacing: 0
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                height: 1
-                                color: Qt.alpha(ThemeBackend.surface1, 0.4)
-                                Layout.topMargin: rootObj.s(5)
-                                Layout.bottomMargin: rootObj.s(5)
-                            }
-
-                            Rectangle {
-                                Layout.fillWidth: true
-                                implicitHeight: rowTimeoutLayout.implicitHeight + rootObj.s(18)
-                                color: "transparent"
-
-                                RowLayout {
-                                    id: rowTimeoutLayout
-                                    anchors.left: parent.left
-                                    anchors.leftMargin: rootObj.s(12)
-                                    anchors.right: parent.right
-                                    anchors.rightMargin: rootObj.s(12)
-                                    anchors.verticalCenter: parent.verticalCenter
-                                    spacing: rootObj.s(16)
-                                    ColumnLayout {
-                                        Layout.fillWidth: true
-                                        spacing: rootObj.s(2)
-                                        Text { text: I18n.t("guide.bar.timeout.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                                        Text { text: I18n.t("guide.bar.timeout.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                                    }
-                                    RowLayout {
-                                        Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                        spacing: rootObj.s(12)
-                                        Layout.rightMargin: rootObj.s(8)
-
-                                        Draggable {
-                                            id: timeoutSlider
-                                            implicitWidth: rootObj.s(220)
-                                            implicitHeight: rootObj.s(18)
-                                            from: 250
-                                            to: 10000
-                                            stepSize: 50
-                                            defaultValue: 1000
-                                            showValueBubble: true
-                                            valueFormatter: function(v) { return Math.round(v) + " ms" }
-                                            value: barTabRoot.autohideTimeout
-                                            backgroundColor: ThemeBackend.surface0
-                                            accentColor: ThemeBackend.mauve
-                                            handleColor: ThemeBackend.text
-                                            handleBorderColor: ThemeBackend.mantle
-                                            onMoved: function(val) {
-                                                barTabRoot.clearPendingGroup();
-                                                let rounded = Math.round(val);
-                                                if (barTabRoot.autohideTimeout !== rounded) {
-                                                    barTabRoot.autohideTimeout = rounded;
-                                                    barWidthDebounceTimer.restart();
-                                                }
-                                            }
-                                            onDragFinished: {
-                                                barWidthDebounceTimer.stop();
-                                                barTabRoot.updateBarSettings();
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.4); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        implicitHeight: rowWorkspacesCountLayout.implicitHeight + rootObj.s(18)
-                        color: "transparent"
-
-                        RowLayout {
-                            id: rowWorkspacesCountLayout
-                            anchors.left: parent.left
-                            anchors.leftMargin: rootObj.s(12)
-                            anchors.right: parent.right
-                            anchors.rightMargin: rootObj.s(12)
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: rootObj.s(16)
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: rootObj.s(2)
-                                Text { text: I18n.t("guide.bar.workspaces.title"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(13); color: ThemeBackend.text }
-                                Text { text: I18n.t("guide.bar.workspaces.desc"); font.family: ThemeBackend.fontFamily; font.pixelSize: rootObj.s(11); color: ThemeBackend.subtext0 }
-                            }
-
-                            NumberSelector {
-                                id: workspaceCountSelector
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                implicitWidth: rootObj.s(140)
-                                implicitHeight: rootObj.s(32)
-                                from: 2
-                                to: 10
-                                stepSize: 1
-                                decimals: 0
-                                value: barTabRoot.workspaceCount
-                                baseColor: ThemeBackend.surface0
-                                accentColor: ThemeBackend.mauve
-                                buttonColor: ThemeBackend.surface1
-                                buttonTextColor: ThemeBackend.text
-                                textColor: ThemeBackend.text
-                                subTextColor: ThemeBackend.subtext0
-                                borderColor: Qt.alpha(ThemeBackend.surface2, 0.6)
-                                cornerRadius: ThemeBackend.borderRadius
-                                fontFamily: ThemeBackend.fontFamily
-                                fontPixelSize: rootObj.s(12)
-                                onValueChanged: {
-                                    let rounded = Math.round(workspaceCountSelector.value);
-                                    if (barTabRoot.workspaceCount !== rounded) {
-                                        barTabRoot.clearPendingGroup();
-                                        barTabRoot.workspaceCount = rounded;
-                                        barTabRoot.updateBarSettings();
-                                    }
-                                }
-                                onTriggered: {
-                                    barTabRoot.clearPendingGroup();
-                                    barTabRoot.workspaceCount = Math.round(workspaceCountSelector.value);
-                                    barTabRoot.updateBarSettings();
-                                }
-                            }
-                        }
-                    }
-
-                    Rectangle { Layout.fillWidth: true; height: 1; color: Qt.alpha(ThemeBackend.surface1, 0.4); Layout.topMargin: rootObj.s(5); Layout.bottomMargin: rootObj.s(5) }
-
-                    ColumnLayout {
-                        Layout.fillWidth: true
-                        Layout.topMargin: rootObj.s(4)
-                        spacing: rootObj.s(14)
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            Layout.leftMargin: rootObj.s(12)
-                            Layout.rightMargin: rootObj.s(12)
-                            spacing: rootObj.s(16)
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: rootObj.s(2)
-                                Text {
-                                    text: I18n.t("guide.bar.config.title")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: rootObj.s(13)
-                                    color: ThemeBackend.text
-                                }
-                                Text {
-                                    text: I18n.t("guide.bar.config.desc")
-                                    font.family: ThemeBackend.fontFamily
-                                    font.pixelSize: rootObj.s(11)
-                                    color: ThemeBackend.subtext0
-                                    Layout.fillWidth: true
-                                    wrapMode: Text.WordWrap
-                                }
-                            }
-
-                            ClickButton {
-                                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                                implicitHeight: rootObj.s(32)
-                                buttonText: I18n.t("guide.bar.config.reset")
-                                buttonIcon: "↺"
-                                accentColor: ThemeBackend.surface0
-                                textColor: ThemeBackend.text
-                                cornerRadius: ThemeBackend.borderRadius
-                                horizontalPadding: rootObj.s(12)
-                                textFontSize: rootObj.s(11)
-                                onClicked: function() {
-                                    barTabRoot.resetBarSettings();
-                                }
+                            Layout.preferredWidth: 1
+                            Layout.fillHeight: true
+                            sourceComponent: dragBoxComp
+                            onLoaded: {
+                                item.listModel = leftModel;
+                                item.lName = "left";
                             }
                         }
 
                         Loader {
                             Layout.fillWidth: true
+                            Layout.preferredWidth: 1
+                            Layout.fillHeight: true
                             sourceComponent: dragBoxComp
                             onLoaded: {
-                                item.listModel = availableModel;
-                                item.lName = "available";
+                                item.listModel = centerModel;
+                                item.lName = "center";
                             }
                         }
 
-                        RowLayout {
+                        Loader {
                             Layout.fillWidth: true
-                            Layout.minimumHeight: rootObj.s(130)
-                            spacing: rootObj.s(16)
-
-                            Loader {
-                                Layout.fillWidth: true
-                                Layout.preferredWidth: 1
-                                Layout.fillHeight: true
-                                sourceComponent: dragBoxComp
-                                onLoaded: {
-                                    item.listModel = leftModel;
-                                    item.lName = "left";
-                                }
-                            }
-
-                            Loader {
-                                Layout.fillWidth: true
-                                Layout.preferredWidth: 1
-                                Layout.fillHeight: true
-                                sourceComponent: dragBoxComp
-                                onLoaded: {
-                                    item.listModel = centerModel;
-                                    item.lName = "center";
-                                }
-                            }
-
-                            Loader {
-                                Layout.fillWidth: true
-                                Layout.preferredWidth: 1
-                                Layout.fillHeight: true
-                                sourceComponent: dragBoxComp
-                                onLoaded: {
-                                    item.listModel = rightModel;
-                                    item.lName = "right";
-                                }
+                            Layout.preferredWidth: 1
+                            Layout.fillHeight: true
+                            sourceComponent: dragBoxComp
+                            onLoaded: {
+                                item.listModel = rightModel;
+                                item.lName = "right";
                             }
                         }
                     }
