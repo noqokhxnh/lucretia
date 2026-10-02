@@ -1280,6 +1280,30 @@
             },
             "dashboard": {
                 "name": "Dashboard"
+            },
+            "productivity": {
+                "name": "Productivity"
+            },
+            "vietnam_lunar": {
+                "name": "Vietnamese Lunar"
+            },
+            "system_monitor": {
+                "name": "Hardware Monitor"
+            },
+            "music_studio": {
+                "name": "Music Studio"
+            },
+            "aesthetic_zen": {
+                "name": "Aesthetic Zen"
+            },
+            "developer": {
+                "name": "Developer Hub"
+            },
+            "compact_glance": {
+                "name": "Compact Glance"
+            },
+            "creative_studio": {
+                "name": "Creative Studio"
             }
         }
     },

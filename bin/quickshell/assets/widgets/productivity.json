@@ -1,0 +1,41 @@
+{
+  "name": "widgets.presets.productivity.name",
+  "widgets": [
+    {
+      "type": "time",
+      "variant": "digital",
+      "anchor": "top left",
+      "x": 40,
+      "y": 40,
+      "w": 260,
+      "h": 120
+    },
+    {
+      "type": "note",
+      "variant": "checklist",
+      "anchor": "top left",
+      "x": 40,
+      "y": 180,
+      "w": 320,
+      "h": 360
+    },
+    {
+      "type": "lunar",
+      "variant": "compact",
+      "anchor": "top right",
+      "x": 40,
+      "y": 40,
+      "w": 280,
+      "h": 120
+    },
+    {
+      "type": "weather",
+      "variant": "compact",
+      "anchor": "top right",
+      "x": 40,
+      "y": 180,
+      "w": 250,
+      "h": 120
+    }
+  ]
+}

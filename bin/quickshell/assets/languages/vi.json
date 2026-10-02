@@ -1280,6 +1280,30 @@
             },
             "dashboard": {
                 "name": "Bảng điều khiển"
+            },
+            "productivity": {
+                "name": "Năng suất & Công việc"
+            },
+            "vietnam_lunar": {
+                "name": "Lịch Âm Việt Nam"
+            },
+            "system_monitor": {
+                "name": "Giám sát phần cứng"
+            },
+            "music_studio": {
+                "name": "Không gian âm nhạc"
+            },
+            "aesthetic_zen": {
+                "name": "Tối giản Zen"
+            },
+            "developer": {
+                "name": "Góc Lập trình"
+            },
+            "compact_glance": {
+                "name": "Liếc nhìn nhanh"
+            },
+            "creative_studio": {
+                "name": "Góc Sáng tạo"
             }
         }
     },

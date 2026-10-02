@@ -1,0 +1,41 @@
+{
+  "name": "widgets.presets.creative_studio.name",
+  "widgets": [
+    {
+      "type": "time",
+      "variant": "analog",
+      "anchor": "top left",
+      "x": 40,
+      "y": 40,
+      "w": 200,
+      "h": 200
+    },
+    {
+      "type": "note",
+      "variant": "notebook",
+      "anchor": "top right",
+      "x": 40,
+      "y": 40,
+      "w": 340,
+      "h": 420
+    },
+    {
+      "type": "music",
+      "variant": "round",
+      "anchor": "bottom left",
+      "x": 40,
+      "y": 40,
+      "w": 340,
+      "h": 120
+    },
+    {
+      "type": "visualizer",
+      "variant": "bars",
+      "anchor": "bottom right",
+      "x": 40,
+      "y": 40,
+      "w": 480,
+      "h": 160
+    }
+  ]
+}
