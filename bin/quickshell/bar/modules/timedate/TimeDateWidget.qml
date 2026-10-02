@@ -5,20 +5,50 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
-import "../../reusables"
-import "../../"
+import "../../../reusables"
+import "../../../"
 
 Rectangle {
     id: timeDateRoot
 
     property var barWindow
     property bool isSolid: false
+    property bool distinctPills: barWindow ? (barWindow.distinctPills !== undefined ? barWindow.distinctPills : false) : false
     property bool moduleActive: true
     property bool isGrouped: false
+    property bool isCompact: isGrouped || (isSolid && distinctPills)
     readonly property bool isBottomBar: barWindow ? (barWindow.barPosition === "bottom") : false
+
+    property int configRevision: 0
+
+    Connections {
+        target: (typeof Config !== "undefined") ? Config : null
+        function onSettingsLoaded() { timeDateRoot.configRevision++; }
+        function onRawSettingsChanged() { timeDateRoot.configRevision++; }
+    }
+
+    property string timeStyle: {
+        let dummy = configRevision;
+        if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar) {
+            if (Config.rawSettings.bar.timeStyle) return Config.rawSettings.bar.timeStyle;
+        }
+        return "classic";
+    }
+
+    property bool showDate: {
+        let dummy = configRevision;
+        if (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar) {
+            if (Config.rawSettings.bar.timeShowDate !== undefined) return Config.rawSettings.bar.timeShowDate;
+            if (Config.rawSettings.bar.showDate !== undefined) return Config.rawSettings.bar.showDate;
+        }
+        return true;
+    }
 
     readonly property string timeStr: DateTime.time
     readonly property string timeOnlyStr: DateTime.timeOnly
+    readonly property string hourStr: (typeof DateTime !== "undefined" && DateTime.hour) ? DateTime.hour : (DateTime.time ? DateTime.time.split(":")[0] : "")
+    readonly property string minuteStr: (typeof DateTime !== "undefined" && DateTime.minute) ? DateTime.minute : (DateTime.time ? DateTime.time.split(":")[1] : "")
+    readonly property string secondStr: (typeof DateTime !== "undefined" && DateTime.second) ? DateTime.second : ""
     readonly property string fullDateStr: DateTime.fullDate
     property int typeInIndex: 0
     property string dateStr: fullDateStr.substring(0, typeInIndex)
@@ -37,6 +67,12 @@ Rectangle {
         onTriggered: typeInIndex += 1
     }
 
+    function s(val) {
+        if (barWindow && typeof barWindow.s === "function") return barWindow.s(val);
+        if (typeof Scaler !== "undefined" && typeof Scaler.s === "function") return Math.round(Scaler.s(val));
+        return val;
+    }
+
     property int animDuration: 600
     property real targetX: 0
     x: targetX
@@ -46,12 +82,14 @@ Rectangle {
         NumberAnimation { duration: timeDateRoot.animDuration; easing.type: Easing.OutQuint }
     }
 
-    property real horizontalPadding: barWindow ? barWindow.s(14) : 14
-    property real baseWidth: timeCol.width + (horizontalPadding * 2)
-    property real baseHeight: barWindow ? barWindow.barHeight : 30
+    property real horizontalPadding: s(isCompact ? 12 : 14)
+    property real baseHeight: barWindow ? (isGrouped ? barWindow.barHeight - 8 : ((isSolid && distinctPills) ? barWindow.barHeight - 6 : barWindow.barHeight)) : (isGrouped ? 22 : ((isSolid && distinctPills) ? 24 : 30))
 
     property real targetHeight: baseHeight
-    property real targetWidth: moduleActive ? baseWidth : 0
+    property real targetWidth: (moduleActive && faceLoader.item) ? (faceLoader.item.implicitWidth + (horizontalPadding * 2)) : 0
+
+    width: targetWidth
+    height: targetHeight
 
     MouseArea {
         id: bgMouse
@@ -68,20 +106,13 @@ Rectangle {
     property bool isHovered: bgMouse.containsMouse
     property bool showLayout: false
 
-    property real targetY: barWindow ? barWindow.baseOffsetY : 0
+    property real targetY: barWindow ? barWindow.baseOffsetY + (barWindow.barHeight - targetHeight) / 2 : 0
     y: targetY
 
     Behavior on y {
         enabled: barWindow ? !barWindow.positionChanging : true
         NumberAnimation { duration: timeDateRoot.animDuration; easing.type: Easing.OutQuint }
     }
-
-    width: targetWidth
-    height: targetHeight
-
-    readonly property bool isBarOpaque: (barWindow && barWindow.barOpacity !== undefined) ? (barWindow.barOpacity >= 1.0) : true
-    readonly property bool paintOwnBackground: (!isGrouped && !isSolid)
-    readonly property bool paintBaseBackground: (!isGrouped && !isSolid) || isBarOpaque
 
     color: "transparent"
     border.width: 0
@@ -95,11 +126,9 @@ Rectangle {
         width: parent.width
         height: parent.height
         radius: ThemeBackend.borderRadius
-        color: timeDateRoot.isHovered ? ThemeBackend.surface0 : ThemeBackend.base
-        property bool showBorder: (!timeDateRoot.isGrouped && !timeDateRoot.isSolid)
-        border.width: showBorder ? 1 : 0
-        border.color: showBorder ? (timeDateRoot.isHovered ? ThemeBackend.surface1 : ThemeBackend.surface0) : "transparent"
-        visible: timeDateRoot.paintOwnBackground && height > 0
+        color: timeDateRoot.isGrouped ? "transparent" : (timeDateRoot.isSolid ? (timeDateRoot.distinctPills ? (timeDateRoot.isHovered ? ThemeBackend.surface0 : Qt.darker(ThemeBackend.surface0, 1.15)) : "transparent") : (timeDateRoot.isHovered ? ThemeBackend.surface0 : ThemeBackend.base))
+        border.width: 0
+        visible: height > 0
 
         Behavior on color { enabled: barWindow ? !barWindow.positionChanging : true; ColorAnimation { duration: 250 } }
     }
@@ -131,35 +160,23 @@ Rectangle {
         onTriggered: timeDateRoot.showLayout = true
     }
 
-    Item {
-        id: topArea
-        width: parent.width
-        height: barWindow ? barWindow.barHeight : 30
-        y: timeDateRoot.isBottomBar ? (parent.height - height) : 0
-
-        Column {
-            id: timeCol
-            anchors.left: parent.left
-            anchors.leftMargin: timeDateRoot.horizontalPadding
-            anchors.verticalCenter: parent.verticalCenter
-            spacing: -2
-
-            Text {
-                anchors.left: parent.left
-                text: timeStr
-                font.family: ThemeBackend.fontFamily
-                font.pixelSize: barWindow ? barWindow.s(15) : 15
-                font.weight: Font.Black
-                color: ThemeBackend.blue
-            }
-            Text {
-                anchors.left: parent.left
-                text: dateStr
-                font.family: ThemeBackend.fontFamily
-                font.pixelSize: barWindow ? barWindow.s(10) : 10
-                font.weight: Font.Bold
-                color: ThemeBackend.subtext0
+    Loader {
+        id: faceLoader
+        z: 2
+        anchors.centerIn: parent
+        source: {
+            switch (timeDateRoot.timeStyle) {
+                case "material": return Qt.resolvedUrl("faces/MaterialFace.qml");
+                case "badge": return Qt.resolvedUrl("faces/BadgeFace.qml");
+                case "classic":
+                default: return Qt.resolvedUrl("faces/ClassicFace.qml");
             }
         }
+    }
+
+    Binding {
+        target: faceLoader.item
+        property: "widget"
+        value: timeDateRoot
     }
 }
