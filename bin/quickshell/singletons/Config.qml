@@ -28,12 +28,13 @@ Item {
         '[ -e "$target" ] && target="$(readlink -f "$target" 2>/dev/null || echo "$target")"\n' +
         'dir="$(dirname "$target")"\n' +
         'mkdir -p "$dir" || exit 1\n' +
-        'tmp="$dir/.settings_tmp_$$\"\n' +
+        'tmp="$dir/.settings_tmp_$$"\n' +
         'trap \'rm -f "$tmp"\' EXIT INT TERM HUP\n' +
         'printf "%s\\n" "$content" > "$tmp" || exit 1\n' +
         'if [ -s "$tmp" ]; then\n' +
         '  chmod 644 "$tmp" 2>/dev/null || true\n' +
-        '  mv "$tmp" "$target"\n' +
+        '  cp -f "$tmp" "$target" 2>/dev/null || mv -f "$tmp" "$target"\n' +
+        '  rm -f "$tmp" 2>/dev/null || true\n' +
         'fi\n'
 
     readonly property real uiScale: {
@@ -131,6 +132,15 @@ Item {
     }
 
     function updateJsonBulk(dataObj) {
+        if (!dataReady || Object.keys(rawSettings || {}).length === 0) {
+            try {
+                let curText = typeof settingsWatcher.text === "function" ? settingsWatcher.text() : settingsWatcher.text;
+                if (curText && curText.trim().length > 0) {
+                    rawSettings = JSON.parse(curText.trim());
+                    dataReady = true;
+                }
+            } catch (e) {}
+        }
         let next = JSON.parse(JSON.stringify(rawSettings || {}));
         let syncIdle = false;
         for (let key in dataObj) {
@@ -164,6 +174,12 @@ Item {
         dispatchWrite(next);
     }
 
+    function reloadSettings() {
+        if (settingsWatcher && typeof settingsWatcher.reload === "function") {
+            settingsWatcher.reload();
+        }
+    }
+
     function dispatchWrite(settingsObj) {
         if (isWriting) {
             pendingPayload = JSON.parse(JSON.stringify(settingsObj));
@@ -172,6 +188,7 @@ Item {
         isWriting = true;
         let str = JSON.stringify(settingsObj, null, 2);
         lastWrittenContent = str;
+        writerProc.running = false;
         writerProc.command = ["bash", "-c", writerScript, "_", settingsJsonPath, str + "\n"];
         writerProc.running = true;
     }

@@ -75,9 +75,9 @@ function getLayout(name, mx, my, mw, mh, userScale, barPosition) {
     if (!barPosition) barPosition = "top";
 
     let base = {
-        "network": { 
-            w: 720, h: 600, comp: "network/NetworkPopup.qml", 
-            pos: { 
+        "network": {
+            w: 900, h: 700, comp: "network/NetworkPopup.qml",
+            pos: {
                 "top": { anchor: "top-right", mt: 52, mr: 4 }, 
                 "bottom": { anchor: "bottom-right", mb: 52, mr: 4 }, 
                 "left": { anchor: "bottom-left", ml: 52, mb: 4 }, 

@@ -1,0 +1,41 @@
+{
+  "name": "widgets.presets.aesthetic_zen.name",
+  "widgets": [
+    {
+      "type": "time",
+      "variant": "analog",
+      "anchor": "top left",
+      "x": 60,
+      "y": 60,
+      "w": 200,
+      "h": 200
+    },
+    {
+      "type": "weather",
+      "variant": "compact",
+      "anchor": "top right",
+      "x": 60,
+      "y": 60,
+      "w": 240,
+      "h": 110
+    },
+    {
+      "type": "music",
+      "variant": "round",
+      "anchor": "bottom left",
+      "x": 60,
+      "y": 60,
+      "w": 340,
+      "h": 120
+    },
+    {
+      "type": "note",
+      "variant": "compact",
+      "anchor": "bottom right",
+      "x": 60,
+      "y": 60,
+      "w": 280,
+      "h": 200
+    }
+  ]
+}

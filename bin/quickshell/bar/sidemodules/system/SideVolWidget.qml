@@ -18,7 +18,7 @@ Rectangle {
     property bool showLayout: false
     property alias volPill: volBtn
 
-    readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
+    readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Audio.getVolume(Audio.defaultSink, Audio.defaultSink.audio.volume) : 0
     readonly property bool isMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
 
     y: targetY
@@ -48,7 +48,7 @@ Rectangle {
         height: barWindow ? barWindow.s(30) : 30
         cornerRadius: Math.max(0, ThemeBackend.borderRadius - 2)
         buttonIcon: isMuted || sysVolume === 0 ? "󰖁" : (sysVolume > 50 ? "󰕾" : "󰖀")
-        iconFontSize: barWindow ? barWindow.s(15) : 15
+        iconFontSize: barWindow ? barWindow.s(18) : 18
         accentColor: (!isMuted && sysVolume > 0) ? ThemeBackend.mauve : ThemeBackend.surface1
         textColor: (!isMuted && sysVolume > 0) ? ThemeBackend.base : ThemeBackend.subtext0
         onClicked: Quickshell.execDetached(["bash", Caching.home + "/.config/niri/bin/qs_manager.sh", "toggle", "volume"])

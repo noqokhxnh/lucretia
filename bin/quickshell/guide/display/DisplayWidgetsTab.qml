@@ -13,9 +13,10 @@ Item {
     id: displayWidgetsRoot
     required property var rootObj
     required property int tabIndex
+    property int subTabIndex: 1
 
     anchors.fill: parent
-    visible: rootObj.currentTab === tabIndex
+    visible: rootObj.currentTab === tabIndex && (rootObj.currentSubTab === undefined || rootObj.currentSubTab === subTabIndex)
     opacity: visible ? 1.0 : 0.0
     property real slideY: visible ? 0 : rootObj.s(10)
 

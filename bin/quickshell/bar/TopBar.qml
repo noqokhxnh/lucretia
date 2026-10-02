@@ -142,12 +142,7 @@ Item {
         }
     }
 
-    property string layoutState: {
-        if (isFill) return "default";
-        if (barWindow && barWindow.isNotifOpen) return "settings";
-        if (barWindow && barWindow.isSysOpen) return "sys";
-        return "default";
-    }
+    property string layoutState: "default"
 
     property var leftArr: contentWrapper.moduleSettings["left"] || []
     property var centerArr: contentWrapper.moduleSettings["center"] || []
@@ -175,7 +170,6 @@ Item {
     property bool trayAlignRight: {
         if (trayInLeft) return false;
         if (trayInRight) return true;
-        if (trayInCenter) return layoutState !== "sys";
         return true;
     }
 
@@ -282,11 +276,7 @@ Item {
     property real screenMinLeft: isFill ? fillInset : (barWindow ? (barWindow.s(1) + distinctEdgePadding) : distinctEdgePadding)
     property real screenMaxRight: isFill ? (contentWrapper.width - fillInset) : (barWindow ? (contentWrapper.width - barWindow.s(1) - distinctEdgePadding) : (contentWrapper.width - distinctEdgePadding))
 
-    property real rawCNaturalX: {
-        if (layoutState === "settings") return screenMaxRight - rWidthTarget - crGap - cWidthTarget;
-        if (layoutState === "sys") return screenMinLeft + lWidthTarget + lcGap;
-        return (contentWrapper.width - cWidthTarget) / 2;
-    }
+    property real rawCNaturalX: (contentWrapper.width - cWidthTarget) / 2
 
     property real absMinC: (lWidthTarget > 0) ? (screenMinLeft + lWidthTarget + lcGap) : screenMinLeft
     property real absMaxC: (rWidthTarget > 0) ? (screenMaxRight - rWidthTarget - crGap - cWidthTarget) : (screenMaxRight - cWidthTarget)
@@ -302,18 +292,12 @@ Item {
 
     property real lFinalX: {
         if (lWidthTarget <= 0) return baseMinLeft;
-        if (layoutState === "settings") {
-            return Math.max(screenMinLeft, cFinalX - lcGap - lWidthTarget);
-        }
         let pushedX = Math.min(baseMinLeft, cFinalX - lcGap - lWidthTarget);
         return Math.max(screenMinLeft, pushedX);
     }
 
     property real rFinalX: {
         if (rWidthTarget <= 0) return baseMaxRight;
-        if (layoutState === "sys") {
-            return Math.min(screenMaxRight - rWidthTarget, cFinalX + cWidthTarget + crGap);
-        }
         let pushedX = Math.max(baseMaxRight - rWidthTarget, cFinalX + cWidthTarget + crGap);
         return Math.min(screenMaxRight - rWidthTarget, pushedX);
     }
@@ -322,26 +306,18 @@ Item {
     property real dynamicMinX: {
         if (isFill) return 0;
         let m = contentWrapper.width;
-        let hasModules = (lWidthTarget > 0 || cWidthTarget > 0 || rWidthTarget > 0);
         if (lWidthTarget > 0) m = Math.min(m, lFinalX - (barWindow ? barWindow.s(1) : 0) - distinctEdgePadding);
         if (cWidthTarget > 0) m = Math.min(m, cFinalX - (barWindow ? barWindow.s(1) : 0) - distinctEdgePadding);
         if (rWidthTarget > 0) m = Math.min(m, rFinalClampedX - (barWindow ? barWindow.s(1) : 0) - distinctEdgePadding);
-        if (layoutState !== "default") {
-            return hasModules ? Math.max(0, m) : contentWrapper.width / 2;
-        }
         return Math.max(0, Math.min(m, barWindow ? barWindow.horizontalOffset : 0));
     }
 
     property real dynamicMaxX: {
         if (isFill) return contentWrapper.width;
         let m = 0;
-        let hasModules = (lWidthTarget > 0 || cWidthTarget > 0 || rWidthTarget > 0);
         if (lWidthTarget > 0) m = Math.max(m, lFinalX + lWidthTarget + (barWindow ? barWindow.s(1) : 0) + distinctEdgePadding);
         if (cWidthTarget > 0) m = Math.max(m, cFinalX + cWidthTarget + (barWindow ? barWindow.s(1) : 0) + distinctEdgePadding);
         if (rWidthTarget > 0) m = Math.max(m, rFinalClampedX + rWidthTarget + (barWindow ? barWindow.s(1) : 0) + distinctEdgePadding);
-        if (layoutState !== "default") {
-            return hasModules ? Math.min(contentWrapper.width, m) : contentWrapper.width / 2;
-        }
         return Math.min(contentWrapper.width, Math.max(m, barWindow ? (barWindow.horizontalOffset + barWindow.effectiveBarWidth) : contentWrapper.width));
     }
 

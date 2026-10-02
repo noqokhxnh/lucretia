@@ -81,7 +81,7 @@ Item {
         }
     }
 
-    readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
+    readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Audio.getVolume(Audio.defaultSink, Audio.defaultSink.audio.volume) : 0
     readonly property bool sysMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
 
     property real sysBrightness: 0
@@ -583,7 +583,7 @@ Item {
                                 Layout.fillWidth: true
                                 implicitHeight: root.s(18)
                                 from: 0.0
-                                to: 150.0
+                                to: 100.0
                                 stepSize: 1.0
                                 showValueBubble: true
                                 valueFormatter: function(v) { return Math.round(v) }
@@ -621,7 +621,7 @@ Item {
                                     volSyncDelay.restart();
                                 }
                                 onMoved: (val) => {
-                                    let pct = Math.max(0, Math.min(150, Math.round(val)));
+                                    let pct = Math.max(0, Math.min(100, Math.round(val)));
                                     volSlider.value = pct;
                                     volCmdThrottle.targetPct = pct;
                                     if (!volCmdThrottle.running) volCmdThrottle.start();

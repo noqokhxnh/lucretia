@@ -602,6 +602,7 @@ Item {
         // Apply: backup config, strip old output blocks with perl, append new ones, reload niri
         let applyLines = [];
         applyLines.push("killall -9 wl-mirror 2>/dev/null || true");
+        applyLines.push("QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/quickshell\"; LUC_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\" \"$LUC_RUN\"; echo '' > \"$QS_RUN/mirror_target\" 2>/dev/null || true; echo '' > \"$LUC_RUN/mirror_target\" 2>/dev/null || true");
         applyLines.push("CONFIG=~/.config/niri/config.kdl");
         applyLines.push("cp \"$CONFIG\" \"${CONFIG}.bak\"");
         // Remove all existing output "..." { ... } blocks (single-level nesting)

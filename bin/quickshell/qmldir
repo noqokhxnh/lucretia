@@ -25,7 +25,9 @@ singleton DateTime 1.0 singletons/DateTime.qml
 singleton Lunar 1.0 singletons/Lunar.qml
 singleton Weather 1.0 singletons/Weather.qml
 singleton TimerState 1.0 singletons/TimerState.qml
+singleton PomodoroService 1.0 singletons/PomodoroService.qml
 singleton Updater 1.0 singletons/Updater.qml
+singleton BlueLight 1.0 singletons/environment/BlueLight.qml
 
 singleton TrayMenuController 1.0 singletons/widgetcontrols/TrayMenuController.qml
 singleton LauncherController 1.0 singletons/widgetcontrols/LauncherController.qml

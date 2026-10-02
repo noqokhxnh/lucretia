@@ -31,10 +31,15 @@ Item {
         if (isVisVisible) Cava.unregisterConsumer();
     }
 
+    readonly property bool isHorizontal: (typeof Cava !== "undefined" && (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left"))
+    readonly property bool isHorizontalLeft: (typeof Cava !== "undefined" && Cava.orientation === "horizontal_left")
+    readonly property bool isInverted: (typeof Cava !== "undefined" && Boolean(Cava.inverted))
+    readonly property bool isRightBase: (isHorizontalLeft && !isInverted) || (!isHorizontalLeft && isInverted)
+
     property real barSpacing: Scaler.s(4)
     property real minBarWidth: Scaler.s(6)
-    property int activeBars: Math.max(4, Math.min(128, Math.floor((width + barSpacing) / (minBarWidth + barSpacing))))
-    property real actualBarWidth: (width - (activeBars - 1) * barSpacing) / activeBars
+    property int activeBars: Math.max(4, Math.min(128, Math.floor(((isHorizontal ? height : width) + barSpacing) / (minBarWidth + barSpacing))))
+    property real actualBarThickness: ((isHorizontal ? height : width) - (activeBars - 1) * barSpacing) / activeBars
 
     property var rawBarLevels: Cava.barLevels
     property var processedBars: {
@@ -78,25 +83,29 @@ Item {
 
     property var barLevels: processedBars
 
+    // Vertical layout (standard column bars growing up or down)
     Row {
+        visible: !root.isHorizontal
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: parent.bottom
+        anchors.bottom: !root.isInverted ? parent.bottom : undefined
+        anchors.top: root.isInverted ? parent.top : undefined
         height: parent.height
         spacing: root.barSpacing
 
         Repeater {
-            model: root.activeBars
+            model: !root.isHorizontal ? root.activeBars : 0
             delegate: Rectangle {
-                width: root.actualBarWidth
+                width: root.actualBarThickness
                 height: Math.max(Scaler.s(3), level * parent.height * 0.96)
-                topLeftRadius: width * 0.35
-                topRightRadius: width * 0.35
-                bottomLeftRadius: 0
-                bottomRightRadius: 0
+                topLeftRadius: !root.isInverted ? width * 0.35 : 0
+                topRightRadius: !root.isInverted ? width * 0.35 : 0
+                bottomLeftRadius: root.isInverted ? width * 0.35 : 0
+                bottomRightRadius: root.isInverted ? width * 0.35 : 0
                 color: ThemeBackend.mauve
                 opacity: (0.3 + (level * 0.7)) * edgeFactor
-                anchors.bottom: parent.bottom
+                anchors.bottom: !root.isInverted ? parent.bottom : undefined
+                anchors.top: root.isInverted ? parent.top : undefined
 
                 property real level: (root.barLevels && index < root.barLevels.length) ? root.barLevels[index] : 0.0
                 property real edgeNorm: Math.sin((index / Math.max(1, root.activeBars - 1)) * Math.PI)
@@ -104,6 +113,52 @@ Item {
                 property real edgeFactor: rawEdgeFactor * rawEdgeFactor * (3.0 - 2.0 * rawEdgeFactor)
 
                 Behavior on height {
+                    NumberAnimation {
+                        duration: 75
+                        easing.type: Easing.OutCubic
+                    }
+                }
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 75
+                        easing.type: Easing.OutQuad
+                    }
+                }
+            }
+        }
+    }
+
+    // Horizontal layout (row bars growing right or left)
+    Column {
+        visible: root.isHorizontal
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.left: !root.isRightBase ? parent.left : undefined
+        anchors.right: root.isRightBase ? parent.right : undefined
+        width: parent.width
+        spacing: root.barSpacing
+
+        Repeater {
+            model: root.isHorizontal ? root.activeBars : 0
+            delegate: Rectangle {
+                height: root.actualBarThickness
+                width: Math.max(Scaler.s(3), level * parent.width * 0.96)
+                topRightRadius: !root.isRightBase ? height * 0.35 : 0
+                bottomRightRadius: !root.isRightBase ? height * 0.35 : 0
+                topLeftRadius: root.isRightBase ? height * 0.35 : 0
+                bottomLeftRadius: root.isRightBase ? height * 0.35 : 0
+                color: ThemeBackend.mauve
+                opacity: (0.3 + (level * 0.7)) * edgeFactor
+                anchors.left: !root.isRightBase ? parent.left : undefined
+                anchors.right: root.isRightBase ? parent.right : undefined
+
+                property real level: (root.barLevels && index < root.barLevels.length) ? root.barLevels[index] : 0.0
+                property real edgeNorm: Math.sin((index / Math.max(1, root.activeBars - 1)) * Math.PI)
+                property real rawEdgeFactor: Math.min(1.0, edgeNorm * 2.0)
+                property real edgeFactor: rawEdgeFactor * rawEdgeFactor * (3.0 - 2.0 * rawEdgeFactor)
+
+                Behavior on width {
                     NumberAnimation {
                         duration: 75
                         easing.type: Easing.OutCubic

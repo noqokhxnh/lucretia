@@ -30,6 +30,16 @@ def run_cmd(cmd, check=False):
         return 1, "", str(e)
 
 
+def get_mirror_target_files():
+    base_run = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+    paths = []
+    for d in ["quickshell", "lucretia"]:
+        target_dir = os.path.join(base_run, d)
+        os.makedirs(target_dir, exist_ok=True)
+        paths.append(os.path.join(target_dir, "mirror_target"))
+    return paths
+
+
 def is_wl_mirror_running():
     code, _, _ = run_cmd(["pgrep", "-x", "wl-mirror"])
     return code == 0
@@ -37,6 +47,12 @@ def is_wl_mirror_running():
 
 def stop_wl_mirror():
     run_cmd(["killall", "-9", "wl-mirror"])
+    for fpath in get_mirror_target_files():
+        try:
+            with open(fpath, "w", encoding="utf-8") as f:
+                f.write("")
+        except Exception:
+            pass
 
 
 def get_niri_outputs():
@@ -169,6 +185,19 @@ def cmd_status():
     mode = get_current_mode(internal, external, outputs)
     mirror_active = is_wl_mirror_running()
 
+    mirror_files = get_mirror_target_files()
+    if not mirror_active:
+        for mf in mirror_files:
+            if os.path.exists(mf):
+                try:
+                    with open(mf, "r", encoding="utf-8") as f:
+                        content = f.read().strip()
+                    if content:
+                        with open(mf, "w", encoding="utf-8") as fw:
+                            fw.write("")
+                except Exception:
+                    pass
+
     res = {
         "mode": mode,
         "internal": internal or "",
@@ -241,13 +270,23 @@ def cmd_set_mode(target_mode):
         target_out = external if external else "HDMI-A-1"
         source_out = internal if internal else "eDP-1"
 
+        mirror_files = get_mirror_target_files()
+        for mf in mirror_files:
+            try:
+                with open(mf, "w", encoding="utf-8") as f:
+                    f.write(target_out)
+            except Exception:
+                pass
+
+        clear_cmds = "; ".join([f'echo "" > "{f}"' for f in mirror_files])
+        cmd = f'wl-mirror --fullscreen-output "{target_out}" "{source_out}"; {clear_cmds}'
         subprocess.Popen(
-            ["wl-mirror", "--fullscreen-output", target_out, source_out],
+            ["bash", "-c", cmd],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             start_new_session=True
         )
-        save_state({"last_mode": "mirror", "ext_mode": ext_mode, "int_mode": int_mode})
+        save_state({"last_mode": "mirror", "ext_mode": ext_mode, "int_mode": int_mode, "mirror_target": target_out, "mirror_source": source_out})
         run_cmd(["notify-send", "-a", "Monitor Settings", "Display Mode: Mirror", f"Chiếu màn hình {source_out} sang {target_out}"])
 
     elif target_mode in ("internal", "pc-only"):

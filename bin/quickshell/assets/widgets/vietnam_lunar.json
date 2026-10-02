@@ -1,0 +1,41 @@
+{
+  "name": "widgets.presets.vietnam_lunar.name",
+  "widgets": [
+    {
+      "type": "time",
+      "variant": "analog",
+      "anchor": "top left",
+      "x": 40,
+      "y": 40,
+      "w": 200,
+      "h": 200
+    },
+    {
+      "type": "weather",
+      "variant": "round",
+      "anchor": "bottom left",
+      "x": 40,
+      "y": 40,
+      "w": 180,
+      "h": 180
+    },
+    {
+      "type": "lunar",
+      "variant": "bloc",
+      "anchor": "top right",
+      "x": 40,
+      "y": 40,
+      "w": 280,
+      "h": 280
+    },
+    {
+      "type": "note",
+      "variant": "notebook",
+      "anchor": "bottom right",
+      "x": 40,
+      "y": 40,
+      "w": 340,
+      "h": 400
+    }
+  ]
+}

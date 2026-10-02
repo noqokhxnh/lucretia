@@ -17,7 +17,7 @@ Rectangle {
     property bool moduleActive: true
     property bool isGrouped: false
 
-    property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
+    property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Audio.getVolume(Audio.defaultSink, Audio.defaultSink.audio.volume) : 0
     property bool isMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
     property string volPercent: sysVolume + "%"
     property string volIcon: isMuted || sysVolume === 0 ? "󰖁" : (sysVolume > 50 ? "󰕾" : "󰖀")
@@ -75,7 +75,7 @@ Rectangle {
             cornerRadius: Math.max(0, ThemeBackend.borderRadius - (barWindow ? barWindow.s(2) : 2))
             horizontalPadding: barWindow.s(12)
             buttonIcon: volIcon
-            iconFontSize: barWindow.s(15)
+            iconFontSize: barWindow.s(18)
             buttonText: volPercent
             textFontSize: barWindow.s(12)
             acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -84,7 +84,10 @@ Rectangle {
 
             property real targetWidth: implicitWidth
             width: targetWidth
-            Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutQuint } }
+            Behavior on width {
+                enabled: barWindow && barWindow.startupCascadeFinished
+                NumberAnimation { duration: 480; easing.type: Easing.OutQuint }
+            }
 
             Timer { running: volWidgetRoot.moduleActive && volWidgetRoot.showLayout && !volPill.initAnimTrigger; interval: 250; onTriggered: volPill.initAnimTrigger = true }
             opacity: initAnimTrigger ? 1.0 : 0.0
@@ -109,7 +112,7 @@ Rectangle {
                     let steps = Math.trunc(volPill.wheelAccumulator / threshold)
                     volPill.wheelAccumulator = volPill.wheelAccumulator % threshold
                     if (steps !== 0 && Audio.defaultSink) {
-                        let newVol = Math.max(0, Math.min(150, sysVolume + (steps * 5)))
+                        let newVol = Math.max(0, Math.min(100, sysVolume + (steps * 5)))
                         Audio.setVolume(Audio.defaultSink, newVol)
                     }
                 }

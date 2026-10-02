@@ -88,6 +88,9 @@ PanelWindow {
     function exitRedactor() {
         Quickshell.execDetached(["bash", "-c", "printf '0' > '" + (Caching.runDir || "/tmp/lucretia") + "/redactor_active'"]);
         if (typeof WidgetSync !== "undefined") WidgetSync.setRedactMode(redactorWindow.safeMonitorName, false);
+        if (typeof Cava !== "undefined") {
+            sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+        }
         sendIpc("setRedactMode", ["false"]);
         sendIpc("save", []);
         sendBarIpc("setRedactMode", ["false"]);
@@ -97,6 +100,9 @@ PanelWindow {
     Component.onDestruction: {
         Quickshell.execDetached(["bash", "-c", "printf '0' > '" + (Caching.runDir || "/tmp/lucretia") + "/redactor_active'"]);
         if (typeof WidgetSync !== "undefined") WidgetSync.setRedactMode(redactorWindow.safeMonitorName, false);
+        if (typeof Cava !== "undefined") {
+            sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+        }
         sendIpc("setRedactMode", ["false"]);
         sendIpc("save", []);
         sendBarIpc("setRedactMode", ["false"]);
@@ -515,6 +521,42 @@ PanelWindow {
                 openImagePicker(itemIndex, itemId, curImg, proxy.wVariant === "round");
             } else if (action === "openNotes") {
                 Quickshell.execDetached(["bash", "-c", "~/.config/niri/bin/qs_manager.sh toggle notes"]);
+            } else if (action === "toggleRotateLeft") {
+                if (typeof Cava !== "undefined") {
+                    Cava.toggleOrientation("left");
+                    redactorWindow.sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+                }
+            } else if (action === "toggleRotateRight") {
+                if (typeof Cava !== "undefined") {
+                    Cava.toggleOrientation("right");
+                    redactorWindow.sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+                }
+            } else if (action === "toggleOrientation") {
+                if (typeof Cava !== "undefined") {
+                    Cava.toggleOrientation();
+                    redactorWindow.sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+                }
+            } else if (action === "toggleInverted") {
+                if (typeof Cava !== "undefined") {
+                    Cava.toggleInverted();
+                    redactorWindow.sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+                }
+            } else if (action === "toggleOnTop") {
+                if (typeof Cava !== "undefined") {
+                    Cava.toggleOnTop();
+                    redactorWindow.sendIpc("setVisualizerConfig", [Cava.orientation, Cava.inverted.toString(), Cava.onTop.toString()]);
+                }
+            } else if (action === "stretchWidth") {
+                let cur = activeWidgetsModel.get(itemIndex);
+                if (cur) {
+                    let sw = redactorMode.safeWidth;
+                    let isFull = Math.abs(cur.wWidth - sw) < 5;
+                    let targetW = isFull ? WidgetRegistry.defaultSize(proxy.wType).w : sw;
+                    let targetX = isFull ? cur.wX : 0;
+                    activeWidgetsModel.setProperty(itemIndex, "wWidth", targetW);
+                    activeWidgetsModel.setProperty(itemIndex, "wX", targetX);
+                    proxy.finalizeSync();
+                }
             }
         }
 
@@ -1423,14 +1465,99 @@ PanelWindow {
 
                                 Repeater {
                                     model: WidgetRegistry.additionalSettings(widgetProxy.wType, "top")
-                                    delegate: IconButton {
-                                        size: s(34)
-                                        cornerRadius: ThemeBackend.borderRadius
-                                        buttonIcon: modelData.icon || ""
-                                        iconFontSize: s(modelData.iconFontSize || 16)
-                                        accentColor: redactorMode.resolveThemeColor(modelData.accentColor || "surface0")
-                                        textColor: redactorMode.resolveThemeColor(modelData.textColor || "mauve")
-                                        onClicked: redactorMode.handleAdditionalAction(modelData.action, widgetProxy.wIndex, widgetProxy.wId, widgetProxy)
+                                    delegate: Item {
+                                        id: settingTopItem
+                                        Layout.alignment: Qt.AlignVCenter
+                                        implicitHeight: s(34)
+                                        implicitWidth: isTextMode ? textBtnTop.implicitWidth : iconBtnTop.implicitWidth
+                                        Layout.preferredWidth: implicitWidth
+                                        Layout.preferredHeight: implicitHeight
+
+                                        readonly property bool isTextMode: Boolean(modelData.isText) || Boolean(modelData.text) || modelData.action === "toggleOrientation" || modelData.action === "toggleRotateLeft" || modelData.action === "toggleRotateRight" || modelData.action === "toggleInverted" || modelData.action === "toggleOnTop"
+
+                                        ClickButton {
+                                            id: textBtnTop
+                                            visible: settingTopItem.isTextMode
+                                            anchors.fill: parent
+                                            implicitHeight: s(34)
+                                            horizontalPadding: s(12)
+                                            cornerRadius: ThemeBackend.borderRadius
+                                            textFontSize: s(12)
+                                            buttonText: {
+                                                if (modelData.action === "toggleRotateLeft") {
+                                                    return I18n.t("widgets.redactor.rotate_left");
+                                                }
+                                                if (modelData.action === "toggleRotateRight") {
+                                                    return I18n.t("widgets.redactor.rotate_right");
+                                                }
+                                                if (modelData.action === "toggleOrientation" && typeof Cava !== "undefined") {
+                                                    return (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left")
+                                                        ? I18n.t("widgets.redactor.rotate_vertical")
+                                                        : I18n.t("widgets.redactor.rotate_horizontal");
+                                                }
+                                                if (modelData.action === "toggleInverted" && typeof Cava !== "undefined") {
+                                                    return Cava.inverted
+                                                        ? I18n.t("widgets.redactor.invert_normal")
+                                                        : I18n.t("widgets.redactor.invert_flip");
+                                                }
+                                                if (modelData.action === "toggleOnTop" && typeof Cava !== "undefined") {
+                                                    return Cava.onTop
+                                                        ? I18n.t("widgets.redactor.layer_top")
+                                                        : I18n.t("widgets.redactor.layer_bottom");
+                                                }
+                                                return modelData.text || "";
+                                            }
+                                            accentColor: {
+                                                if (modelData.action === "toggleRotateLeft" && typeof Cava !== "undefined" && Cava.orientation === "horizontal_left") {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleRotateRight" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal")) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleOrientation" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left")) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleInverted" && typeof Cava !== "undefined" && Cava.inverted) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleOnTop" && typeof Cava !== "undefined" && Cava.onTop) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                return redactorMode.resolveThemeColor(modelData.accentColor || "surface0");
+                                            }
+                                            textColor: {
+                                                if (modelData.action === "toggleRotateLeft" && typeof Cava !== "undefined" && Cava.orientation === "horizontal_left") {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleRotateRight" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal")) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleOrientation" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left")) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleInverted" && typeof Cava !== "undefined" && Cava.inverted) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleOnTop" && typeof Cava !== "undefined" && Cava.onTop) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                return redactorMode.resolveThemeColor(modelData.textColor || "mauve");
+                                            }
+                                            onClicked: redactorMode.handleAdditionalAction(modelData.action, widgetProxy.wIndex, widgetProxy.wId, widgetProxy)
+                                        }
+
+                                        IconButton {
+                                            id: iconBtnTop
+                                            visible: !settingTopItem.isTextMode
+                                            anchors.fill: parent
+                                            size: s(34)
+                                            cornerRadius: ThemeBackend.borderRadius
+                                            buttonIcon: modelData.icon || ""
+                                            iconFontSize: s(modelData.iconFontSize || 16)
+                                            accentColor: redactorMode.resolveThemeColor(modelData.accentColor || "surface0")
+                                            textColor: redactorMode.resolveThemeColor(modelData.textColor || "mauve")
+                                            onClicked: redactorMode.handleAdditionalAction(modelData.action, widgetProxy.wIndex, widgetProxy.wId, widgetProxy)
+                                        }
                                     }
                                 }
 
@@ -1475,14 +1602,99 @@ PanelWindow {
 
                                 Repeater {
                                     model: WidgetRegistry.additionalSettings(widgetProxy.wType, "bottom")
-                                    delegate: IconButton {
-                                        size: s(34)
-                                        cornerRadius: ThemeBackend.borderRadius
-                                        buttonIcon: modelData.icon || ""
-                                        iconFontSize: s(modelData.iconFontSize || 16)
-                                        accentColor: redactorMode.resolveThemeColor(modelData.accentColor || "surface0")
-                                        textColor: redactorMode.resolveThemeColor(modelData.textColor || "mauve")
-                                        onClicked: redactorMode.handleAdditionalAction(modelData.action, widgetProxy.wIndex, widgetProxy.wId, widgetProxy)
+                                    delegate: Item {
+                                        id: settingBottomItem
+                                        Layout.alignment: Qt.AlignVCenter
+                                        implicitHeight: s(34)
+                                        implicitWidth: isTextMode ? textBtnBottom.implicitWidth : iconBtnBottom.implicitWidth
+                                        Layout.preferredWidth: implicitWidth
+                                        Layout.preferredHeight: implicitHeight
+
+                                        readonly property bool isTextMode: Boolean(modelData.isText) || Boolean(modelData.text) || modelData.action === "toggleOrientation" || modelData.action === "toggleRotateLeft" || modelData.action === "toggleRotateRight" || modelData.action === "toggleInverted" || modelData.action === "toggleOnTop"
+
+                                        ClickButton {
+                                            id: textBtnBottom
+                                            visible: settingBottomItem.isTextMode
+                                            anchors.fill: parent
+                                            implicitHeight: s(34)
+                                            horizontalPadding: s(12)
+                                            cornerRadius: ThemeBackend.borderRadius
+                                            textFontSize: s(12)
+                                            buttonText: {
+                                                if (modelData.action === "toggleRotateLeft") {
+                                                    return I18n.t("widgets.redactor.rotate_left");
+                                                }
+                                                if (modelData.action === "toggleRotateRight") {
+                                                    return I18n.t("widgets.redactor.rotate_right");
+                                                }
+                                                if (modelData.action === "toggleOrientation" && typeof Cava !== "undefined") {
+                                                    return (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left")
+                                                        ? I18n.t("widgets.redactor.rotate_vertical")
+                                                        : I18n.t("widgets.redactor.rotate_horizontal");
+                                                }
+                                                if (modelData.action === "toggleInverted" && typeof Cava !== "undefined") {
+                                                    return Cava.inverted
+                                                        ? I18n.t("widgets.redactor.invert_normal")
+                                                        : I18n.t("widgets.redactor.invert_flip");
+                                                }
+                                                if (modelData.action === "toggleOnTop" && typeof Cava !== "undefined") {
+                                                    return Cava.onTop
+                                                        ? I18n.t("widgets.redactor.layer_top")
+                                                        : I18n.t("widgets.redactor.layer_bottom");
+                                                }
+                                                return modelData.text || "";
+                                            }
+                                            accentColor: {
+                                                if (modelData.action === "toggleRotateLeft" && typeof Cava !== "undefined" && Cava.orientation === "horizontal_left") {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleRotateRight" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal")) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleOrientation" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left")) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleInverted" && typeof Cava !== "undefined" && Cava.inverted) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                if (modelData.action === "toggleOnTop" && typeof Cava !== "undefined" && Cava.onTop) {
+                                                    return ThemeBackend.mauve;
+                                                }
+                                                return redactorMode.resolveThemeColor(modelData.accentColor || "surface0");
+                                            }
+                                            textColor: {
+                                                if (modelData.action === "toggleRotateLeft" && typeof Cava !== "undefined" && Cava.orientation === "horizontal_left") {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleRotateRight" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal")) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleOrientation" && typeof Cava !== "undefined" && (Cava.orientation === "horizontal" || Cava.orientation === "horizontal_right" || Cava.orientation === "horizontal_left")) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleInverted" && typeof Cava !== "undefined" && Cava.inverted) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                if (modelData.action === "toggleOnTop" && typeof Cava !== "undefined" && Cava.onTop) {
+                                                    return ThemeBackend.crust;
+                                                }
+                                                return redactorMode.resolveThemeColor(modelData.textColor || "mauve");
+                                            }
+                                            onClicked: redactorMode.handleAdditionalAction(modelData.action, widgetProxy.wIndex, widgetProxy.wId, widgetProxy)
+                                        }
+
+                                        IconButton {
+                                            id: iconBtnBottom
+                                            visible: !settingBottomItem.isTextMode
+                                            anchors.fill: parent
+                                            size: s(34)
+                                            cornerRadius: ThemeBackend.borderRadius
+                                            buttonIcon: modelData.icon || ""
+                                            iconFontSize: s(modelData.iconFontSize || 16)
+                                            accentColor: redactorMode.resolveThemeColor(modelData.accentColor || "surface0")
+                                            textColor: redactorMode.resolveThemeColor(modelData.textColor || "mauve")
+                                            onClicked: redactorMode.handleAdditionalAction(modelData.action, widgetProxy.wIndex, widgetProxy.wId, widgetProxy)
+                                        }
                                     }
                                 }
 

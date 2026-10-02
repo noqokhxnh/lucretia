@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Shapes
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import "../"
 import "../reusables"
@@ -160,7 +161,7 @@ Variants {
                     return Boolean(val);
                 }
 
-                readonly property bool isEffectivelyExclusive: dockWindow.initialized && dockEnabled && dockExclusive && !autohide && !isFullscreenActive && !editMode && (dockAppsModel.count > 0)
+                readonly property bool isEffectivelyExclusive: dockWindow.initialized && dockEnabled && dockExclusive && !autohide && !isFullscreenActive && !editMode && (dockAppsModel.count > 0) && !isMirroredTarget
                 readonly property int dockReservedSpace: Math.round(dockContainer.fullThickness + effectiveMargin)
 
                 property real dockHoverScaleMultiplier: {
@@ -292,7 +293,30 @@ Variants {
                     positionChangeTimer.restart();
                 }
 
-                visible: dockWindow.initialized && dockEnabled && !isFullscreenActive && (dockAppsModel.count > 0 || editMode)
+                visible: dockWindow.initialized && dockEnabled && !isFullscreenActive && (dockAppsModel.count > 0 || editMode) && !isMirroredTarget
+
+                property string mirrorTarget: ""
+                readonly property bool isMirroredTarget: {
+                    let myName = (dockWindow.screen && dockWindow.screen.name) ? dockWindow.screen.name : (dockScope.modelData && dockScope.modelData.name ? dockScope.modelData.name : "");
+                    if (dockWindow.mirrorTarget !== "" && myName !== "" && dockWindow.mirrorTarget === myName) return true;
+                    if (typeof ToplevelManager !== "undefined" && ToplevelManager.activeToplevel) {
+                        let atl = ToplevelManager.activeToplevel;
+                        if ((atl.appId === "at.yrlf.wl_mirror" || atl.appId === "wl-mirror") && atl.screens && atl.screens.length > 0 && dockWindow.screen) {
+                            if (atl.screens.indexOf(dockWindow.screen) !== -1) return true;
+                        }
+                    }
+                    return false;
+                }
+
+                FileView {
+                    id: dockMirrorWatcher
+                    path: (typeof Caching !== "undefined" && Caching.runDir) ? (Caching.runDir + "/mirror_target") : ""
+                    watchChanges: true
+                    onFileChanged: reload()
+                    onLoaded: {
+                        dockWindow.mirrorTarget = text().trim();
+                    }
+                }
 
                 property var rawBarSettings: {
                     let dummy = configRevision;

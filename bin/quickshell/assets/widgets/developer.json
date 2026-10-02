@@ -1,0 +1,50 @@
+{
+  "name": "widgets.presets.developer.name",
+  "widgets": [
+    {
+      "type": "note",
+      "variant": "notebook",
+      "anchor": "top left",
+      "x": 40,
+      "y": 40,
+      "w": 360,
+      "h": 440
+    },
+    {
+      "type": "user",
+      "variant": "default",
+      "anchor": "bottom left",
+      "x": 40,
+      "y": 40,
+      "w": 280,
+      "h": 140
+    },
+    {
+      "type": "cpu",
+      "variant": "default",
+      "anchor": "top right",
+      "x": 180,
+      "y": 40,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "type": "ram",
+      "variant": "default",
+      "anchor": "top right",
+      "x": 40,
+      "y": 40,
+      "w": 120,
+      "h": 120
+    },
+    {
+      "type": "time",
+      "variant": "digital",
+      "anchor": "bottom right",
+      "x": 40,
+      "y": 40,
+      "w": 240,
+      "h": 110
+    }
+  ]
+}

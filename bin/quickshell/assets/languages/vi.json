@@ -43,7 +43,9 @@
             "display_widgets": "Widgets",
             "dock": "Dock",
             "osd": "On-Screen Display",
-            "widgets": "Widgets"
+            "widgets": "Widgets",
+            "bar_general": "Chung",
+            "bar_modules": "Mô-đun"
         },
         "keybinds": {
             "desc": "Xem, quản lý và tùy chỉnh các tổ hợp phím tắt",
@@ -383,7 +385,19 @@
             "modules": {
                 "vis": "Trực quan hoá âm thanh (Cava)",
                 "actions": "Tác vụ",
-                "workspaces": "Không gian làm việc",
+                "workspaces": {
+                    "name": "Workspace",
+                    "style": {
+                        "pills": "Các chỉ báo viên thuốc tối giản",
+                        "numbers": "Chỉ số được đánh số",
+                        "pacman": "Các chấm arcade chuyển động",
+                        "name": {
+                            "pills": "Viên thuốc (Pills)",
+                            "numbers": "Chữ số (Numbers)",
+                            "pacman": "Pacman"
+                        }
+                    }
+                },
                 "media": "Trình phát nhạc",
                 "tray": "Khay hệ thống",
                 "keyboard": "Bàn phím",
@@ -393,7 +407,19 @@
                 "battery": "Pin",
                 "focus": "Tiêu điểm ứng dụng",
                 "sysmon": "Giám sát hệ thống",
-                "timedate": "Thời gian / Ngày",
+                "timedate": {
+                    "name": "Thời gian/Ngày",
+                    "style": {
+                        "classic": "Thời gian và ngày xếp chồng gọn gàng",
+                        "material": "Chữ số điểm nhấn chéo đậm nét",
+                        "badge": "Thẻ phân đoạn dạng con nhộng",
+                        "name": {
+                            "classic": "Cổ điển (Classic)",
+                            "material": "Material",
+                            "badge": "Huy hiệu (Badge)"
+                        }
+                    }
+                },
                 "info": "Ghi âm / Hẹn giờ",
                 "weather": "Thời tiết"
             },
@@ -416,7 +442,15 @@
             "workspaces": {
                 "title": "Chọn số lượng không gian làm việc hiển thị",
                 "desc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor",
-                "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor"
+                "disc": "Lưu ý: tùy chọn này không ảnh hưởng đến số lượng workspace thực tế trong compositor",
+                "hide_empty": {
+                    "title": "Ẩn workspace trống",
+                    "desc": "Chỉ hiển thị các workspace có ứng dụng và workspace đang hoạt động"
+                },
+                "style": {
+                    "title": "Kiểu hiển thị Workspace",
+                    "desc": "Chọn kiểu hiển thị cho các chỉ báo workspace"
+                }
             },
             "opacity": {
                 "title": "Độ mờ / trong suốt",
@@ -457,6 +491,20 @@
             "distinct_pills": {
                 "title": "Kiểu dạng khối viên thuốc nhỏ gọn",
                 "desc": "Bọc các module của thanh bar trong các khối bo tròn riêng biệt và thu nhỏ kích thước"
+            },
+            "height": {
+                "title": "Chiều cao thanh bar",
+                "desc": "Đặt chiều cao của thanh bar theo pixel"
+            },
+            "timedate": {
+                "show_date": {
+                    "title": "Hiển thị ngày",
+                    "desc": "Hiển thị ngày tháng bên cạnh đồng hồ"
+                },
+                "style": {
+                    "title": "Kiểu hiển thị thời gian & ngày",
+                    "desc": "Chọn kiểu hiển thị cho đồng hồ và ngày tháng"
+                }
             }
         },
         "theme": {
@@ -598,7 +646,9 @@
         "update_available": "Có bản cập nhật mới",
         "common": {
             "show_bar": "Hiện thanh bar",
-            "unavailable": "Không khả dụng"
+            "unavailable": "Không khả dụng",
+            "on": "BẬT",
+            "off": "TẮT"
         },
         "dock": {
             "title": "Thanh Dock",
@@ -715,10 +765,19 @@
                 "bottom_left": "Góc dưới bên trái",
                 "bottom_right": "Góc dưới bên phải"
             },
-            "test": "Thử nghiệm OSD"
+            "test": "Thử nghiệm OSD",
+            "caps_lock": "Caps Lock",
+            "num_lock": "Num Lock",
+            "airplane_mode": "Chế độ máy bay"
         },
         "position": {
             "custom": "Tùy chỉnh"
+        },
+        "settings": "Cài đặt",
+        "search": {
+            "no_results": "Không tìm thấy cài đặt",
+            "placeholder": "Tìm kiếm cài đặt...",
+            "prompt": "Nhập để tìm kiếm cài đặt..."
         }
     },
     "sysnotif": {
@@ -762,7 +821,15 @@
         "translation_desc": "Dịch sang {lang} — Nhấn Enter để sao chép kết quả",
         "looking_up": "Đang tra cứu: {word}...",
         "dictionary": "Từ điển: {word}",
-        "dictionary_desc": "Định nghĩa từ điển — Nhấn Enter để sao chép"
+        "dictionary_desc": "Định nghĩa từ điển — Nhấn Enter để sao chép",
+        "pomo_title": "Đồng hồ Pomodoro",
+        "pomo_desc": "Mở đồng hồ đếm ngược Pomodoro trong FocusTime",
+        "searching_files": "Đang tìm: {query}...",
+        "no_files_found": "Không tìm thấy tệp hoặc thư mục nào",
+        "kill_hint_title": "kill <tên tiến trình> hoặc kill :<cổng>",
+        "kill_hint_desc": "Nhập tên tiến trình hoặc số cổng (vd: :3000) để dừng",
+        "searching_proc": "Đang tìm tiến trình: {query}...",
+        "no_proc_found": "Không tìm thấy tiến trình hoặc cổng phù hợp"
     },
     "calendar": {
         "loading": "Đang tải...",
@@ -1152,7 +1219,17 @@
             "done": "Xong",
             "widget_singular": "tiện ích",
             "widgets_plural": "tiện ích",
-            "widgets_short": "w"
+            "widgets_short": "w",
+            "rotate": "Xoay",
+            "rotate_horizontal": "Xoay ngang",
+            "rotate_vertical": "Xoay dọc",
+            "rotate_left": "Xoay trái",
+            "rotate_right": "Xoay phải",
+            "invert": "Lật",
+            "invert_flip": "Lật ngược",
+            "invert_normal": "Lật xuôi",
+            "layer_top": "Đè lên trên",
+            "layer_bottom": "Ở nền"
         },
         "types": {
             "clock": "Đồng hồ",
@@ -1203,6 +1280,30 @@
             },
             "dashboard": {
                 "name": "Bảng điều khiển"
+            },
+            "productivity": {
+                "name": "Năng suất & Công việc"
+            },
+            "vietnam_lunar": {
+                "name": "Lịch Âm Việt Nam"
+            },
+            "system_monitor": {
+                "name": "Giám sát phần cứng"
+            },
+            "music_studio": {
+                "name": "Không gian âm nhạc"
+            },
+            "aesthetic_zen": {
+                "name": "Tối giản Zen"
+            },
+            "developer": {
+                "name": "Góc Lập trình"
+            },
+            "compact_glance": {
+                "name": "Liếc nhìn nhanh"
+            },
+            "creative_studio": {
+                "name": "Góc Sáng tạo"
             }
         }
     },
@@ -1217,6 +1318,19 @@
         "pinned": "Đã ghim",
         "saving": "Đang lưu...",
         "saved": "Đã lưu"
+    },
+    "focustime": {
+        "tab_stats": "Thống kê",
+        "tab_pomodoro": "Pomodoro",
+        "focus_time": "Thời gian tập trung",
+        "short_break": "Nghỉ ngắn",
+        "long_break": "Nghỉ dài",
+        "session": "Phiên {current} / {total}",
+        "start": "Bắt đầu",
+        "pause": "Tạm dừng",
+        "reset": "Đặt lại",
+        "skip": "Bỏ qua",
+        "minutes": "{m} phút"
     },
     "cli": {
         "usage": "Cách dùng: Lucretia [lệnh] [tùy chọn...]",

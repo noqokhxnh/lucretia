@@ -47,13 +47,24 @@ PanelWindow {
     onWVariantChanged: updateEffectiveSize()
     onWTypeChanged: updateEffectiveSize()
 
+    readonly property bool isVisualizerOnTop: (wType === "visualizer" && typeof Cava !== "undefined" && Boolean(Cava.onTop))
+
     WlrLayershell.namespace: "qs-widget-" + wType + "-" + wId
-    WlrLayershell.layer: WlrLayer.Bottom
+    WlrLayershell.layer: isVisualizerOnTop ? WlrLayer.Top : WlrLayer.Bottom
     readonly property bool hasKeyboardFocusDemand: (wType === "note" && wVariant !== "compact") || Boolean(faceLoader.item && faceLoader.item.wantsKeyboardFocus)
     WlrLayershell.keyboardFocus: hasKeyboardFocusDemand ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     exclusionMode: ExclusionMode.Ignore
     focusable: hasKeyboardFocusDemand ? true : false
+
+    mask: Region {
+        item: isVisualizerOnTop ? null : maskFull
+    }
+
+    Item {
+        id: maskFull
+        anchors.fill: parent
+    }
 
     anchors.top: true
     anchors.left: true

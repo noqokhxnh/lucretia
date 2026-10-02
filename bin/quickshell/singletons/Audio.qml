@@ -56,8 +56,23 @@ Singleton {
         if (node && node.audio) node.audio.muted = !node.audio.muted;
     }
 
+    function getMaxVolumeScale(node) {
+        if (node && !node.isSink && !node.isStream) return 1.0;
+        return 1.5;
+    }
+
+    function getVolume(node, currentVolume) {
+        if (!node || !node.audio) return 0;
+        let vol = (currentVolume !== undefined) ? currentVolume : node.audio.volume;
+        let maxScale = getMaxVolumeScale(node);
+        return Math.max(0, Math.min(100, Math.round((vol / maxScale) * 100)));
+    }
+
     function setVolume(node, pct) {
-        if (node && node.audio) node.audio.volume = Math.max(0, Math.min(1.5, pct / 100.0));
+        if (node && node.audio) {
+            let maxScale = getMaxVolumeScale(node);
+            node.audio.volume = Math.max(0, Math.min(maxScale, (pct / 100.0) * maxScale));
+        }
     }
 
     function getNodeName(node) {

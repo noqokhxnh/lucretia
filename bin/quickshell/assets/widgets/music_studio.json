@@ -1,0 +1,32 @@
+{
+  "name": "widgets.presets.music_studio.name",
+  "widgets": [
+    {
+      "type": "music",
+      "variant": "full",
+      "anchor": "top left",
+      "x": 40,
+      "y": 40,
+      "w": 360,
+      "h": 130
+    },
+    {
+      "type": "time",
+      "variant": "minimal",
+      "anchor": "top right",
+      "x": 40,
+      "y": 40,
+      "w": 240,
+      "h": 100
+    },
+    {
+      "type": "visualizer",
+      "variant": "continuous",
+      "anchor": "bottom left",
+      "stretchWidth": true,
+      "x": 0,
+      "y": 0,
+      "h": 180
+    }
+  ]
+}

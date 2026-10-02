@@ -674,11 +674,9 @@ PanelWindow {
             if (masterWindow.currentActive === "hidden" && scheduledGeneration === masterWindow.switchGeneration) {
                 masterWindow.disableMorph = true;
                 widgetStack.clear();
-                // Immediately evict heavy dialogs when closed
-                masterWindow.evictWidget("guide");
-                masterWindow.evictWidget("settings");
+                // Immediately evict heavy dynamic dialogs when closed
                 masterWindow.evictWidget("movies");
-                // Schedule idle cleanup for other cached widgets
+                // Schedule idle cleanup (3 min) for other cached widgets like guide
                 idleEvictionTimer.restart();
             }
         }

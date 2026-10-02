@@ -194,7 +194,10 @@ Rectangle {
 
             property real targetWidth: isDesktop ? 0 : implicitWidth
             width: targetWidth
-            Behavior on width { NumberAnimation { duration: 480; easing.type: Easing.OutQuint } }
+            Behavior on width {
+                enabled: barWindow && barWindow.startupCascadeFinished
+                NumberAnimation { duration: 480; easing.type: Easing.OutQuint }
+            }
 
             Timer { running: btWidgetRoot.moduleActive && btWidgetRoot.showLayout && !btPill.initAnimTrigger; interval: 190; onTriggered: btPill.initAnimTrigger = true }
             opacity: initAnimTrigger ? 1.0 : 0.0

@@ -19,8 +19,8 @@ get_volume() {
     fi
     
     if [[ -z "$vol" ]]; then
-        if command -v wpctl &> /dev/null; then 
-            vol=$(LC_ALL=C wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{print int($2*100)}')
+        if command -v wpctl &> /dev/null; then
+            vol=$(LC_ALL=C wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null | awk '{v=int(($2/1.5)*100); if(v>100)v=100; print v}')
         fi
         if [[ -z "$vol" ]] && command -v pamixer &> /dev/null; then 
             vol=$(LC_ALL=C pamixer --get-volume 2>/dev/null)

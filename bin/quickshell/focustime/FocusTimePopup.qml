@@ -495,12 +495,109 @@ Item {
                 spacing: window.s(16)
 
                 // ==========================================
+                // 0. TOP NAVIGATION SWITCHER (Stats vs Pomodoro)
+                // ==========================================
+                Rectangle {
+                    Layout.alignment: Qt.AlignHCenter
+                    Layout.preferredWidth: window.s(340)
+                    Layout.preferredHeight: window.s(38)
+                    radius: window.s(12)
+                    color: window.surface0
+                    border.color: window.surface1
+                    border.width: 1
+
+                    opacity: introHeader
+                    transform: Translate { y: window.s(-15) * (1 - introHeader) }
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.margins: window.s(3)
+                        spacing: window.s(4)
+
+                        // Stats Tab Button
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: window.s(9)
+                            color: PomodoroService.activeTab === "stats" ? window.mauve : (statsNavMa.containsMouse ? window.surface1 : "transparent")
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Row {
+                                anchors.centerIn: parent
+                                spacing: window.s(6)
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "󰄳"
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: window.s(14)
+                                    color: PomodoroService.activeTab === "stats" ? window.crust : window.text
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: typeof I18n !== "undefined" ? I18n.t("focustime.tab_stats") : "Analytics"
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: window.s(12.5)
+                                    font.weight: PomodoroService.activeTab === "stats" ? Font.Bold : Font.Normal
+                                    color: PomodoroService.activeTab === "stats" ? window.crust : window.text
+                                }
+                            }
+
+                            MouseArea {
+                                id: statsNavMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: PomodoroService.activeTab = "stats"
+                            }
+                        }
+
+                        // Pomodoro Tab Button
+                        Rectangle {
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            radius: window.s(9)
+                            color: PomodoroService.activeTab === "pomodoro" ? window.mauve : (pomoNavMa.containsMouse ? window.surface1 : "transparent")
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Row {
+                                anchors.centerIn: parent
+                                spacing: window.s(6)
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: "󰔛"
+                                    font.family: "Iosevka Nerd Font"
+                                    font.pixelSize: window.s(14)
+                                    color: PomodoroService.activeTab === "pomodoro" ? window.crust : window.text
+                                }
+                                Text {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: typeof I18n !== "undefined" ? I18n.t("focustime.tab_pomodoro") : "Pomodoro"
+                                    font.family: "JetBrains Mono"
+                                    font.pixelSize: window.s(12.5)
+                                    font.weight: PomodoroService.activeTab === "pomodoro" ? Font.Bold : Font.Normal
+                                    color: PomodoroService.activeTab === "pomodoro" ? window.crust : window.text
+                                }
+                            }
+
+                            MouseArea {
+                                id: pomoNavMa
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: PomodoroService.activeTab = "pomodoro"
+                            }
+                        }
+                    }
+                }
+
+                // ==========================================
                 // 1. HEADER
                 // ==========================================
                 RowLayout {
                     Layout.fillWidth: true
                     Layout.topMargin: window.s(4)
                     Layout.preferredHeight: window.s(40)
+                    visible: PomodoroService.activeTab === "stats"
 
                     opacity: introHeader
                     transform: Translate { y: window.s(-20) * (1 - introHeader) }
@@ -635,9 +732,9 @@ Item {
                         id: dailyViewWrapper
                         anchors.fill: parent
                         spacing: window.s(16)
-                        
+
                         opacity: 1.0 - window.weekViewFocus
-                        visible: opacity > 0
+                        visible: PomodoroService.activeTab === "stats" && opacity > 0
                         transform: Translate { x: window.s(-40) * window.weekViewFocus }
                         scale: 0.95 + (0.05 * (1.0 - window.weekViewFocus)) // Smooth fluid scale backward
 
@@ -1166,7 +1263,7 @@ Item {
                         spacing: window.s(16)
 
                         opacity: window.weekViewFocus
-                        visible: opacity > 0
+                        visible: PomodoroService.activeTab === "stats" && opacity > 0
                         transform: Translate { x: window.s(40) * (1 - window.weekViewFocus) }
                         scale: 0.95 + (0.05 * window.weekViewFocus) // Fluid zoom in on activation
 
@@ -1484,6 +1581,384 @@ Item {
                             }
                         }
                     } // End Week View Wrapper
+
+                    // ==========================================
+                    // POMODORO FOCUS TIMER VIEW
+                    // ==========================================
+                    Item {
+                        id: pomodoroViewWrapper
+                        anchors.fill: parent
+                        visible: PomodoroService.activeTab === "pomodoro"
+
+                        ColumnLayout {
+                            anchors.fill: parent
+                            spacing: window.s(20)
+
+                            // 1. Phase Segmented Selector (Focus, Short Break, Long Break)
+                            Rectangle {
+                                Layout.alignment: Qt.AlignHCenter
+                                Layout.preferredWidth: window.s(450)
+                                Layout.preferredHeight: window.s(44)
+                                radius: window.s(12)
+                                color: window.surface0
+                                border.color: window.surface1
+                                border.width: 1
+
+                                RowLayout {
+                                    anchors.fill: parent
+                                    anchors.margins: window.s(4)
+                                    spacing: window.s(6)
+
+                                    // Focus Phase Pill
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        radius: window.s(9)
+                                        color: PomodoroService.phase === 0 ? window.mauve : (p0Ma.containsMouse ? window.surface1 : "transparent")
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: window.s(6)
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: "󱎫"
+                                                font.family: "Iosevka Nerd Font"
+                                                font.pixelSize: window.s(15)
+                                                color: PomodoroService.phase === 0 ? window.crust : window.text
+                                            }
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: typeof I18n !== "undefined" ? I18n.t("focustime.focus_time") : "Focus Time"
+                                                font.family: "JetBrains Mono"
+                                                font.pixelSize: window.s(12.5)
+                                                font.weight: PomodoroService.phase === 0 ? Font.Bold : Font.Normal
+                                                color: PomodoroService.phase === 0 ? window.crust : window.text
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: p0Ma
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: PomodoroService.setPhase(0)
+                                        }
+                                    }
+
+                                    // Short Break Phase Pill
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        radius: window.s(9)
+                                        color: PomodoroService.phase === 1 ? window.green : (p1Ma.containsMouse ? window.surface1 : "transparent")
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: window.s(6)
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: "󰒲"
+                                                font.family: "Iosevka Nerd Font"
+                                                font.pixelSize: window.s(15)
+                                                color: PomodoroService.phase === 1 ? window.crust : window.text
+                                            }
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: typeof I18n !== "undefined" ? I18n.t("focustime.short_break") : "Short Break"
+                                                font.family: "JetBrains Mono"
+                                                font.pixelSize: window.s(12.5)
+                                                font.weight: PomodoroService.phase === 1 ? Font.Bold : Font.Normal
+                                                color: PomodoroService.phase === 1 ? window.crust : window.text
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: p1Ma
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: PomodoroService.setPhase(1)
+                                        }
+                                    }
+
+                                    // Long Break Phase Pill
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        radius: window.s(9)
+                                        color: PomodoroService.phase === 2 ? window.blue : (p2Ma.containsMouse ? window.surface1 : "transparent")
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                                        Row {
+                                            anchors.centerIn: parent
+                                            spacing: window.s(6)
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: "󰄲"
+                                                font.family: "Iosevka Nerd Font"
+                                                font.pixelSize: window.s(15)
+                                                color: PomodoroService.phase === 2 ? window.crust : window.text
+                                            }
+                                            Text {
+                                                anchors.verticalCenter: parent.verticalCenter
+                                                text: typeof I18n !== "undefined" ? I18n.t("focustime.long_break") : "Long Break"
+                                                font.family: "JetBrains Mono"
+                                                font.pixelSize: window.s(12.5)
+                                                font.weight: PomodoroService.phase === 2 ? Font.Bold : Font.Normal
+                                                color: PomodoroService.phase === 2 ? window.crust : window.text
+                                            }
+                                        }
+
+                                        MouseArea {
+                                            id: p2Ma
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: PomodoroService.setPhase(2)
+                                        }
+                                    }
+                                }
+                            }
+
+                            // 2. Central Hero Display Card
+                            Rectangle {
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
+                                radius: window.s(20)
+                                color: window.surface0
+                                border.color: window.surface1
+                                border.width: 1
+                                clip: true
+
+                                ColumnLayout {
+                                    anchors.centerIn: parent
+                                    spacing: window.s(16)
+
+                                    // Giant Countdown Display
+                                    Text {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        text: PomodoroService.formattedTime
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: window.s(82)
+                                        font.weight: Font.Bold
+                                        color: PomodoroService.phase === 0 ? window.mauve : (PomodoroService.phase === 1 ? window.green : window.blue)
+                                        Behavior on color { ColorAnimation { duration: 250 } }
+                                    }
+
+                                    // Cycle Indicators (4 dots for sessions)
+                                    Row {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        spacing: window.s(10)
+                                        Repeater {
+                                            model: 4
+                                            delegate: Rectangle {
+                                                width: window.s(12)
+                                                height: window.s(12)
+                                                radius: window.s(6)
+                                                property bool isDone: (PomodoroService.completedSessions % 4) > index
+                                                property bool isCurrent: (PomodoroService.completedSessions % 4) === index && PomodoroService.phase === 0
+                                                color: isDone ? (PomodoroService.phase === 0 ? window.mauve : window.green) : (isCurrent ? Qt.rgba(window.mauve.r, window.mauve.g, window.mauve.b, 0.4) : window.surface1)
+                                                scale: isCurrent ? 1.25 : 1.0
+                                                Behavior on scale { NumberAnimation { duration: 150 } }
+                                                Behavior on color { ColorAnimation { duration: 150 } }
+                                            }
+                                        }
+                                    }
+
+                                    // Session Status Text
+                                    Text {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        text: typeof I18n !== "undefined"
+                                            ? I18n.t("focustime.session", { current: ((PomodoroService.completedSessions % 4) + 1).toString(), total: "4" })
+                                            : ("Session " + ((PomodoroService.completedSessions % 4) + 1) + " of 4")
+                                        font.family: "JetBrains Mono"
+                                        font.pixelSize: window.s(14)
+                                        font.weight: Font.Medium
+                                        color: window.subtext0
+                                    }
+
+                                    // Progress Bar
+                                    Rectangle {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        Layout.preferredWidth: window.s(320)
+                                        Layout.preferredHeight: window.s(8)
+                                        radius: window.s(4)
+                                        color: window.crust
+
+                                        Rectangle {
+                                            height: parent.height
+                                            width: parent.width * PomodoroService.progress
+                                            radius: window.s(4)
+                                            color: PomodoroService.phase === 0 ? window.mauve : (PomodoroService.phase === 1 ? window.green : window.blue)
+                                            Behavior on width { NumberAnimation { duration: 250; easing.type: Easing.Linear } }
+                                            Behavior on color { ColorAnimation { duration: 250 } }
+                                        }
+                                    }
+
+                                    Item { Layout.preferredHeight: window.s(6) }
+
+                                    // 3. Play / Pause / Skip / Reset Controls
+                                    RowLayout {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        spacing: window.s(16)
+
+                                        // Reset Button
+                                        Rectangle {
+                                            Layout.preferredWidth: window.s(52)
+                                            Layout.preferredHeight: window.s(52)
+                                            radius: window.s(26)
+                                            color: resetMa.containsMouse ? window.surface1 : window.crust
+                                            border.color: window.surface1
+                                            border.width: 1
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "󰑐"
+                                                font.family: "Iosevka Nerd Font"
+                                                font.pixelSize: window.s(20)
+                                                color: resetMa.containsMouse ? window.text : window.subtext0
+                                            }
+
+                                            MouseArea {
+                                                id: resetMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: PomodoroService.reset()
+                                            }
+                                        }
+
+                                        // Big Play / Pause Button
+                                        Rectangle {
+                                            Layout.preferredWidth: window.s(72)
+                                            Layout.preferredHeight: window.s(72)
+                                            radius: window.s(36)
+                                            color: PomodoroService.phase === 0 ? window.mauve : (PomodoroService.phase === 1 ? window.green : window.blue)
+                                            scale: playMa.containsMouse ? 1.08 : 1.0
+                                            Behavior on scale { NumberAnimation { duration: 150; easing.type: Easing.OutBack } }
+                                            Behavior on color { ColorAnimation { duration: 200 } }
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: PomodoroService.isRunning ? "󰏤" : "󰐊"
+                                                font.family: "Iosevka Nerd Font"
+                                                font.pixelSize: window.s(28)
+                                                font.weight: Font.Bold
+                                                color: window.crust
+                                            }
+
+                                            MouseArea {
+                                                id: playMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: PomodoroService.toggle()
+                                            }
+                                        }
+
+                                        // Skip Phase Button
+                                        Rectangle {
+                                            Layout.preferredWidth: window.s(52)
+                                            Layout.preferredHeight: window.s(52)
+                                            radius: window.s(26)
+                                            color: skipMa.containsMouse ? window.surface1 : window.crust
+                                            border.color: window.surface1
+                                            border.width: 1
+                                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "󰒭"
+                                                font.family: "Iosevka Nerd Font"
+                                                font.pixelSize: window.s(20)
+                                                color: skipMa.containsMouse ? window.text : window.subtext0
+                                            }
+
+                                            MouseArea {
+                                                id: skipMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: PomodoroService.skip()
+                                            }
+                                        }
+                                    }
+
+                                    // Quick Duration Selector Chips
+                                    RowLayout {
+                                        Layout.alignment: Qt.AlignHCenter
+                                        spacing: window.s(10)
+                                        visible: !PomodoroService.isRunning
+
+                                        // Chip 1
+                                        Rectangle {
+                                            Layout.preferredWidth: window.s(76)
+                                            Layout.preferredHeight: window.s(32)
+                                            radius: window.s(8)
+                                            property int val: PomodoroService.phase === 0 ? 25 : (PomodoroService.phase === 1 ? 5 : 15)
+                                            color: chip1Ma.containsMouse ? window.surface1 : window.crust
+                                            border.color: window.surface1
+                                            border.width: 1
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: typeof I18n !== "undefined" ? I18n.t("focustime.minutes", { m: parent.val.toString() }) : (parent.val + "m")
+                                                font.family: "JetBrains Mono"
+                                                font.pixelSize: window.s(12)
+                                                color: window.text
+                                            }
+
+                                            MouseArea {
+                                                id: chip1Ma
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (PomodoroService.phase === 0) PomodoroService.setWorkMinutes(25);
+                                                    else if (PomodoroService.phase === 1) PomodoroService.setBreakMinutes(5);
+                                                    else PomodoroService.setLongBreakMinutes(15);
+                                                }
+                                            }
+                                        }
+
+                                        // Chip 2
+                                        Rectangle {
+                                            Layout.preferredWidth: window.s(76)
+                                            Layout.preferredHeight: window.s(32)
+                                            radius: window.s(8)
+                                            property int val: PomodoroService.phase === 0 ? 50 : (PomodoroService.phase === 1 ? 10 : 30)
+                                            color: chip2Ma.containsMouse ? window.surface1 : window.crust
+                                            border.color: window.surface1
+                                            border.width: 1
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: typeof I18n !== "undefined" ? I18n.t("focustime.minutes", { m: parent.val.toString() }) : (parent.val + "m")
+                                                font.family: "JetBrains Mono"
+                                                font.pixelSize: window.s(12)
+                                                color: window.text
+                                            }
+
+                                            MouseArea {
+                                                id: chip2Ma
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (PomodoroService.phase === 0) PomodoroService.setWorkMinutes(50);
+                                                    else if (PomodoroService.phase === 1) PomodoroService.setBreakMinutes(10);
+                                                    else PomodoroService.setLongBreakMinutes(30);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } // End Pomodoro View Wrapper
                 } // End Container Item
             }
         }

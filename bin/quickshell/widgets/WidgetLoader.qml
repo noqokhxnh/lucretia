@@ -522,6 +522,21 @@ Item {
             return "ok";
         }
 
+        function setVisualizerConfig(orientation: string, inverted: string, onTop: string): string {
+            if (typeof Cava !== "undefined") {
+                if (orientation === "horizontal" || orientation === "horizontal_right" || orientation === "horizontal_left" || orientation === "vertical") {
+                    Cava.setOrientation(orientation);
+                }
+                if (inverted === "true" || inverted === "false") {
+                    Cava.setInverted(inverted === "true");
+                }
+                if (onTop === "true" || onTop === "false") {
+                    Cava.setOnTop(onTop === "true");
+                }
+            }
+            return "ok";
+        }
+
         function save(): string {
             loaderRoot.saveNow();
             return "ok";

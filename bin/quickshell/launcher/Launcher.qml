@@ -265,12 +265,33 @@ PanelWindow {
     }
 
     // -------------------------------------------------------------------------
-    // TOOLS (Translator & Dictionary)
+    // TOOLS (Translator, Dictionary, Files & Process Killer)
     // -------------------------------------------------------------------------
     property string toolMode: ""
     property string toolResult: ""
+    property var toolItems: []
     property bool toolLoading: false
     property string activeToolQuery: ""
+
+    function shortenPath(p) {
+        let home = Quickshell.env("HOME") || "";
+        if (home && p && p.startsWith(home)) {
+            return "~" + p.substring(home.length);
+        }
+        return p || "";
+    }
+
+    function getFileFontIcon(ext, isDir) {
+        if (isDir) return "󰉋";
+        let e = (ext || "").toLowerCase();
+        if (["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp"].indexOf(e) !== -1) return "󰈟";
+        if (["mp4", "mkv", "webm", "avi", "mov"].indexOf(e) !== -1) return "󰈫";
+        if (["mp3", "flac", "wav", "m4a", "ogg", "opus"].indexOf(e) !== -1) return "󰎆";
+        if (["c", "cpp", "h", "hpp", "rs", "go", "py", "js", "ts", "qml", "sh", "json", "html", "css", "kdl"].indexOf(e) !== -1) return "󰈮";
+        if (["pdf", "doc", "docx", "odt", "txt", "md"].indexOf(e) !== -1) return "󰈦";
+        if (["zip", "tar", "gz", "7z", "rar", "xz", "bz2"].indexOf(e) !== -1) return "󰛫";
+        return "󰈔";
+    }
 
     function getLangCode(lang) {
         if (!lang) return "vi";
@@ -324,11 +345,18 @@ PanelWindow {
             onStreamFinished: {
                 try {
                     let data = JSON.parse(this.text.trim());
-                    launcherWindow.toolResult = data.result || "No result";
+                    if (data.items !== undefined && Array.isArray(data.items)) {
+                        launcherWindow.toolItems = data.items;
+                        launcherWindow.toolResult = "";
+                    } else {
+                        launcherWindow.toolItems = [];
+                        launcherWindow.toolResult = data.result || "No result";
+                    }
                     launcherWindow.toolLoading = false;
                     launcherWindow.executeFilter(searchInput.text);
                 } catch(e) {
-                    launcherWindow.toolResult = "No definition found or error.";
+                    launcherWindow.toolItems = [];
+                    launcherWindow.toolResult = "No result or error.";
                     launcherWindow.toolLoading = false;
                     launcherWindow.executeFilter(searchInput.text);
                 }
@@ -747,14 +775,279 @@ PanelWindow {
                 isWidget: false,
                 widgetTarget: "",
                 isFavorite: false,
-                isHidden: false
+                isHidden: false,
+                isFile: false,
+                isDir: false,
+                filePath: "",
+                isKill: false,
+                killPid: 0,
+                killName: ""
             });
         }
 
-        // 5. Desktop Apps & Widgets
-        let showOnlyHidden = (q === ":hidden" || q === "hidden");
+        // 5. Pomodoro Shortcut (:pomo or pomo)
+        if (q === ":pomo" || q === "pomo") {
+            filtered.push({
+                name: typeof I18n !== "undefined" ? I18n.t("applauncher.pomo_title", "Pomodoro Focus Timer") : "Pomodoro Focus Timer",
+                description: typeof I18n !== "undefined" ? I18n.t("applauncher.pomo_desc", "Open Pomodoro countdown timer in FocusTime") : "Open Pomodoro countdown timer in FocusTime",
+                desktop_id: "",
+                icon: "",
+                fontIcon: "󰔛",
+                score: 95000000,
+                isCommand: false,
+                command: "",
+                isCalc: false,
+                calcResult: "",
+                isTool: false,
+                toolResult: "",
+                isWidget: true,
+                widgetTarget: "focustime",
+                isFavorite: false,
+                isHidden: false,
+                isFile: false,
+                isDir: false,
+                filePath: "",
+                isKill: false,
+                killPid: 0,
+                killName: ""
+            });
+        }
 
-        if (!tranMatch && !dfMatch) {
+        // 6. File & Folder Search (f <query>, f"<query>, d <query>, d"<query>)
+        let fileMatch = rawTrimmed.match(/^(?:f"|f\s+)(.+)$/i);
+        let dirMatch = rawTrimmed.match(/^(?:d"|d\s+)(.+)$/i);
+        if (fileMatch || dirMatch) {
+            let isFileSearch = !!fileMatch;
+            let fileQuery = (fileMatch ? fileMatch[1] : dirMatch[1]).trim();
+            let modeName = isFileSearch ? "file" : "dir";
+            let fullQueryKey = modeName + "::" + fileQuery;
+
+            if (activeToolQuery !== fullQueryKey) {
+                activeToolQuery = fullQueryKey;
+                toolMode = modeName;
+                toolLoading = true;
+                toolItems = [];
+                toolDebounceTimer.pendingMode = modeName;
+                toolDebounceTimer.pendingQuery = fileQuery;
+                toolDebounceTimer.pendingExtra = "";
+                toolDebounceTimer.restart();
+            }
+
+            if (toolLoading) {
+                filtered.push({
+                    name: typeof I18n !== "undefined" ? I18n.t("applauncher.searching_files", { query: fileQuery }) : ("Searching: " + fileQuery + "..."),
+                    description: isFileSearch ? "Searching files with fd..." : "Searching directories with fd...",
+                    desktop_id: "",
+                    icon: "",
+                    fontIcon: isFileSearch ? "󰈔" : "󰉋",
+                    score: 10000000,
+                    isCommand: false,
+                    command: "",
+                    isCalc: false,
+                    calcResult: "",
+                    isTool: false,
+                    toolResult: "",
+                    isWidget: false,
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false,
+                    isFile: false,
+                    isDir: false,
+                    filePath: "",
+                    isKill: false,
+                    killPid: 0,
+                    killName: ""
+                });
+            } else if (toolItems && toolItems.length > 0) {
+                for (let i = 0; i < toolItems.length; i++) {
+                    let ti = toolItems[i];
+                    filtered.push({
+                        name: ti.name || (ti.isDir ? "Folder" : "File"),
+                        description: shortenPath(ti.path),
+                        desktop_id: "",
+                        icon: "",
+                        fontIcon: getFileFontIcon(ti.ext, ti.isDir),
+                        score: 10000000 - i,
+                        isCommand: false,
+                        command: "",
+                        isCalc: false,
+                        calcResult: "",
+                        isTool: false,
+                        toolResult: "",
+                        isWidget: false,
+                        widgetTarget: "",
+                        isFavorite: false,
+                        isHidden: false,
+                        isFile: !ti.isDir,
+                        isDir: !!ti.isDir,
+                        filePath: ti.path,
+                        isKill: false,
+                        killPid: 0,
+                        killName: ""
+                    });
+                }
+            } else if (!toolLoading && activeToolQuery === fullQueryKey) {
+                filtered.push({
+                    name: typeof I18n !== "undefined" ? I18n.t("applauncher.no_files_found") : "No files or folders found",
+                    description: fileQuery,
+                    desktop_id: "",
+                    icon: "",
+                    fontIcon: "󰅙",
+                    score: 10000000,
+                    isCommand: false,
+                    command: "",
+                    isCalc: false,
+                    calcResult: "",
+                    isTool: false,
+                    toolResult: "",
+                    isWidget: false,
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false,
+                    isFile: false,
+                    isDir: false,
+                    filePath: "",
+                    isKill: false,
+                    killPid: 0,
+                    killName: ""
+                });
+            }
+        }
+
+        // 8. Kill Process / Port (kill <query>, :kill <query>, :<port>)
+        let killMatch = rawTrimmed.match(/^(?:kill|:kill)\s*(.*)$/i);
+        let directPortMatch = rawTrimmed.match(/^:([0-9]{2,5})$/);
+        if (killMatch || directPortMatch) {
+            let killQuery = directPortMatch ? (":" + directPortMatch[1]) : (killMatch ? killMatch[1].trim() : "");
+            let fullQueryKey = "kill::" + killQuery;
+
+            if (killQuery.length === 0) {
+                filtered.push({
+                    name: typeof I18n !== "undefined" ? I18n.t("applauncher.kill_hint_title", "kill <process> or kill :<port>") : "kill <process> or kill :<port>",
+                    description: typeof I18n !== "undefined" ? I18n.t("applauncher.kill_hint_desc", "Type a process name or port number (e.g. :3000) to terminate") : "Type a process name or port number (e.g. :3000) to terminate",
+                    desktop_id: "",
+                    icon: "",
+                    fontIcon: "󰅙",
+                    score: 10000000,
+                    isCommand: false,
+                    command: "",
+                    isCalc: false,
+                    calcResult: "",
+                    isTool: false,
+                    toolResult: "",
+                    isWidget: false,
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false,
+                    isFile: false,
+                    isDir: false,
+                    filePath: "",
+                    isKill: false,
+                    killPid: 0,
+                    killName: ""
+                });
+            } else {
+                if (activeToolQuery !== fullQueryKey) {
+                    activeToolQuery = fullQueryKey;
+                    toolMode = "kill_search";
+                    toolLoading = true;
+                    toolItems = [];
+                    toolDebounceTimer.pendingMode = "kill_search";
+                    toolDebounceTimer.pendingQuery = killQuery;
+                    toolDebounceTimer.pendingExtra = "";
+                    toolDebounceTimer.restart();
+                }
+
+                if (toolLoading) {
+                    filtered.push({
+                        name: typeof I18n !== "undefined" ? I18n.t("applauncher.searching_proc", { query: killQuery }) : ("Searching processes: " + killQuery + "..."),
+                        description: "Inspecting running processes and ports...",
+                        desktop_id: "",
+                        icon: "",
+                        fontIcon: "󰅙",
+                        score: 10000000,
+                        isCommand: false,
+                        command: "",
+                        isCalc: false,
+                        calcResult: "",
+                        isTool: false,
+                        toolResult: "",
+                        isWidget: false,
+                        widgetTarget: "",
+                        isFavorite: false,
+                        isHidden: false,
+                        isFile: false,
+                        isDir: false,
+                        filePath: "",
+                        isKill: false,
+                        killPid: 0,
+                        killName: ""
+                    });
+                } else if (toolItems && toolItems.length > 0) {
+                    for (let i = 0; i < toolItems.length; i++) {
+                        let proc = toolItems[i];
+                        let desc = proc.isPort
+                            ? ("Port :" + proc.port + " | User: " + (proc.user || "current") + " — Press Enter to kill")
+                            : ("CPU: " + proc.cpu + "% | RAM: " + proc.mem + "% — " + proc.cmd);
+                        filtered.push({
+                            name: proc.isPort ? (proc.name + " [Port :" + proc.port + ", PID " + proc.pid + "]") : (proc.name + " [PID " + proc.pid + "]"),
+                            description: desc,
+                            desktop_id: "",
+                            icon: "",
+                            fontIcon: "󰅙",
+                            score: 10000000 - i,
+                            isCommand: false,
+                            command: "",
+                            isCalc: false,
+                            calcResult: "",
+                            isTool: false,
+                            toolResult: "",
+                            isWidget: false,
+                            widgetTarget: "",
+                            isFavorite: false,
+                            isHidden: false,
+                            isFile: false,
+                            isDir: false,
+                            filePath: "",
+                            isKill: true,
+                            killPid: proc.pid,
+                            killName: proc.name
+                        });
+                    }
+                } else if (!toolLoading && activeToolQuery === fullQueryKey) {
+                    filtered.push({
+                        name: typeof I18n !== "undefined" ? I18n.t("applauncher.no_proc_found") : "No matching processes or ports found",
+                        description: killQuery,
+                        desktop_id: "",
+                        icon: "",
+                        fontIcon: "󰅙",
+                        score: 10000000,
+                        isCommand: false,
+                        command: "",
+                        isCalc: false,
+                        calcResult: "",
+                        isTool: false,
+                        toolResult: "",
+                        isWidget: false,
+                        widgetTarget: "",
+                        isFavorite: false,
+                        isHidden: false,
+                        isFile: false,
+                        isDir: false,
+                        filePath: "",
+                        isKill: false,
+                        killPid: 0,
+                        killName: ""
+                    });
+                }
+            }
+        }
+
+        // 9. Desktop Apps & Widgets
+        let showOnlyHidden = (q === ":hidden" || q === "hidden");
+        let isSpecialMode = (tranMatch || dfMatch || fileMatch || dirMatch || killMatch || directPortMatch);
+
+        if (!isSpecialMode) {
             for (let i = 0; i < allApps.length; i++) {
                 let app = allApps[i];
 
@@ -866,7 +1159,27 @@ PanelWindow {
             return;
         }
 
+        if (item.isFile || item.isDir) {
+            if (item.filePath) {
+                Quickshell.execDetached(["xdg-open", item.filePath]);
+            }
+            closeLauncher();
+            return;
+        }
+
+        if (item.isKill) {
+            if (item.killPid) {
+                Quickshell.execDetached([Caching.qsDir + "/applauncher/tools_fetcher", "kill_proc", item.killPid.toString()]);
+                Quickshell.execDetached(["notify-send", "-a", "Lucretia", "Process Terminated", "Killed " + item.killName + " (PID " + item.killPid + ")"]);
+            }
+            closeLauncher();
+            return;
+        }
+
         if (item.isWidget) {
+            if (item.widgetTarget === "focustime" && item.fontIcon === "󰔛") {
+                PomodoroService.activeTab = "pomodoro";
+            }
             launchWidget(item.name, item.widgetTarget);
             return;
         }

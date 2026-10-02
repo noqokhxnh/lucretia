@@ -23,7 +23,7 @@ ShellRoot {
 
     Process {
         id: zombieCleanup
-        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; killall cava 2>/dev/null || true; pkill -f 'watchers/.*\\.sh' 2>/dev/null || true; pkill -f 'workspaces.sh' 2>/dev/null || true; QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/quickshell\"; LUC_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\" \"$LUC_RUN\"; rm -f \"$QS_RUN/qs_daemon.sock\" \"$QS_RUN\"/qs_*.lock \"$LUC_RUN/qs_daemon.sock\" \"$LUC_RUN\"/qs_*.lock /tmp/quickshell_qs_daemon.sock"]
+        command: ["bash", "-c", "killall -9 qs_daemon 2>/dev/null || true; killall cava 2>/dev/null || true; pkill -f 'watchers/.*\\.sh' 2>/dev/null || true; pkill -f 'workspaces.sh' 2>/dev/null || true; QS_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/quickshell\"; LUC_RUN=\"${XDG_RUNTIME_DIR:-/tmp}/lucretia\"; mkdir -p \"$QS_RUN\" \"$LUC_RUN\"; rm -f \"$QS_RUN/qs_daemon.sock\" \"$QS_RUN\"/qs_*.lock \"$LUC_RUN/qs_daemon.sock\" \"$LUC_RUN\"/qs_*.lock /tmp/quickshell_qs_daemon.sock; (pgrep -x wl-mirror >/dev/null 2>&1 || { : > \"$QS_RUN/mirror_target\"; : > \"$LUC_RUN/mirror_target\"; })"]
         running: true
         onExited: {
             qsDaemon.running = true;
