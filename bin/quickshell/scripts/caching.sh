@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-[ -n "$_QS_CACHING_INIT_DONE" ] && { return 0 2>/dev/null || exit 0; }
+[ -n "${_QS_CACHING_INIT_DONE:-}" ] && { return 0 2>/dev/null || exit 0; }
 
-if [ -z "$LUCRETIA_DIR" ]; then
-    if [ -n "$SERPANTINUM_DIR" ]; then
+if [ -z "${LUCRETIA_DIR:-}" ]; then
+    if [ -n "${SERPANTINUM_DIR:-}" ]; then
         export LUCRETIA_DIR="$SERPANTINUM_DIR"
     else
         SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"

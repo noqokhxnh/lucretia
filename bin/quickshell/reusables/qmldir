@@ -23,3 +23,5 @@ TimeSelector 1.0 TimeSelector.qml
 Dropdown 1.0 Dropdown.qml
 AppPicker 1.0 AppPicker.qml
 AppIcon 1.0 AppIcon.qml
+SettingsRow 1.0 guide/SettingsRow.qml
+SettingsGroup 1.0 guide/SettingsGroup.qml
