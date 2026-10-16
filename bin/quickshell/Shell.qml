@@ -27,15 +27,8 @@ ShellRoot {
         running: true
         onExited: {
             qsDaemon.running = true;
-            wsDaemon.running = true;
             mainLoader.active = true;
         }
-    }
-
-    Process {
-        id: wsDaemon
-        command: ["bash", "-c", "~/.config/niri/bin/workspaces.sh"]
-        running: false
     }
 
     Process {

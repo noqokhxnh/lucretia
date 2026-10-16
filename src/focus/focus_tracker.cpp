@@ -14,17 +14,23 @@
 using json = nlohmann::json;
 
 FocusService::FocusService(QObject* parent) : QObject(parent), db(nullptr) {
-    std::string db_dir = std::getenv("QS_STATE_FOCUSTIME") ? std::getenv("QS_STATE_FOCUSTIME") : 
+    std::string db_dir = std::getenv("QS_STATE_FOCUSTIME") ? std::getenv("QS_STATE_FOCUSTIME") :
                          std::string(std::getenv("HOME")) + "/.local/state/quickshell/focustime";
     fs::create_directories(db_dir);
     db_path = db_dir + "/focustime.db";
     db = focus_common::init_db(db_path);
 
-    run_dir = std::getenv("QS_RUN_FOCUSTIME") ? std::getenv("QS_RUN_FOCUSTIME") : "/tmp/quickshell/focustime";
+    run_dir = std::getenv("QS_RUN_FOCUSTIME") ? std::getenv("QS_RUN_FOCUSTIME") :
+              ((std::getenv("XDG_RUNTIME_DIR") ? std::string(std::getenv("XDG_RUNTIME_DIR")) : "/tmp") + "/lucretia/focustime");
     fs::create_directories(run_dir);
 
-    // Initial active window query
+    ws_run_dir = std::getenv("QS_RUN_WORKSPACES") ? std::getenv("QS_RUN_WORKSPACES") :
+                 ((std::getenv("XDG_RUNTIME_DIR") ? std::string(std::getenv("XDG_RUNTIME_DIR")) : "/tmp") + "/lucretia/workspaces");
+    fs::create_directories(ws_run_dir);
+
+    // Initial state queries
     updateActiveWindow();
+    updateWorkspacesState();
 
     // Start Niri listener socket thread
     daemon_thread = std::thread([this]() {
@@ -66,6 +72,13 @@ FocusService::~FocusService() {
     if (daemon_thread.joinable()) {
         daemon_thread.detach();
     }
+    {
+        std::lock_guard<std::mutex> lock(query_mutex);
+        if (query_sock >= 0) {
+            ::close(query_sock);
+            query_sock = -1;
+        }
+    }
     flushBuffer();
     if (db) sqlite3_close(db);
 }
@@ -89,94 +102,272 @@ std::string FocusService::getNiriSocketPath() {
     return "";
 }
 
+std::string FocusService::queryNiri(const std::string& req) {
+    std::lock_guard<std::mutex> lock(query_mutex);
+
+    auto connect_query = [this]() -> bool {
+        if (query_sock >= 0) {
+            ::close(query_sock);
+            query_sock = -1;
+        }
+        std::string sock_path = getNiriSocketPath();
+        if (sock_path.empty()) return false;
+
+        int sock = socket(AF_UNIX, SOCK_STREAM, 0);
+        if (sock < 0) return false;
+
+        struct sockaddr_un addr;
+        memset(&addr, 0, sizeof(addr));
+        addr.sun_family = AF_UNIX;
+        strncpy(addr.sun_path, sock_path.c_str(), sizeof(addr.sun_path) - 1);
+
+        struct timeval tv;
+        tv.tv_sec = 1;
+        tv.tv_usec = 0;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+
+        if (::connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+            ::close(sock);
+            return false;
+        }
+        query_sock = sock;
+        return true;
+    };
+
+    if (query_sock < 0 && !connect_query()) {
+        return "";
+    }
+
+    std::string to_send = req;
+    if (to_send.empty() || to_send.back() != '\n') to_send += '\n';
+
+    auto try_send_recv = [this, &to_send]() -> std::string {
+        if (send(query_sock, to_send.c_str(), to_send.length(), MSG_NOSIGNAL) < 0) {
+            return "";
+        }
+        std::string resp;
+        char buf[8192];
+        while (true) {
+            ssize_t n = recv(query_sock, buf, sizeof(buf) - 1, 0);
+            if (n <= 0) return "";
+            buf[n] = '\0';
+            resp.append(buf, n);
+            if (resp.find('\n') != std::string::npos) {
+                break;
+            }
+        }
+        return resp;
+    };
+
+    std::string res = try_send_recv();
+    if (res.empty()) {
+        if (connect_query()) {
+            res = try_send_recv();
+        }
+    }
+    return res;
+}
+
 bool FocusService::isLocked() {
     const char* xdg = std::getenv("XDG_RUNTIME_DIR");
     std::string lock_file = (xdg ? std::string(xdg) : "/tmp") + "/lucretia/lock.active";
     return ::access(lock_file.c_str(), F_OK) == 0;
 }
 
+void FocusService::writeFocusState(const std::string& cls, const std::string& title) {
+    if (cls == last_written_class && title == last_written_title) {
+        return;
+    }
+    bool cls_changed = (cls != last_written_class);
+    last_written_class = cls;
+    last_written_title = title;
+
+    int64_t ts = std::chrono::duration_cast<std::chrono::seconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    json payload;
+    payload["timestamp"] = ts;
+    payload["app_class"] = cls;
+    payload["app_title"] = title;
+
+    std::string json_str = payload.dump();
+
+    if (cls_changed && cls != last_logged_class && cls != "Locked") {
+        last_logged_class = cls;
+        std::string log_file = run_dir + "/focus_events.jsonl";
+        std::ofstream f(log_file, std::ios::app);
+        if (f.is_open()) {
+            f << json_str << "\n";
+        }
+    }
+
+    std::string tmp_file = run_dir + "/focus_state.json.tmp";
+    std::string state_file = run_dir + "/focus_state.json";
+    std::ofstream f(tmp_file, std::ios::trunc);
+    if (f.is_open()) {
+        f << json_str << "\n";
+        f.close();
+        std::error_code ec;
+        fs::rename(tmp_file, state_file, ec);
+    }
+}
+
 void FocusService::updateActiveWindow() {
     if (isLocked()) {
-        std::lock_guard<std::mutex> lock(state_mutex);
-        current_class = "Locked";
-        current_title = "Locked";
+        {
+            std::lock_guard<std::mutex> lock(state_mutex);
+            current_class = "Locked";
+            current_title = "Locked";
+        }
+        writeFocusState("Locked", "Locked");
         return;
     }
 
-    std::string sock_path = getNiriSocketPath();
-    if (sock_path.empty()) {
-        std::lock_guard<std::mutex> lock(state_mutex);
-        current_class = "Desktop";
-        current_title = "Desktop";
+    std::string response = queryNiri("\"FocusedWindow\"\n");
+    if (response.empty()) {
+        {
+            std::lock_guard<std::mutex> lock(state_mutex);
+            current_class = "Desktop";
+            current_title = "Desktop";
+        }
+        writeFocusState("Desktop", "Desktop");
         return;
     }
-
-    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock < 0) return;
-
-    struct sockaddr_un addr;
-    memset(&addr, 0, sizeof(addr));
-    addr.sun_family = AF_UNIX;
-    strncpy(addr.sun_path, sock_path.c_str(), sizeof(addr.sun_path) - 1);
-
-    struct timeval tv;
-    tv.tv_sec = 1;
-    tv.tv_usec = 0;
-    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
-    setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
-
-    if (::connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        close(sock);
-        return;
-    }
-
-    std::string req = "\"FocusedWindow\"\n";
-    if (send(sock, req.c_str(), req.length(), 0) < 0) {
-        close(sock);
-        return;
-    }
-
-    char buf[4096];
-    std::string response = "";
-    ssize_t n = recv(sock, buf, sizeof(buf) - 1, 0);
-    if (n > 0) {
-        buf[n] = '\0';
-        response = buf;
-    }
-    close(sock);
-
-    if (response.empty()) return;
 
     try {
         auto data = json::parse(response);
         if (data.contains("Ok") && data["Ok"].contains("FocusedWindow")) {
             auto focused = data["Ok"]["FocusedWindow"];
             if (focused.is_null()) {
-                std::lock_guard<std::mutex> lock(state_mutex);
-                current_class = "Desktop";
-                current_title = "Desktop";
+                {
+                    std::lock_guard<std::mutex> lock(state_mutex);
+                    current_class = "Desktop";
+                    current_title = "Desktop";
+                }
+                writeFocusState("Desktop", "Desktop");
             } else {
                 std::string cls = focused.value("app_id", "");
                 if (cls.empty()) cls = "Unknown";
                 std::string title = focused.value("title", "");
                 if (title.empty()) title = cls;
 
-                if (cls.find("quickshell") != std::string::npos) {
+                std::string cls_lower = cls;
+                for (auto &c : cls_lower) c = std::tolower(c);
+                std::string title_lower = title;
+                for (auto &c : title_lower) c = std::tolower(c);
+
+                if (cls_lower.find("quickshell") != std::string::npos ||
+                    title_lower.find("qs-master") != std::string::npos ||
+                    cls_lower.find("qs-master") != std::string::npos) {
                     cls = "Quickshell";
                     title = "Quickshell";
                 }
                 std::string clean_title = focus_common::resolve_app_name(cls, title);
-                std::lock_guard<std::mutex> lock(state_mutex);
-                current_class = cls;
-                current_title = clean_title;
+                {
+                    std::lock_guard<std::mutex> lock(state_mutex);
+                    current_class = cls;
+                    current_title = clean_title;
+                }
+                writeFocusState(cls, clean_title);
             }
         }
     } catch (...) {
     }
 }
 
+void FocusService::updateWorkspacesState() {
+    std::string spaces_resp = queryNiri("\"Workspaces\"\n");
+    if (spaces_resp.empty()) return;
+    std::string windows_resp = queryNiri("\"Windows\"\n");
+    if (windows_resp.empty()) return;
+
+    try {
+        auto spaces_data = json::parse(spaces_resp);
+        auto windows_data = json::parse(windows_resp);
+        if (!spaces_data.contains("Ok") || !spaces_data["Ok"].contains("Workspaces")) return;
+        if (!windows_data.contains("Ok") || !windows_data["Ok"].contains("Windows")) return;
+
+        const auto& spaces = spaces_data["Ok"]["Workspaces"];
+        const auto& windows = windows_data["Ok"]["Windows"];
+
+        std::map<int64_t, int> id_to_idx;
+        int active_idx = -1;
+        for (const auto& w : spaces) {
+            int64_t id = w.value("id", (int64_t)-1);
+            int idx = w.value("idx", -1);
+            id_to_idx[id] = idx;
+            if (w.value("is_active", false) || w.value("is_focused", false)) {
+                active_idx = idx;
+            }
+        }
+
+        struct WInfo { int count = 0; std::string tooltip = "Empty"; bool focused = false; };
+        std::map<int, WInfo> w_map;
+        for (const auto& win : windows) {
+            if (win.contains("workspace_id") && !win["workspace_id"].is_null()) {
+                int64_t wid = win["workspace_id"].get<int64_t>();
+                if (id_to_idx.count(wid)) {
+                    int idx = id_to_idx[wid];
+                    w_map[idx].count++;
+                    std::string win_title = win.value("title", "Empty");
+                    if (win.value("is_focused", false)) {
+                        w_map[idx].tooltip = win_title;
+                        w_map[idx].focused = true;
+                    } else if (!w_map[idx].focused) {
+                        w_map[idx].tooltip = win_title;
+                    }
+                }
+            }
+        }
+
+        int seq_end = 8;
+        const char* home = std::getenv("HOME");
+        if (home) {
+            std::string settings_path = std::string(home) + "/.config/lucretia/settings.json";
+            std::ifstream sf(settings_path);
+            if (sf.is_open()) {
+                try {
+                    auto s_json = json::parse(sf);
+                    seq_end = s_json.value("workspaceCount", 8);
+                } catch (...) {}
+            }
+        }
+        if (seq_end <= 0) seq_end = 8;
+
+        json res = json::array();
+        for (int i = 1; i <= seq_end; ++i) {
+            std::string state = "empty";
+            if (i == active_idx) state = "active";
+            else if (w_map.count(i) && w_map[i].count > 0) state = "occupied";
+
+            std::string tooltip = (w_map.count(i) && !w_map[i].tooltip.empty()) ? w_map[i].tooltip : "Empty";
+            res.push_back({
+                {"id", i},
+                {"state", state},
+                {"tooltip", tooltip}
+            });
+        }
+
+        std::string res_str = res.dump();
+        if (res_str != last_workspaces_json) {
+            last_workspaces_json = res_str;
+            std::string tmp_file = ws_run_dir + "/workspaces.tmp";
+            std::string target_file = ws_run_dir + "/workspaces.json";
+            std::ofstream out(tmp_file, std::ios::trunc);
+            if (out.is_open()) {
+                out << res_str << "\n";
+                out.close();
+                std::error_code ec;
+                fs::rename(tmp_file, target_file, ec);
+            }
+        }
+    } catch (...) {}
+}
+
 void FocusService::daemonLoop() {
     updateActiveWindow();
+    updateWorkspacesState();
 
     while (!stop_daemon) {
         std::string sock_path = getNiriSocketPath();
@@ -229,6 +420,7 @@ void FocusService::daemonLoop() {
                         line.find("WorkspaceActivated") != std::string::npos ||
                         line.find("WorkspacesChanged") != std::string::npos) {
                         updateActiveWindow();
+                        updateWorkspacesState();
                     }
                 }
             }

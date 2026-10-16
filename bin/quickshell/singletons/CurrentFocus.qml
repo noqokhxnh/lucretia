@@ -12,12 +12,6 @@ Item {
     readonly property string displayText: appTitle !== "" ? appTitle : appClass
     readonly property bool isFocused: displayText !== ""
 
-    Process {
-        id: focusDaemon
-        command: ["bash", "-c", Caching.lucretiaDir + "/scripts/current_focus.sh"]
-        running: typeof Caching !== "undefined" && Caching.lucretiaDir !== undefined && Caching.lucretiaDir !== ""
-    }
-
     FileView {
         id: focusWatcher
         path: (typeof Caching !== "undefined" && Caching.getRunDir && Caching.getRunDir("focustime")) ? (Caching.getRunDir("focustime") + "/focus_state.json") : ""
