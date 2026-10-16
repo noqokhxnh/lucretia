@@ -22,20 +22,23 @@ Item {
     property var pendingPayload: null
     property string lastWrittenContent: ""
 
-    readonly property string writerScript:
-        'target="$1"\n' +
-        'content="$2"\n' +
-        '[ -e "$target" ] && target="$(readlink -f "$target" 2>/dev/null || echo "$target")"\n' +
-        'dir="$(dirname "$target")"\n' +
-        'mkdir -p "$dir" || exit 1\n' +
-        'tmp="$dir/.settings_tmp_$$"\n' +
-        'trap \'rm -f "$tmp"\' EXIT INT TERM HUP\n' +
-        'printf "%s\\n" "$content" > "$tmp" || exit 1\n' +
-        'if [ -s "$tmp" ]; then\n' +
-        '  chmod 644 "$tmp" 2>/dev/null || true\n' +
-        '  cp -f "$tmp" "$target" 2>/dev/null || mv -f "$tmp" "$target"\n' +
-        '  rm -f "$tmp" 2>/dev/null || true\n' +
-        'fi\n'
+    function deepClone(obj) {
+        if (obj === null || typeof obj !== "object") return obj;
+        if (Array.isArray(obj)) {
+            let arr = new Array(obj.length);
+            for (let i = 0; i < obj.length; i++) {
+                arr[i] = deepClone(obj[i]);
+            }
+            return arr;
+        }
+        let copy = {};
+        let keys = Object.keys(obj);
+        for (let i = 0; i < keys.length; i++) {
+            let k = keys[i];
+            copy[k] = deepClone(obj[k]);
+        }
+        return copy;
+    }
 
     readonly property real uiScale: {
         let raw = rawSettings || {};
@@ -89,7 +92,7 @@ Item {
     function getSetting(key, fallbackValue) {
         if (!rawSettings || typeof rawSettings !== "object") {
             if (fallbackValue !== null && typeof fallbackValue === "object") {
-                try { return JSON.parse(JSON.stringify(fallbackValue)); } catch (e) { return fallbackValue; }
+                return deepClone(fallbackValue);
             }
             return fallbackValue;
         }
@@ -116,11 +119,7 @@ Item {
         }
 
         if (val !== null && typeof val === "object") {
-            try {
-                return JSON.parse(JSON.stringify(val));
-            } catch (e) {
-                return val;
-            }
+            return deepClone(val);
         }
         return val;
     }
@@ -141,11 +140,11 @@ Item {
                 }
             } catch (e) {}
         }
-        let next = JSON.parse(JSON.stringify(rawSettings || {}));
+        let next = deepClone(rawSettings || {});
         let syncIdle = false;
         for (let key in dataObj) {
             let val = dataObj[key];
-            let clonedVal = (val !== null && typeof val === "object") ? JSON.parse(JSON.stringify(val)) : val;
+            let clonedVal = deepClone(val);
             if (typeof key === "string" && key.indexOf(".") !== -1) {
                 setNestedValue(next, key, clonedVal);
             } else {
@@ -182,21 +181,23 @@ Item {
 
     function dispatchWrite(settingsObj) {
         if (isWriting) {
-            pendingPayload = JSON.parse(JSON.stringify(settingsObj));
+            pendingPayload = deepClone(settingsObj);
             return;
         }
         isWriting = true;
-        let str = JSON.stringify(settingsObj, null, 2);
+        let str = JSON.stringify(settingsObj, null, 2) + "\n";
         lastWrittenContent = str;
-        writerProc.running = false;
-        writerProc.command = ["bash", "-c", writerScript, "_", settingsJsonPath, str + "\n"];
-        writerProc.running = true;
+        settingsWatcher.setText(str);
     }
 
-    Process {
-        id: writerProc
-        command: []
-        onExited: function(exitCode, exitStatus) {
+    FileView {
+        id: settingsWatcher
+        path: config.settingsJsonPath
+        watchChanges: true
+        atomicWrites: true
+        onFileChanged: reload()
+
+        onSaved: {
             config.isWriting = false;
             if (config.pendingPayload !== null) {
                 let next = config.pendingPayload;
@@ -206,13 +207,15 @@ Item {
                 config.settingsLoaded();
             }
         }
-    }
 
-    FileView {
-        id: settingsWatcher
-        path: config.settingsJsonPath
-        watchChanges: true
-        onFileChanged: reload()
+        onSaveFailed: error => {
+            config.isWriting = false;
+            if (config.pendingPayload !== null) {
+                let next = config.pendingPayload;
+                config.pendingPayload = null;
+                config.dispatchWrite(next);
+            }
+        }
 
         onLoaded: {
             try {
@@ -251,8 +254,9 @@ Item {
 
     Component.onDestruction: {
         let targetObj = pendingPayload !== null ? pendingPayload : rawSettings;
-        let str = JSON.stringify(targetObj, null, 2);
+        let str = JSON.stringify(targetObj, null, 2) + "\n";
         lastWrittenContent = str;
-        Quickshell.execDetached(["bash", "-c", writerScript, "_", settingsJsonPath, str + "\n"]);
+        settingsWatcher.setText(str);
+        settingsWatcher.waitForJob();
     }
 }
