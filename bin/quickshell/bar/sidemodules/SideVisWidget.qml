@@ -30,7 +30,7 @@ Rectangle {
     property real targetWidth: barWindow ? barWindow.barHeight : 40
 
     property bool showLayout: !barWindow || barWindow.isStartupReady
-    property bool isVisVisible: moduleActive && showLayout
+    property bool isVisVisible: moduleActive && showLayout && (barWindow ? barWindow.isVertical : true)
     property bool isSubscribed: false
     readonly property bool shouldSubscribe: isVisVisible && MprisController.isPlaying
 

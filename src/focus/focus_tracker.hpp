@@ -14,6 +14,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <fstream>
 
 #include "focustime/focus_common.hpp"
 
@@ -31,13 +32,21 @@ private:
     sqlite3* db{nullptr};
     std::string db_path;
     std::string run_dir;
+    std::string ws_run_dir;
     std::atomic<bool> stop_daemon{false};
     std::thread daemon_thread;
     std::mutex buf_mutex;
     std::mutex state_mutex;
 
+    int query_sock{-1};
+    std::mutex query_mutex;
+
     std::string current_class{"Desktop"};
     std::string current_title{"Desktop"};
+    std::string last_written_class;
+    std::string last_written_title;
+    std::string last_logged_class;
+    std::string last_workspaces_json;
 
     struct LogEntry {
         std::string date;
@@ -49,8 +58,11 @@ private:
     std::vector<LogEntry> buffer;
 
     std::string getNiriSocketPath();
+    std::string queryNiri(const std::string& req);
     bool isLocked();
     void updateActiveWindow();
+    void updateWorkspacesState();
+    void writeFocusState(const std::string& cls, const std::string& title);
     void daemonLoop();
     void flushBuffer();
 };

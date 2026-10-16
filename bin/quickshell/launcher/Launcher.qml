@@ -631,9 +631,11 @@ PanelWindow {
         launcherWindow.allApps = finalArr;
     }
 
-    ListModel {
-        id: appModel
-    }
+    property var filteredApps: []
+    readonly property var appModel: ({
+        get count() { return launcherWindow.filteredApps.length; },
+        get: function(i) { return launcherWindow.filteredApps[i]; }
+    })
 
     function filterApps(query) {
         launcherWindow.pendingQuery = query;
@@ -1147,12 +1149,9 @@ PanelWindow {
             });
         }
 
-        appModel.clear();
-        for (let i = 0; i < filtered.length; i++) {
-            appModel.append(filtered[i]);
-        }
+        launcherWindow.filteredApps = filtered;
 
-        if (appModel.count > 0) {
+        if (filtered.length > 0) {
             appList.currentIndex = 0;
             appList.positionViewAtBeginning();
         } else {
@@ -1161,8 +1160,8 @@ PanelWindow {
     }
 
     function activateIndex(index) {
-        if (index < 0 || index >= appModel.count) return;
-        let item = appModel.get(index);
+        if (index < 0 || index >= launcherWindow.filteredApps.length) return;
+        let item = launcherWindow.filteredApps[index];
         if (!item) return;
 
         if (item.isCommand) {
@@ -1631,8 +1630,8 @@ PanelWindow {
 
                     Keys.onPressed: function(event) {
                         if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_F) {
-                            if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
-                                let it = appModel.get(appList.currentIndex);
+                            if (appList.currentIndex >= 0 && appList.currentIndex < launcherWindow.filteredApps.length) {
+                                let it = launcherWindow.filteredApps[appList.currentIndex];
                                 if (it && !it.isCommand && !it.isCalc && !it.isTool) {
                                     launcherWindow.toggleFavorite(it.desktop_id, it.name);
                                 }
@@ -1641,8 +1640,8 @@ PanelWindow {
                             return;
                         }
                         if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_H) {
-                            if (appList.currentIndex >= 0 && appList.currentIndex < appModel.count) {
-                                let it = appModel.get(appList.currentIndex);
+                            if (appList.currentIndex >= 0 && appList.currentIndex < launcherWindow.filteredApps.length) {
+                                let it = launcherWindow.filteredApps[appList.currentIndex];
                                 if (it && !it.isCommand && !it.isCalc && !it.isTool) {
                                     launcherWindow.toggleHidden(it.desktop_id, it.name);
                                 }
@@ -1655,7 +1654,7 @@ PanelWindow {
                     Keys.onDownPressed: function(event) {
                         launcherWindow.isKeyboardNav = true;
                         keyboardNavTimer.restart();
-                        if (appList.currentIndex < appModel.count - 1) {
+                        if (appList.currentIndex < launcherWindow.filteredApps.length - 1) {
                             appList.currentIndex++;
                         }
                         event.accepted = true;
@@ -1686,7 +1685,7 @@ PanelWindow {
                         id: appList
                         anchors.fill: parent
                         clip: true
-                        model: appModel
+                        model: launcherWindow.filteredApps
                         spacing: launcherWindow.s(4)
                         currentIndex: 0
                         boundsBehavior: Flickable.StopAtBounds
@@ -1723,6 +1722,9 @@ PanelWindow {
 
                         delegate: Item {
                             id: delegateRoot
+                            required property var modelData
+                            required property int index
+                            readonly property var model: modelData
                             width: ListView.view.width
                             height: launcherWindow.s(44)
                             clip: true

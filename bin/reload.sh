@@ -22,7 +22,7 @@ rm -f "$QS_DIR/qs_daemon.sock" "$QS_DIR"/qs_*.lock "$LUC_DIR/qs_daemon.sock" "$L
 
 sleep 0.2
 
-# 4. Start Quickshell (Shell.qml supervises and starts qs_daemon & workspaces.sh cleanly)
+# 4. Start Quickshell (Shell.qml supervises and starts qs_daemon cleanly)
 setsid -f quickshell -p "$SHELL_PATH" >/dev/null 2>&1
 
 # 5. Notify user

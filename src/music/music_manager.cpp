@@ -218,8 +218,10 @@ void MusicService::processImage(const QString &input, const QString &outputBlur,
     }
     blurred = blurred.scaled(500, 500, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     blurred.save(outputBlur, "PNG");
-    data->blur = outputBlur;
-    data->artUrl = input;
+    if (data) {
+        data->blur = outputBlur;
+        data->artUrl = input;
+    }
 
     QImage small = img.scaled(50, 50, Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
     QMap<QString, int> colorCounts;
@@ -238,58 +240,72 @@ void MusicService::processImage(const QString &input, const QString &outputBlur,
     QString c2 = sortedColors.size() > 1 ? sortedColors[1] : c1;
     QString c3 = sortedColors.size() > 2 ? sortedColors[2] : c1;
 
-    data->grad = QString("linear-gradient(45deg, %1, %2, %3, %1)").arg(c1, c2, c3);
+    QString grad = QString("linear-gradient(45deg, %1, %2, %3, %1)").arg(c1, c2, c3);
     QFile fGrad(outputGrad);
-    if (fGrad.open(QIODevice::WriteOnly)) fGrad.write(data->grad.toUtf8());
+    if (fGrad.open(QIODevice::WriteOnly)) fGrad.write(grad.toUtf8());
+    if (data) data->grad = grad;
 
     QColor col1(c1);
     double luminance = (0.299 * col1.red() + 0.587 * col1.green() + 0.114 * col1.blue()) / 255.0;
-    data->textColor = luminance > 0.5 ? "#11111b" : "#cdd6f4";
+    QString textColor = luminance > 0.5 ? "#11111b" : "#cdd6f4";
     QFile fText(outputText);
-    if (fText.open(QIODevice::WriteOnly)) fText.write(data->textColor.toUtf8());
+    if (fText.open(QIODevice::WriteOnly)) fText.write(textColor.toUtf8());
+    if (data) data->textColor = textColor;
 }
 
 void MusicService::fetchDeviceInfo(MusicState *data) {
+    data->deviceIcon = cachedDeviceIcon;
+    data->deviceName = cachedDeviceName;
+
     qint64 now = QDateTime::currentMSecsSinceEpoch();
-    if (now - lastDeviceFetchTime < 15000 && !cachedDeviceName.isEmpty()) {
-        data->deviceIcon = cachedDeviceIcon;
-        data->deviceName = cachedDeviceName;
+    if (now - lastDeviceFetchTime < 15000 || isFetchingDevice) {
         return;
     }
 
-    QProcess proc;
-    proc.start("wpctl", QStringList() << "inspect" << "@DEFAULT_AUDIO_SINK@");
-    if (proc.waitForFinished(500)) {
-        QString out = proc.readAllStandardOutput();
-        QString name, desc;
-        for (const QString &line : out.split("\n")) {
-            if (line.contains("node.name")) {
-                auto parts = line.split("\"");
-                if (parts.size() > 1) name = parts.at(1);
+    isFetchingDevice = true;
+    QThreadPool::globalInstance()->start(QRunnable::create([this, now]() {
+        QProcess proc;
+        proc.start("wpctl", QStringList() << "inspect" << "@DEFAULT_AUDIO_SINK@");
+        if (proc.waitForFinished(1000)) {
+            QString out = proc.readAllStandardOutput();
+            QString name, desc;
+            for (const QString &line : out.split("\n")) {
+                if (line.contains("node.name")) {
+                    auto parts = line.split("\"");
+                    if (parts.size() > 1) name = parts.at(1);
+                }
+                if (line.contains("node.description")) {
+                    auto parts = line.split("\"");
+                    if (parts.size() > 1) desc = parts.at(1);
+                }
             }
-            if (line.contains("node.description")) {
-                auto parts = line.split("\"");
-                if (parts.size() > 1) desc = parts.at(1);
+
+            QString icon = "󰓃";
+            QString devName = desc.isEmpty() ? "System" : desc;
+            if (name.contains("bluez")) {
+                icon = "󰂯";
+                devName = desc.isEmpty() ? "Bluetooth" : desc;
+            } else if (name.contains("usb")) {
+                icon = "󰓃";
+                devName = "USB Audio";
+            } else if (name.contains("pci")) {
+                icon = "󰓃";
+                devName = "System";
             }
-        }
 
-        if (name.contains("bluez")) {
-            data->deviceIcon = "󰂯";
-            data->deviceName = desc.isEmpty() ? "Bluetooth" : desc;
-        } else if (name.contains("usb")) {
-            data->deviceIcon = "󰓃";
-            data->deviceName = "USB Audio";
-        } else if (name.contains("pci")) {
-            data->deviceIcon = "󰓃";
-            data->deviceName = "System";
-        } else if (!desc.isEmpty()) {
-            data->deviceName = desc;
+            QMetaObject::invokeMethod(this, [this, icon, devName, now]() {
+                cachedDeviceIcon = icon;
+                cachedDeviceName = devName;
+                lastDeviceFetchTime = now;
+                isFetchingDevice = false;
+            });
+        } else {
+            QMetaObject::invokeMethod(this, [this, now]() {
+                lastDeviceFetchTime = now;
+                isFetchingDevice = false;
+            });
         }
-
-        cachedDeviceIcon = data->deviceIcon;
-        cachedDeviceName = data->deviceName;
-        lastDeviceFetchTime = now;
-    }
+    }));
 }
 
 MusicState MusicService::fetchDataInternal() {
@@ -406,40 +422,60 @@ MusicState MusicService::fetchDataInternal() {
                     QFile fG(cachedGrad); if (fG.open(QIODevice::ReadOnly)) data.grad = fG.readAll();
                     QFile fT(cachedText); if (fT.open(QIODevice::ReadOnly)) data.textColor = fT.readAll();
                 } else {
-                    bool downloaded = false;
-                    if (rawArtUrl.startsWith("http")) {
-                        QNetworkRequest req{QUrl(rawArtUrl)};
-                        req.setRawHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
-                        QNetworkReply *rep = manager->get(req);
-                        QEventLoop loop;
-                        QObject::connect(rep, &QNetworkReply::finished, &loop, &QEventLoop::quit);
-                        loop.exec();
-                        if (rep->error() == QNetworkReply::NoError) {
-                            QFile f(cachedArt);
-                            if (f.open(QIODevice::WriteOnly)) { f.write(rep->readAll()); downloaded = true; }
-                        }
-                        rep->deleteLater();
-                    } else if (rawArtUrl.startsWith("data:")) {
-                        int commaPos = rawArtUrl.indexOf(',');
-                        if (commaPos >= 0) {
-                            QString dataPart = rawArtUrl.mid(commaPos + 1);
-                            QString metaPart = rawArtUrl.mid(5, commaPos - 5);
-                            bool isBase64 = metaPart.contains("base64");
-                            QByteArray imgData = isBase64 ? QByteArray::fromBase64(dataPart.toUtf8()) : QByteArray::fromPercentEncoding(dataPart.toUtf8());
-                            if (!imgData.isEmpty()) {
-                                QFile f(cachedArt);
-                                if (f.open(QIODevice::WriteOnly)) { f.write(imgData); downloaded = true; }
-                            }
-                        }
-                    } else {
-                        QString path = rawArtUrl;
-                        if (path.startsWith("file://")) path = path.mid(7);
-                        if (QFile::exists(path)) {
-                            if (QFile::exists(cachedArt)) QFile::remove(cachedArt);
-                            if (QFile::copy(path, cachedArt)) downloaded = true;
+                    bool shouldStart = false;
+                    {
+                        std::lock_guard<std::mutex> lock(artMutex);
+                        if (pendingArtDownloads.find(rawArtUrl) == pendingArtDownloads.end()) {
+                            pendingArtDownloads.insert(rawArtUrl);
+                            shouldStart = true;
                         }
                     }
-                    if (downloaded) processImage(cachedArt, cachedBlur, cachedGrad, cachedText, &data);
+
+                    if (shouldStart) {
+                        QThreadPool::globalInstance()->start(QRunnable::create([this, rawArtUrl, cachedArt, cachedBlur, cachedGrad, cachedText]() {
+                            bool downloaded = false;
+                            if (rawArtUrl.startsWith("http")) {
+                                QNetworkAccessManager netMgr;
+                                QNetworkRequest req{QUrl(rawArtUrl)};
+                                req.setRawHeader("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0");
+                                QNetworkReply *rep = netMgr.get(req);
+                                QEventLoop loop;
+                                QObject::connect(rep, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+                                loop.exec();
+                                if (rep->error() == QNetworkReply::NoError) {
+                                    QFile f(cachedArt);
+                                    if (f.open(QIODevice::WriteOnly)) { f.write(rep->readAll()); downloaded = true; }
+                                }
+                                rep->deleteLater();
+                            } else if (rawArtUrl.startsWith("data:")) {
+                                int commaPos = rawArtUrl.indexOf(',');
+                                if (commaPos >= 0) {
+                                    QString dataPart = rawArtUrl.mid(commaPos + 1);
+                                    QString metaPart = rawArtUrl.mid(5, commaPos - 5);
+                                    bool isBase64 = metaPart.contains("base64");
+                                    QByteArray imgData = isBase64 ? QByteArray::fromBase64(dataPart.toUtf8()) : QByteArray::fromPercentEncoding(dataPart.toUtf8());
+                                    if (!imgData.isEmpty()) {
+                                        QFile f(cachedArt);
+                                        if (f.open(QIODevice::WriteOnly)) { f.write(imgData); downloaded = true; }
+                                    }
+                                }
+                            } else {
+                                QString path = rawArtUrl;
+                                if (path.startsWith("file://")) path = path.mid(7);
+                                if (QFile::exists(path)) {
+                                    if (QFile::exists(cachedArt)) QFile::remove(cachedArt);
+                                    if (QFile::copy(path, cachedArt)) downloaded = true;
+                                }
+                            }
+                            if (downloaded) {
+                                processImage(cachedArt, cachedBlur, cachedGrad, cachedText, nullptr);
+                            }
+                            {
+                                std::lock_guard<std::mutex> lock(artMutex);
+                                pendingArtDownloads.erase(rawArtUrl);
+                            }
+                        }));
+                    }
                 }
             }
         }

@@ -91,7 +91,7 @@ while True:
         rlist = []
         if fds:
             try:
-                rlist, _, _ = select.select(list(fds.keys()), [], [], 0.08)
+                rlist, _, _ = select.select(list(fds.keys()), [], [], 2.0)
             except Exception:
                 dead = []
                 for fd in list(fds.keys()):
@@ -101,6 +101,8 @@ while True:
                         dead.append(fd)
                 for fd in dead:
                     remove_fd(fd, fds)
+        else:
+            time.sleep(1.0)
 
         for fd in rlist:
             while True:
@@ -198,7 +200,7 @@ while True:
             echo "numlock $n"
             last_n=$n
         fi
-        sleep 0.08
+        sleep 0.5
     done
 }
 

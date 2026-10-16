@@ -83,6 +83,52 @@ Item {
                 property string pathB: ""
                 property bool isVideoB: false
                 property bool playbackPaused: false
+                property bool autoPaused: false
+
+                readonly property bool isFullscreen: {
+                    try {
+                        if (typeof ToplevelManager !== "undefined" && ToplevelManager.activeToplevel && ToplevelManager.activeToplevel.fullscreen) {
+                            let atl = ToplevelManager.activeToplevel;
+                            if (atl.screens && atl.screens.length > 0) {
+                                return atl.screens.indexOf(barWindow.screen) !== -1;
+                            }
+                            return true;
+                        }
+                    } catch (e) {}
+                    return false;
+                }
+
+                FileView {
+                    id: lockWatcher
+                    path: (typeof Caching !== "undefined" && Caching.runDir) ? (Caching.runDir + "/lock.active") : "/tmp/lucretia/lock.active"
+                    watchChanges: true
+                    onFileChanged: reload()
+                }
+
+                readonly property bool isLocked: lockWatcher.exists
+                readonly property bool shouldPause: isFullscreen || isLocked
+
+                onShouldPauseChanged: {
+                    if (shouldPause && !autoPaused) {
+                        autoPaused = true;
+                        barWindow.playbackPaused = true;
+                        barWindow.stopA();
+                        barWindow.stopB();
+                        Quickshell.execDetached(["pkill", "-STOP", "-x", "mpvpaper"]);
+                    } else if (!shouldPause && autoPaused) {
+                        autoPaused = false;
+                        Quickshell.execDetached(["pkill", "-CONT", "-x", "mpvpaper"]);
+                        barWindow.playbackPaused = false;
+                        if (barWindow.activeLayer === 0 && barWindow.isVideoA) barWindow.playA();
+                        if (barWindow.activeLayer === 1 && barWindow.isVideoB) barWindow.playB();
+                    }
+                }
+
+                Component.onDestruction: {
+                    if (autoPaused) {
+                        Quickshell.execDetached(["pkill", "-CONT", "-x", "mpvpaper"]);
+                    }
+                }
 
                 readonly property int fadeDuration: 1000
                 readonly property int maskDuration: 1600

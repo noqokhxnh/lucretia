@@ -33,6 +33,7 @@ Item {
     function resetMarquee() {
         scrollProgress = 0.0;
         if (canMarquee) {
+            textSource.scheduleUpdate();
             scrollAnim.restart();
         } else {
             scrollAnim.stop();
@@ -40,9 +41,10 @@ Item {
     }
 
     onCanMarqueeChanged: resetMarquee()
-    onWidthChanged: resetMarquee()
-    onTextChanged: resetMarquee()
+    onWidthChanged: { resetMarquee(); textSource.scheduleUpdate(); }
+    onTextChanged: { resetMarquee(); textSource.scheduleUpdate(); }
     onActiveChanged: resetMarquee()
+    onColorChanged: textSource.scheduleUpdate()
 
     property real scrollProgress: 0.0
 
@@ -87,7 +89,7 @@ Item {
         id: textSource
         sourceItem: textRow
         hideSource: root.canMarquee
-        live: root.canMarquee
+        live: false
         visible: false
     }
 

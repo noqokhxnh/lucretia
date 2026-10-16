@@ -221,7 +221,6 @@ Item {
         // Idle timeouts are now set statically in bin/swayidle.sh
 
         if (config.workspaceCount !== config.initialWorkspaceCount) {
-            sh(`qs -p "${qsScriptsDir}/TopBar.qml" ipc call topbar queueReload`);
             config.initialWorkspaceCount = config.workspaceCount;
         }
     }
