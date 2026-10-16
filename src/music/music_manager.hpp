@@ -22,6 +22,10 @@
 #include <QMap>
 #include <QRegularExpression>
 #include <QDateTime>
+#include <QThreadPool>
+#include <QRunnable>
+#include <set>
+#include <mutex>
 
 struct MusicState {
     QString title = "Not Playing";
@@ -64,7 +68,11 @@ private:
     void fetchDeviceInfo(MusicState *data);
     MusicState fetchDataInternal();
 
-    QString cachedDeviceIcon;
-    QString cachedDeviceName;
+    QString cachedDeviceIcon{"󰓃"};
+    QString cachedDeviceName{"System"};
     qint64 lastDeviceFetchTime = 0;
+    bool isFetchingDevice = false;
+
+    std::set<QString> pendingArtDownloads;
+    std::mutex artMutex;
 };

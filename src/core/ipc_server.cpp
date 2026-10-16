@@ -130,7 +130,12 @@ public:
     void handleRequest(DaemonServer* server, QLocalSocket* client, const QString& reqId, const QString& action, const QJsonObject& req) override {
         auto* svcMgr = server->getServiceManager();
         if (action == "list") {
-            server->sendResponse(client, reqId, svcMgr->listServices());
+            QThreadPool::globalInstance()->start(QRunnable::create([server, client, reqId, svcMgr]() {
+                QJsonArray arr = svcMgr->listServices();
+                QMetaObject::invokeMethod(server, [server, client, reqId, arr]() {
+                    server->sendResponse(client, reqId, arr);
+                });
+            }));
         } else if (action == "control") {
             svcMgr->controlService(req["unit"].toString(), req["command"].toString(), req["is_user"].toBool());
             server->sendResponse(client, reqId, "ok");
