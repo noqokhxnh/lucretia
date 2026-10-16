@@ -118,7 +118,7 @@ std::string read_local_version(const std::string& state_dir) {
         }
     }
 
-    return "2.0.6";
+    return "2.0.7";
 }
 
 std::string get_last_notified(const std::string& state_dir) {
