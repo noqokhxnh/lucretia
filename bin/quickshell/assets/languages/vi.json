@@ -926,7 +926,8 @@
         },
         "actions": {
             "unpair": "Hủy ghép đôi",
-            "scan": "Quét tìm kiếm"
+            "scan": "Quét tìm kiếm",
+            "sign_in": "Đăng nhập"
         }
     },
     "notifications": {

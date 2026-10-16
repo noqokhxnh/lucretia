@@ -158,12 +158,14 @@ Item {
             else if (window.activeMode === "eth") window.rebuildEthData();
             window.fetchIpData();
             window.fetchFreqData();
+            window.fetchConnectivityData();
             if (window.activeMode === "bt" && !btProfilePoller.running) btProfilePoller.running = true;
         } else {
             window.stopBtScan();
             btProfilePoller.running = false;
             ipFetcher.running = false;
             freqFetcher.running = false;
+            connectivityFetcher.running = false;
             btConnectSimTimer.stop();
             busyTimeout.stop();
             failClearTimer.stop();
@@ -318,6 +320,27 @@ Item {
     property string lastFetchedEthMac: ""
     property string lastFetchedWifiSsid: ""
     property string wifiDeviceName: ""
+    property string connectivityState: "unknown"
+    readonly property string wifiConnectedSsid: window.isWifiConn ? (window.wifiConnected.ssid || "") : ""
+    readonly property string portalProbeUrl: "http://nmcheck.gnome.org/check_network_status.txt"
+
+    onWifiConnectedSsidChanged: {
+        window.connectivityState = "unknown";
+        window.fetchConnectivityData();
+    }
+
+    Process {
+        id: connectivityFetcher
+        command: ["sh", "-c", "command -v nmcli >/dev/null 2>&1 && nmcli -t -g CONNECTIVITY general"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let state = this.text.trim() || "unknown";
+                if (state === window.connectivityState) return;
+                window.connectivityState = state;
+                if (window.activeMode === "wifi" && window.isWifiConn) window.updateInfoNodes();
+            }
+        }
+    }
 
     Process {
         id: ipFetcher
@@ -366,6 +389,7 @@ Item {
     }
 
     function fetchIpData() { if (window.visible) ipFetcher.running = true; }
+    function fetchConnectivityData() { if (window.visible && window.isWifiConn) connectivityFetcher.running = true; }
     function fetchFreqData() { if (window.visible && window.wifiDeviceName !== "") freqFetcher.running = true; }
 
     Timer {
@@ -375,6 +399,7 @@ Item {
         onTriggered: {
             if (window.isEthConn || window.isWifiConn) window.fetchIpData();
             if (window.isWifiConn) window.fetchFreqData();
+            if (window.isWifiConn && window.connectivityState !== "full") window.fetchConnectivityData();
         }
     }
 
@@ -881,6 +906,7 @@ Item {
                     nodes.push({ id: "sec_" + i, name: obj.security || I18n.t("network.status.open") || "Open", icon: "󰦝", action: "", isInfoNode: true, isActionable: false, parentIndex: cIndex });
                     if (obj.ip) nodes.push({ id: "ip_" + i, name: obj.ip, icon: "󰩟", action: "", isInfoNode: true, isActionable: true, cmdStr: "printf '%s' " + window.shEsc(obj.ip) + " | wl-copy", parentIndex: cIndex });
                     if (obj.freq) nodes.push({ id: "freq_" + i, name: obj.freq, icon: "󰖧", action: "", isInfoNode: true, isActionable: false, parentIndex: cIndex });
+                    if (window.connectivityState === "portal") nodes.push({ id: "action_portal", name: I18n.t("network.actions.sign_in") || "Sign in", icon: "󰖟", action: "", isInfoNode: true, isActionable: true, cmdStr: "command -v xdg-open >/dev/null 2>&1 && xdg-open " + window.shEsc(window.portalProbeUrl), parentIndex: cIndex });
                 } else if (obj.mac) {
                     nodes.push({ id: "bat_" + obj.mac, name: (obj.battery || "0") + "%", icon: "󰥉", action: "", isInfoNode: true, isActionable: false, parentIndex: cIndex });
                     if (obj.profile) {
@@ -2165,7 +2191,7 @@ Item {
 
                         property bool isPairedBT: window.activeMode === "bt" && (typeof action !== "undefined" && action === "Connect")
                         property bool isTargetWifi: window.activeMode === "wifi" && !window.isWifiConn && itemId === window.targetWifiSsid
-                        property bool isSpecialAction: itemId === "action_scan" || itemId === "action_settings" || itemId === "ip_0" || itemId.indexOf("forget_") === 0
+                        property bool isSpecialAction: itemId === "action_scan" || itemId === "action_settings" || itemId === "ip_0" || itemId === "action_portal" || itemId.indexOf("forget_") === 0
                         property bool isHighlighted: isPairedBT || isTargetWifi || isSpecialAction
 
                         property bool isCurrentlyConnected: {
