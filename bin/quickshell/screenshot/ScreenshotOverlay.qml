@@ -1483,9 +1483,10 @@ PanelWindow {
         Quickshell.execDetached(["bash", "-c", "rm -f " + Caching.getRunDir("screenshot") + "/qr_result"]);
         root.isScanningQr = true; root.showQrPopup = false; qrModel.clear();
         let cmd = `bash ${Caching.lucretiaDir}/scripts/screenshot.sh --geometry "${root.geometryString}" --scan-qr`;
+        cmd += root.frozenSourceArgs();
         Quickshell.execDetached(["bash", "-c", cmd]);
         qrWaitTimer.start();
-    }   
+    }
 
     Timer {
         id: captureTimer
@@ -1497,9 +1498,21 @@ PanelWindow {
         }
     }
 
+    function frozenSourceArgs() {
+        if (root.freezeImg === "" || root.isVideoMode || root.isRefreezing) return "";
+        let rect = `${Math.round(root.selX)},${Math.round(root.selY)} ${Math.round(root.selW)}x${Math.round(root.selH)}`;
+        return ` --source "${root.freezeImg}" --crop "${rect}" --logical-size "${Math.round(root.width)}x${Math.round(root.height)}"`;
+    }
+
     function executeCapture(openEditor, isRecord) {
         let cmd = `bash ${Caching.lucretiaDir}/scripts/screenshot.sh --geometry "${root.geometryString}"`;
+        let useFrozen = !isRecord && root.frozenSourceArgs() !== "";
+        if (useFrozen) {
+            cmd += root.frozenSourceArgs();
+            root.freezeImg = "";
+        }
         if (isRecord) {
+            if (root.targetMonitorName !== "") cmd += ` --monitor "${root.targetMonitorName}"`;
             cmd += " --record";
             cmd += ` --backend "${root.videoBackend}"`;
             cmd += ` --desk-vol ${root.deskVol} --desk-mute ${root.deskMute}`;
@@ -1508,9 +1521,13 @@ PanelWindow {
         }
         if (openEditor) cmd += " --edit";
 
-        captureTimer.pendingCmd = cmd;
         root.animateChanges = false;
-        captureTimer.start();
+        if (useFrozen) {
+            Quickshell.execDetached(["bash", "-c", cmd]);
+        } else {
+            captureTimer.pendingCmd = cmd;
+            captureTimer.start();
+        }
         root.deactivate();
     }
 }

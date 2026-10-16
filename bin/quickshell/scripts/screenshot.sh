@@ -5,6 +5,9 @@ FULL_MODE=false
 RECORD_MODE=false
 SCAN_QR_MODE=false
 GEOMETRY=""
+SOURCE_IMG=""
+CROP_RECT=""
+LOGICAL_SIZE=""
 DESK_VOL="1.0"
 DESK_MUTE="false"
 MIC_VOL="1.0"
@@ -21,6 +24,9 @@ while [[ "$#" -gt 0 ]]; do
         --record) RECORD_MODE=true; shift ;;
         --scan-qr) SCAN_QR_MODE=true; shift ;;
         --geometry) GEOMETRY="$2"; shift 2 ;;
+        --source) SOURCE_IMG="$2"; shift 2 ;;
+        --crop) CROP_RECT="$2"; shift 2 ;;
+        --logical-size) LOGICAL_SIZE="$2"; shift 2 ;;
         --scale) USER_SCALE="$2"; shift 2 ;;
         --desk-vol) DESK_VOL="$2"; shift 2 ;;
         --desk-mute) DESK_MUTE="$2"; shift 2 ;;
@@ -207,6 +213,43 @@ resolve_screenshot_scale() {
     fi
 }
 
+crop_source() {
+    local dst="$1" magick_bin img_w img_h x y w h lw lh
+    [ -s "$SOURCE_IMG" ] && [ -n "$CROP_RECT" ] && [ -n "$LOGICAL_SIZE" ] || return 1
+    if command -v magick &>/dev/null; then magick_bin="magick"
+    elif command -v convert &>/dev/null; then magick_bin="convert"
+    else return 1; fi
+    read -r img_w img_h < <($magick_bin identify -format '%w %h' "$SOURCE_IMG" 2>/dev/null)
+    [ -n "$img_w" ] && [ -n "$img_h" ] || return 1
+    IFS=', x' read -r x y w h <<< "$CROP_RECT"
+    IFS='x' read -r lw lh <<< "$LOGICAL_SIZE"
+    local rect
+    rect=$(awk -v x="$x" -v y="$y" -v w="$w" -v h="$h" -v lw="$lw" -v lh="$lh" -v iw="$img_w" -v ih="$img_h" 'BEGIN {
+        if (lw <= 0 || lh <= 0) exit 1
+        sx = iw / lw; sy = ih / lh
+        x0 = int(x * sx + 0.5); y0 = int(y * sy + 0.5)
+        x1 = int((x + w) * sx + 0.5); y1 = int((y + h) * sy + 0.5)
+        if (x0 < 0) x0 = 0; if (y0 < 0) y0 = 0
+        if (x1 > iw) x1 = iw; if (y1 > ih) y1 = ih
+        if (x1 - x0 < 1 || y1 - y0 < 1) exit 1
+        printf "%dx%d+%d+%d", x1 - x0, y1 - y0, x0, y0
+    }') || return 1
+    $magick_bin "$SOURCE_IMG" -crop "$rect" +repage "$dst" 2>/dev/null && [ -s "$dst" ]
+}
+
+capture_region() {
+    local dst="$1"
+    if crop_source "$dst"; then
+        return 0
+    fi
+    local sc grim_scale_arg=()
+    sc=$(resolve_screenshot_scale)
+    if [ -n "$sc" ] && [ "$sc" != "1" ] && [ "$sc" != "1.0" ]; then
+        grim_scale_arg=(-s "$sc")
+    fi
+    grim "${grim_scale_arg[@]}" -l 1 -g "$GEOMETRY" "$dst"
+}
+
 if [ -z "$TARGET_MON" ] && [ -z "$GEOMETRY" ]; then
     TARGET_MON=$(get_active_monitor)
 fi
@@ -253,9 +296,9 @@ if [ "$SCAN_QR_MODE" = true ]; then
     RES_FILE="$QS_RUN_SCREENSHOT/qr_result"
     export DEBUG_LOG="$QS_LOG_DIR/qr_debug.log"
     rm -f "$RES_FILE" "$DEBUG_LOG"
-    
+
     TMP_IMG="$QS_RUN_SCREENSHOT/qr_temp_$$.png"
-    grim -l 0 -g "$GEOMETRY" "$TMP_IMG"
+    capture_region "$TMP_IMG"
     
     export XML_OUT=$(zbarimg --xml -q "$TMP_IMG" 2>>"$DEBUG_LOG")
     if [ -n "$XML_OUT" ]; then
@@ -317,7 +360,7 @@ time=$(date +'%Y-%m-%d-%H%M%S')
 FILENAME="$SAVE_DIR/Screenshot_$time.png"
 VID_FILENAME="$RECORD_DIR/Recording_$time.mp4"
 
-if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
+if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ] || [ -n "$SOURCE_IMG" ]; then
     if [ "$RECORD_MODE" = true ]; then
         if [ "$VIDEO_BACKEND" = "wf-recorder" ]; then
             WF_ARGS=(-f "$VID_FILENAME" -r 60)
@@ -405,34 +448,22 @@ if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ]; then
         GRIM_SCALE_ARG=(-s "$SCREENSHOT_SCALE")
     fi
 
-    if [ -n "$GEOMETRY" ]; then
-        if [ "$EDIT_MODE" = true ]; then
-            TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
-            grim "${GRIM_SCALE_ARG[@]}" -l 1 -g "$GEOMETRY" "$TMP_SCREENSHOT"
-            GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
-            rm -f "$TMP_SCREENSHOT"
-        else
-            grim "${GRIM_SCALE_ARG[@]}" -l 1 -g "$GEOMETRY" "$FILENAME"
-        fi
+    TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
+    if [ -n "$GEOMETRY" ] || [ -n "$SOURCE_IMG" ]; then
+        capture_region "$TMP_SCREENSHOT"
     elif [ -n "$TARGET_MON" ]; then
-        if [ "$EDIT_MODE" = true ]; then
-            TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
-            grim -o "$TARGET_MON" "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT" 2>/dev/null || grim "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT"
-            GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
-            rm -f "$TMP_SCREENSHOT"
-        else
-            grim -o "$TARGET_MON" "${GRIM_SCALE_ARG[@]}" -l 1 "$FILENAME" 2>/dev/null || grim "${GRIM_SCALE_ARG[@]}" -l 1 "$FILENAME"
-        fi
+        grim -o "$TARGET_MON" "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT" 2>/dev/null || grim "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT"
     else
-        if [ "$EDIT_MODE" = true ]; then
-            TMP_SCREENSHOT="/tmp/instant_snap_$$.png"
-            grim "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT"
-            GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
-            rm -f "$TMP_SCREENSHOT"
-        else
-            grim "${GRIM_SCALE_ARG[@]}" -l 1 "$FILENAME"
-        fi
+        grim "${GRIM_SCALE_ARG[@]}" -l 1 "$TMP_SCREENSHOT"
     fi
+
+    if [ "$EDIT_MODE" = true ]; then
+        GSK_RENDERER=gl satty --filename "$TMP_SCREENSHOT" --output-filename "$FILENAME" --init-tool brush --copy-command "wl-copy --type image/png"
+    else
+        cp "$TMP_SCREENSHOT" "$FILENAME"
+    fi
+    rm -f "$TMP_SCREENSHOT"
+    [ -n "$SOURCE_IMG" ] && rm -f "$SOURCE_IMG"
 
     if [ -s "$FILENAME" ]; then
         wl-copy --type image/png < "$FILENAME"

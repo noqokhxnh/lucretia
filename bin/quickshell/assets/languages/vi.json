@@ -870,6 +870,11 @@
             "authenticating": "Đang xác thực...",
             "enter_pin": "Nhập mã PIN"
         },
+        "fingerprint": {
+            "ready": "Chạm vào cảm biến",
+            "not_recognized": "Không nhận diện được vân tay",
+            "recognized": "Đã nhận diện vân tay"
+        },
         "power": {
             "suspend": "Tạm dừng",
             "reboot": "Khởi động lại",
@@ -926,7 +931,8 @@
         },
         "actions": {
             "unpair": "Hủy ghép đôi",
-            "scan": "Quét tìm kiếm"
+            "scan": "Quét tìm kiếm",
+            "sign_in": "Đăng nhập"
         }
     },
     "notifications": {

@@ -18,6 +18,7 @@ Scope {
     id: root
 
     property string freezeTimestamp: ""
+    property bool staticLock: false
     property bool isUnlocking: false
     property int wallpaperRev: 0
 
@@ -25,6 +26,13 @@ Scope {
     property bool isSway: false
     property string kbLayout: "US"
     property int connectedScreenCount: 1
+    property bool fingerprintAvailable: false
+    property bool fpUnsupported: false
+    property bool fpHolding: false
+    property bool fpGotInfo: false
+    property bool fpAborting: false
+    property bool pwAborting: false
+    readonly property int fingerprintMaxAttempts: 5
 
     readonly property bool isDesktop: UPower.displayDevice.ready ? !UPower.displayDevice.isLaptopBattery : SystemInfo.isDesktop
     readonly property int batCap: UPower.displayDevice.ready ? Math.round(UPower.displayDevice.percentage * 100) : 0
@@ -70,6 +78,7 @@ Scope {
         SystemInfo.fetch();
         root.updateDeInfo();
         root.updateScreenCount();
+        pamServiceProbe.running = true;
     }
 
     Connections {
@@ -181,8 +190,165 @@ Scope {
         }
     }
 
+    Process {
+        id: pamServiceProbe
+        command: [
+            "bash",
+            "-c",
+            "if test -e \"${1:-/etc/pam.d}/lucretia\"; then echo 'lucretia'; elif test -e \"${1:-/etc/pam.d}/serpantinum\"; then echo 'serpantinum'; fi",
+            "pam-probe",
+            pam.configDirectory
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let s = this.text.trim();
+                if (s !== "") {
+                    pam.config = s;
+                    fpPam.config = s;
+                }
+            }
+        }
+    }
+
+    Timer {
+        id: fingerprintRestartTimer
+        interval: 1000
+        repeat: false
+        onTriggered: root.startFingerprint()
+    }
+
+    Timer {
+        id: fingerprintSettleTimer
+        interval: 1700
+        repeat: false
+        onTriggered: {
+            if (lockUI.fpState === "failed") lockUI.fpState = "ready";
+        }
+    }
+
+    Timer {
+        id: fingerprintUnlockTimer
+        interval: 480
+        repeat: false
+        onTriggered: root.finishUnlock()
+    }
+
+    Timer {
+        id: passwordStartTimer
+        interval: 3000
+        repeat: false
+        onTriggered: root.startPassword(true)
+    }
+
+    Timer {
+        id: passwordRetryTimer
+        interval: 350
+        repeat: false
+        onTriggered: root.startPassword(false)
+    }
+
+    function markFingerprintUnsupported() {
+        root.fpUnsupported = true;
+        root.fpHolding = false;
+        root.fingerprintAvailable = false;
+        fingerprintRestartTimer.stop();
+        root.startPassword(true);
+    }
+
+    function startFingerprint() {
+        if (root.fpUnsupported || !rootLock.locked || root.isUnlocking || fpPam.active) return;
+        if (lockUI.fpState === "success") return;
+        root.fpGotInfo = false;
+        root.fpAborting = false;
+        fpPam.start();
+    }
+
+    function startPassword(force) {
+        if (!rootLock.locked || root.isUnlocking || pam.active) return;
+        if (!force && !root.fpUnsupported && !root.fpHolding) {
+            passwordRetryTimer.restart();
+            return;
+        }
+        root.pwAborting = false;
+        pam.start();
+    }
+
+    function beginAuth() {
+        if (!rootLock.locked || root.isUnlocking) return;
+        root.startFingerprint();
+        passwordStartTimer.restart();
+    }
+
+    function stopAuth() {
+        fingerprintRestartTimer.stop();
+        fingerprintSettleTimer.stop();
+        passwordStartTimer.stop();
+        passwordRetryTimer.stop();
+        root.fpAborting = true;
+        root.fpHolding = false;
+        if (fpPam.active) fpPam.abort();
+        if (pam.active) {
+            root.pwAborting = true;
+            pam.abort();
+        }
+    }
+
+    function restartAuth() {
+        root.stopAuth();
+        root.fpUnsupported = false;
+        root.fingerprintAvailable = false;
+        if (lockUI.fpState !== "success") lockUI.fpState = "ready";
+        pamActionTimer.restart();
+    }
+
+    function handleFingerprintMessage() {
+        if (!rootLock.locked || root.isUnlocking || lockUI.fpState === "success") return;
+        if (fpPam.responseRequired) {
+            root.fpHolding = false;
+            root.fpAborting = true;
+            fpPam.abort();
+            if (root.fpGotInfo) fingerprintRestartTimer.restart();
+            else root.markFingerprintUnsupported();
+            return;
+        }
+        if (fpPam.messageIsError) {
+            lockUI.fpFailures = Math.min(lockUI.fpFailures + 1, root.fingerprintMaxAttempts);
+            lockUI.fpState = "failed";
+            fingerprintSettleTimer.restart();
+            return;
+        }
+        root.fpGotInfo = true;
+        root.fpHolding = true;
+        root.fingerprintAvailable = true;
+        root.startPassword(false);
+    }
+
+    function handleFingerprintCompleted(result) {
+        root.fpHolding = false;
+        if (root.fpAborting || !rootLock.locked || root.isUnlocking) return;
+        if (result === PamResult.Success) {
+            fingerprintSettleTimer.stop();
+            lockUI.fpState = "success";
+            fingerprintUnlockTimer.restart();
+        } else if (root.fpGotInfo) {
+            fingerprintRestartTimer.restart();
+        } else {
+            root.markFingerprintUnsupported();
+        }
+    }
+
+    function lockStatic() {
+        if (rootLock.locked) return;
+        grimLockSnapProcess.running = false;
+        grimTimeoutTimer.stop();
+        root.staticLock = true;
+        root.freezeTimestamp = "";
+        root.doLock();
+    }
+
     function lock() {
         if (rootLock.locked) return;
+        root.staticLock = false;
         root.wallpaperRev++;
         let ts = Date.now().toString();
         let mons = [];
@@ -209,6 +375,12 @@ Scope {
         lockUI.failed = false;
         lockUI.authenticating = false;
         lockUI.statusText = I18n.t("lock.status.locked");
+        lockUI.fpState = "ready";
+        lockUI.fpFailures = 0;
+        root.stopAuth();
+        root.fpUnsupported = false;
+        root.fingerprintAvailable = false;
+        fingerprintUnlockTimer.stop();
         rootLock.locked = true;
         pamActionTimer.start();
         kbPollerRestartTimer.restart();
@@ -218,6 +390,8 @@ Scope {
     function finishUnlock() {
         if (root.isUnlocking) return;
         root.isUnlocking = true;
+        fingerprintUnlockTimer.stop();
+        root.stopAuth();
     }
 
     signal unlocked()
@@ -228,6 +402,7 @@ Scope {
         Quickshell.execDetached(["rm", "-f", Caching.runDir + "/lock.active"]);
         rootLock.locked = false;
         root.isUnlocking = false;
+        root.stopAuth();
         kbWaiter.running = false;
         kbPoller.running = false;
         if (root.freezeTimestamp !== "") {
@@ -256,16 +431,31 @@ Scope {
         property bool failed: false
         property bool authenticating: false
         property string statusText: I18n.t("lock.status.locked")
+        property string fpState: "ready"
+        property int fpFailures: 0
+        readonly property string fpLabel: {
+            switch (fpState) {
+            case "failed": return I18n.t("lock.fingerprint.not_recognized");
+            case "success": return I18n.t("lock.fingerprint.recognized");
+            default: return I18n.t("lock.fingerprint.ready");
+            }
+        }
     }
 
     Timer {
         id: pamActionTimer
         interval: 350
         onTriggered: {
-            if (rootLock.locked) {
-                pam.start();
-            }
+            root.beginAuth();
         }
+    }
+
+    PamContext {
+        id: fpPam
+
+        onPamMessage: root.handleFingerprintMessage()
+        onCompleted: (result) => root.handleFingerprintCompleted(result)
+        onError: root.markFingerprintUnsupported()
     }
 
     PamContext {
@@ -273,12 +463,13 @@ Scope {
 
         onCompleted: (result) => {
             lockUI.authenticating = false;
+            if (root.pwAborting) return;
             if (result === PamResult.Success) {
                 root.finishUnlock();
             } else {
                 lockUI.failed = true;
                 lockUI.statusText = I18n.t("lock.status.access_denied");
-                pamActionTimer.start();
+                passwordRetryTimer.start();
             }
         }
     }
@@ -291,9 +482,7 @@ Scope {
             root.updateDeInfo();
             pamActionTimer.restart();
             kbPollerRestartTimer.restart();
-            if (rootLock.locked) {
-                pam.start();
-            }
+            root.restartAuth();
         }
     }
 
@@ -1394,6 +1583,22 @@ Scope {
                                 }
                             }
 
+                            FingerprintIndicator {
+                                id: clockFingerprint
+                                anchors.bottom: parent.bottom
+                                anchors.bottomMargin: screenRoot.s(36)
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                visible: root.fingerprintAvailable && !screenRoot.inputActive
+                                opacity: (screenRoot.inputActive || screenRoot.centerReveal > 0.02) ? 0.0 : 1.0
+                                Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                                status: lockUI.fpState
+                                label: lockUI.fpLabel
+                                attempts: lockUI.fpFailures
+                                maxAttempts: root.fingerprintMaxAttempts
+                                glyphSize: screenRoot.s(40)
+                                labelPixelSize: screenRoot.s(12)
+                            }
+
                             Rectangle {
                                 id: mainDashboardShell
                                 anchors.centerIn: parent
@@ -1541,6 +1746,7 @@ Scope {
                                                     if (newText.length > 0) {
                                                         lockUI.failed = false;
                                                         lockUI.statusText = I18n.t("lock.status.enter_pin");
+                                                        if (!pam.active) root.startPassword(true);
                                                     } else {
                                                         if (!lockUI.failed) lockUI.statusText = I18n.t("lock.status.locked");
                                                     }
@@ -1591,6 +1797,17 @@ Scope {
                                                     accentColor: Qt.lighter(ThemeBackend.surface0, 1.28)
                                                     textColor: root.batDynamicColor
                                                 }
+                                            }
+
+                                            FingerprintIndicator {
+                                                Layout.alignment: Qt.AlignHCenter
+                                                visible: root.fingerprintAvailable
+                                                status: lockUI.fpState
+                                                label: lockUI.fpLabel
+                                                attempts: lockUI.fpFailures
+                                                maxAttempts: root.fingerprintMaxAttempts
+                                                glyphSize: screenRoot.s(44)
+                                                labelPixelSize: screenRoot.s(12)
                                             }
                                         }
 

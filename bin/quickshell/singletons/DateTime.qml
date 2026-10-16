@@ -51,15 +51,17 @@ Item {
 
     readonly property bool is12Hour: amPmFormat !== "" || hourFormat === "hh" || hourFormat === "h"
 
-    readonly property string time: Qt.formatDateTime(timeNow, timeFormat)
-    readonly property string timeShort: Qt.formatDateTime(timeNow, hourFormat + ":" + minuteFormat + (amPmFormat !== "" ? " " + amPmFormat : ""))
-    readonly property string timeLong: Qt.formatDateTime(timeNow, "HH:mm:ss")
-    readonly property string timeOnly: Qt.formatDateTime(timeNow, timeFormat)
+    property string time: ""
+    property string timeShort: ""
+    property string timeLong: ""
+    property string timeOnly: ""
 
-    readonly property string hour: Qt.formatDateTime(timeNow, hourFormat)
-    readonly property string minute: Qt.formatDateTime(timeNow, minuteFormat)
-    readonly property string second: secondFormat !== "" ? Qt.formatDateTime(timeNow, secondFormat) : ""
-    readonly property string amPm: amPmFormat !== "" ? Qt.formatDateTime(timeNow, amPmFormat) : ""
+    property string hour: ""
+    property string minute: ""
+    property string second: ""
+    property string amPm: ""
+
+    property int _lastMinuteKey: -1
 
     readonly property bool isVi: typeof I18n !== "undefined" && I18n.currentLang === "vi"
 
@@ -84,26 +86,65 @@ Item {
         return Qt.formatDateTime(dateObj || timeNow, pattern);
     }
 
+    function updateTimes(forceAll) {
+        let d = new Date();
+        root.timeNow = d;
+
+        let curTime = Qt.formatDateTime(d, timeFormat);
+        if (root.time !== curTime) root.time = curTime;
+        if (root.timeOnly !== curTime) root.timeOnly = curTime;
+
+        let curTimeLong = timeFormat === "HH:mm:ss" ? curTime : Qt.formatDateTime(d, "HH:mm:ss");
+        if (root.timeLong !== curTimeLong) root.timeLong = curTimeLong;
+
+        if (secondFormat !== "") {
+            let curSec = Qt.formatDateTime(d, secondFormat);
+            if (root.second !== curSec) root.second = curSec;
+        } else if (root.second !== "") {
+            root.second = "";
+        }
+
+        let minuteKey = d.getHours() * 60 + d.getMinutes();
+        if (forceAll || root._lastMinuteKey !== minuteKey) {
+            root._lastMinuteKey = minuteKey;
+
+            let curMin = Qt.formatDateTime(d, minuteFormat);
+            if (root.minute !== curMin) root.minute = curMin;
+
+            let curHour = Qt.formatDateTime(d, hourFormat);
+            if (root.hour !== curHour) root.hour = curHour;
+
+            let curAmPm = amPmFormat !== "" ? Qt.formatDateTime(d, amPmFormat) : "";
+            if (root.amPm !== curAmPm) root.amPm = curAmPm;
+
+            let curTimeShort = Qt.formatDateTime(d, hourFormat + ":" + minuteFormat + (amPmFormat !== "" ? " " + amPmFormat : ""));
+            if (root.timeShort !== curTimeShort) root.timeShort = curTimeShort;
+        }
+
+        if (d.getDate() !== root.dateNow.getDate() || d.getMonth() !== root.dateNow.getMonth() || d.getFullYear() !== root.dateNow.getFullYear()) {
+            root.dateNow = d;
+        }
+    }
+
     Timer {
         interval: 1000
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: {
-            let d = new Date();
-            root.timeNow = d;
-            if (d.getDate() !== root.dateNow.getDate() || d.getMonth() !== root.dateNow.getMonth() || d.getFullYear() !== root.dateNow.getFullYear()) {
-                root.dateNow = d;
-            }
-        }
+        onTriggered: root.updateTimes(false)
     }
 
     Connections {
         target: typeof Config !== "undefined" ? Config : null
         function onSettingsLoaded() {
-            let d = new Date();
-            root.timeNow = d;
-            root.dateNow = d;
+            root.updateTimes(true);
+        }
+    }
+
+    Connections {
+        target: typeof I18n !== "undefined" ? I18n : null
+        function onLanguageChanged() {
+            root.updateTimes(true);
         }
     }
 }
