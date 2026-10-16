@@ -870,6 +870,11 @@
             "authenticating": "Authenticating...",
             "enter_pin": "Enter PIN"
         },
+        "fingerprint": {
+            "ready": "Touch the sensor",
+            "not_recognized": "Fingerprint not recognized",
+            "recognized": "Fingerprint recognized"
+        },
         "power": {
             "suspend": "Suspend",
             "reboot": "Reboot",

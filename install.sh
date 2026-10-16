@@ -1898,6 +1898,24 @@ find "$TARGET_CONFIG_DIR/bin" -type f -name "*.sh" -exec chmod +x {} + 2>/dev/nu
 find "$TARGET_CONFIG_DIR/bin/quickshell" -maxdepth 3 -type f -executable -exec chmod +x {} + 2>/dev/null || true
 printf "  -> Permissions set successfully %-14s ${C_GREEN}[ OK ]${RESET}\n" ""
 
+# Setup PAM Service for Lucretia (Fingerprint & Native Auth)
+setup_pam_service() {
+    echo -e "  ${C_CYAN}→${RESET} Configuring PAM service for Lucretia lockscreen..."
+    if [ -d /etc/pam.d ]; then
+        cat << 'EOF' | sudo tee /etc/pam.d/lucretia > /dev/null
+#%PAM-1.0
+-auth       sufficient   pam_fprintd.so
+auth        include      login
+account     include      login
+session     include      login
+EOF
+        printf "  -> PAM service configured %-19s ${C_GREEN}[ OK ]${RESET}\n" ""
+    else
+        printf "  -> PAM service skipped (/etc/pam.d missing) %-8s ${C_YELLOW}[ SKIP ]${RESET}\n" ""
+    fi
+}
+setup_pam_service
+
 # Setup SDDM Theme and Config
 if [[ "$SETUP_SDDM_THEME" == true ]]; then
     if [ -d "$REPO_DIR/sddm/themes/matugen-minimal" ]; then

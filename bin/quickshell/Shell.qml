@@ -161,6 +161,7 @@ ShellRoot {
                 // 2. Lock Screen
                 property bool lockActive: false
                 property bool pendingLock: false
+                property bool pendingStaticLock: false
 
                 IpcHandler {
                     target: "lock"
@@ -169,6 +170,16 @@ ShellRoot {
                             lockLoader.item.lock();
                         } else {
                             pendingLock = true;
+                            pendingStaticLock = false;
+                            lockActive = true;
+                        }
+                    }
+                    function activateStatic(): void {
+                        if (lockLoader.item) {
+                            lockLoader.item.lockStatic();
+                        } else {
+                            pendingLock = false;
+                            pendingStaticLock = true;
                             lockActive = true;
                         }
                     }
@@ -187,7 +198,10 @@ ShellRoot {
                             lockUnloadTimer.restart();
                         }
                         Component.onCompleted: {
-                            if (pendingLock) {
+                            if (pendingStaticLock) {
+                                pendingStaticLock = false;
+                                lockStatic();
+                            } else if (pendingLock) {
                                 pendingLock = false;
                                 lock();
                             }
