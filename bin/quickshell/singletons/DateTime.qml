@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import Quickshell
+import Quickshell.Io
 import "../"
 
 Item {
@@ -126,9 +127,20 @@ Item {
         }
     }
 
+    FileView {
+        id: lockWatcher
+        path: (typeof Caching !== "undefined" && Caching.runDir) ? (Caching.runDir + "/lock.active") : "/tmp/lucretia/lock.active"
+        watchChanges: true
+        onFileChanged: {
+            if (!lockWatcher.exists) {
+                root.updateTimes(true);
+            }
+        }
+    }
+
     Timer {
         interval: 1000
-        running: true
+        running: !lockWatcher.exists
         repeat: true
         triggeredOnStart: true
         onTriggered: root.updateTimes(false)

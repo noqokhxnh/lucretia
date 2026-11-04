@@ -1149,10 +1149,7 @@ Item {
                             acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: (mouse) => {
                                 if (mouse.button === Qt.RightButton) {
-                                    appContextMenu.targetAppName = model.name;
-                                    appContextMenu.isFavorite = model.isFavorite;
-                                    appContextMenu.isHidden = model.isHidden;
-                                    appContextMenu.popup();
+                                    toggleFavorite(model.name);
                                 } else {
                                     appList.currentIndex = index;
                                     let item = appModel.get(index);

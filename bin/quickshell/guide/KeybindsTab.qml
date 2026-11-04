@@ -182,7 +182,7 @@ Item {
         } else if (act.indexOf("spawn \"zen-browser\"") !== -1) {
             title = I18n.t("guide.keybinds.actions.browser");
             icon = "󰖟";
-        } else if (act.indexOf("spawn \"nautilus\"") !== -1) {
+        } else if (act.indexOf("spawn \"ski\"") !== -1 || act.indexOf("spawn \"nautilus\"") !== -1) {
             title = I18n.t("guide.keybinds.actions.files");
             icon = "󰝰";
         } else if (act.indexOf("brightnessctl") !== -1) {
@@ -335,7 +335,7 @@ Item {
                 if (q.indexOf("term") !== -1 && item.action.indexOf("foot") !== -1) matchAlias = true;
                 if (q.indexOf("enter") !== -1 && item.combo.toLowerCase().indexOf("return") !== -1) matchAlias = true;
                 if (q.indexOf("browser") !== -1 && item.action.indexOf("zen") !== -1) matchAlias = true;
-                if (q.indexOf("file") !== -1 && item.action.indexOf("nautilus") !== -1) matchAlias = true;
+                if (q.indexOf("file") !== -1 && (item.action.indexOf("ski") !== -1 || item.action.indexOf("nautilus") !== -1)) matchAlias = true;
 
                 if (!matchTitle && !matchCombo && !matchAction && !matchCat && !matchAlias) continue;
             }
@@ -1673,7 +1673,7 @@ Item {
                                                 { key: "overview", act: "toggle-overview;" },
                                                 { key: "terminal", act: 'spawn "foot";' },
                                                 { key: "browser", act: 'spawn "zen-browser";' },
-                                                { key: "files", act: 'spawn "nautilus";' },
+                                                { key: "files", act: 'spawn "ski";' },
                                                 { key: "launcher", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle applauncher";' },
                                                 { key: "clipboard", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/qs_manager.sh toggle clipboard";' },
                                                 { key: "screenshot", act: 'spawn "bash" "-c" "$HOME/.config/niri/bin/screenshot.sh";' },

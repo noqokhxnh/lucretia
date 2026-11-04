@@ -285,7 +285,7 @@
       "mods": "$mainMod",
       "key": "E",
       "dispatcher": "exec",
-      "command": "nautilus"
+      "command": "ski"
     },
     {
       "type": "bind",

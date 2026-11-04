@@ -728,7 +728,7 @@ show_overview() {
     echo -e "${BOLD}${C_BLUE}--- Applications ---${RESET}"
     print_kb "SUPER + RETURN" "Open Terminal"
     print_kb "SUPER + W" "Open Browser"
-    print_kb "SUPER + E" "Open File Manager (Nautilus)"
+    print_kb "SUPER + E" "Open File Manager (Ski)"
     print_kb "SUPER + V" "Clipboard History Manager"
     print_kb "SUPER + ," "Lock Screen"
     echo ""
@@ -1772,6 +1772,13 @@ fi
 # 6.5c. Ensure XDG standard user directories are generated
 if command -v xdg-user-dirs-update &>/dev/null; then
     xdg-user-dirs-update >/dev/null 2>&1 || true
+fi
+
+# 6.5d. Install & configure Ski File Manager and FileChooser Portal
+if [ -f "$REPO_DIR/bin/install_ski.sh" ]; then
+    echo -e "  -> Installing and configuring Ski File Manager (v0.5.1)..."
+    chmod +x "$REPO_DIR/bin/install_ski.sh"
+    bash "$REPO_DIR/bin/install_ski.sh" || true
 fi
 
 # ------------------------------------------------------------------------------

@@ -12,6 +12,7 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 struct AppInfo {
+    std::string id;
     std::string name;
     std::string exec;
     std::string icon;
@@ -56,6 +57,7 @@ void parse_desktop_file(const fs::path& path, std::map<std::string, AppInfo>& ap
     if (!file.is_open()) return;
 
     AppInfo app;
+    app.id = path.filename().string();
     bool is_desktop = false;
     bool no_display = false;
     std::string line;
@@ -87,7 +89,61 @@ void parse_desktop_file(const fs::path& path, std::map<std::string, AppInfo>& ap
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    std::set<std::string> favorites;
+    std::set<std::string> hidden;
+    const char* home = std::getenv("HOME");
+    fs::path settingsPath;
+    if (home) {
+        settingsPath = fs::path(home) / ".cache/applauncher_settings.json";
+        if (fs::exists(settingsPath)) {
+            try {
+                std::ifstream sf(settingsPath);
+                if (sf.is_open()) {
+                    json sj;
+                    sf >> sj;
+                    if (sj.contains("favorites") && sj["favorites"].is_array()) {
+                        for (const auto& fav : sj["favorites"]) {
+                            if (fav.is_string()) favorites.insert(fav.get<std::string>());
+                        }
+                    }
+                    if (sj.contains("hidden") && sj["hidden"].is_array()) {
+                        for (const auto& hid : sj["hidden"]) {
+                            if (hid.is_string()) hidden.insert(hid.get<std::string>());
+                        }
+                    }
+                }
+            } catch (...) {}
+        }
+    }
+
+    if (argc > 2 && (std::string(argv[1]) == "--toggle-pin" || std::string(argv[1]) == "toggle-pin")) {
+        std::string target = argv[2];
+        bool wasPinned = favorites.count(target) > 0;
+        if (wasPinned) {
+            favorites.erase(target);
+        } else {
+            favorites.insert(target);
+        }
+        if (!settingsPath.empty()) {
+            json sj;
+            sj["favorites"] = json::array();
+            for (const auto& f : favorites) sj["favorites"].push_back(f);
+            sj["hidden"] = json::array();
+            for (const auto& h : hidden) sj["hidden"].push_back(h);
+
+            fs::path tmpPath = settingsPath.string() + ".tmp";
+            std::ofstream out(tmpPath);
+            if (out.is_open()) {
+                out << sj.dump(4);
+                out.close();
+                fs::rename(tmpPath, settingsPath);
+            }
+        }
+        std::cout << json({{"status", "ok"}, {"pinned", !wasPinned}}).dump() << std::endl;
+        return 0;
+    }
+
     std::vector<std::string> dirs = {
         "/usr/share/applications",
         "/usr/local/share/applications",
@@ -113,32 +169,6 @@ int main() {
         } catch (...) {}
     }
 
-    std::set<std::string> favorites;
-    std::set<std::string> hidden;
-    const char* home = std::getenv("HOME");
-    if (home) {
-        fs::path settingsPath = fs::path(home) / ".cache/applauncher_settings.json";
-        if (fs::exists(settingsPath)) {
-            try {
-                std::ifstream sf(settingsPath);
-                if (sf.is_open()) {
-                    json sj;
-                    sf >> sj;
-                    if (sj.contains("favorites") && sj["favorites"].is_array()) {
-                        for (const auto& fav : sj["favorites"]) {
-                            if (fav.is_string()) favorites.insert(fav.get<std::string>());
-                        }
-                    }
-                    if (sj.contains("hidden") && sj["hidden"].is_array()) {
-                        for (const auto& hid : sj["hidden"]) {
-                            if (hid.is_string()) hidden.insert(hid.get<std::string>());
-                        }
-                    }
-                }
-            } catch (...) {}
-        }
-    }
-
     std::vector<std::pair<std::string, AppInfo>> sorted_apps;
     for (const auto& pair : apps) {
         if (hidden.count(pair.second.name)) continue;
@@ -146,17 +176,18 @@ int main() {
     }
 
     std::sort(sorted_apps.begin(), sorted_apps.end(), [&favorites](const auto& a, const auto& b) {
-        bool favA = (favorites.count(a.second.name) > 0);
-        bool favB = (favorites.count(b.second.name) > 0);
+        bool favA = (favorites.count(a.second.name) > 0) || (!a.second.id.empty() && favorites.count(a.second.id) > 0);
+        bool favB = (favorites.count(b.second.name) > 0) || (!b.second.id.empty() && favorites.count(b.second.id) > 0);
         if (favA != favB) return favA > favB;
         return a.first < b.first;
     });
 
     std::vector<json> res;
     for (const auto& pair : sorted_apps) {
-        bool isFav = (favorites.count(pair.second.name) > 0);
+        bool isFav = (favorites.count(pair.second.name) > 0) || (!pair.second.id.empty() && favorites.count(pair.second.id) > 0);
         res.push_back({
             {"name", pair.second.name},
+            {"desktop_id", pair.second.id},
             {"exec", pair.second.exec},
             {"icon", pair.second.icon},
             {"is_favorite", isFav},

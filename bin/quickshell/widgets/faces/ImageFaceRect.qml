@@ -29,6 +29,10 @@ Item {
             anchors.fill: parent
             source: root.imagePath !== "" ? (root.imagePath.startsWith("file://") ? root.imagePath : "file://" + root.imagePath) : ""
             fillMode: Image.PreserveAspectFit
+            sourceSize: Qt.size(
+                Math.max(1, Math.ceil(root.width * (Screen.devicePixelRatio ? Screen.devicePixelRatio : 1))),
+                Math.max(1, Math.ceil(root.height * (Screen.devicePixelRatio ? Screen.devicePixelRatio : 1)))
+            )
             asynchronous: true
             cache: true
             smooth: true

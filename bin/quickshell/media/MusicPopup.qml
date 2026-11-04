@@ -602,6 +602,8 @@ Item {
                         id: blurA
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(640, 360)
+                        asynchronous: true
                         opacity: blurCrossfader.showingA && status === Image.Ready && root.hasTargetPlayer ? 0.35 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 800; easing.type: Easing.InOutQuad } }
                     }
@@ -610,6 +612,8 @@ Item {
                         id: blurB
                         anchors.fill: parent
                         fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(640, 360)
+                        asynchronous: true
                         opacity: !blurCrossfader.showingA && status === Image.Ready && root.hasTargetPlayer ? 0.35 : 0.0
                         Behavior on opacity { NumberAnimation { duration: 800; easing.type: Easing.InOutQuad } }
                     }
@@ -877,6 +881,8 @@ Item {
                                                     id: artImgA
                                                     anchors.fill: parent
                                                     fillMode: Image.PreserveAspectCrop
+                                                    sourceSize: Qt.size(512, 512)
+                                                    asynchronous: true
                                                     opacity: artCrossfader.showingA && status === Image.Ready ? 1.0 : 0.0
                                                     Behavior on opacity { NumberAnimation { duration: 650; easing.type: Easing.InOutQuad } }
                                                 }
@@ -885,6 +891,8 @@ Item {
                                                     id: artImgB
                                                     anchors.fill: parent
                                                     fillMode: Image.PreserveAspectCrop
+                                                    sourceSize: Qt.size(512, 512)
+                                                    asynchronous: true
                                                     opacity: !artCrossfader.showingA && status === Image.Ready ? 1.0 : 0.0
                                                     Behavior on opacity { NumberAnimation { duration: 650; easing.type: Easing.InOutQuad } }
                                                 }

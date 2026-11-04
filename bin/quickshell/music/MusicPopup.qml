@@ -481,7 +481,9 @@ Item {
                     anchors.fill: parent
                     source: root.musicData.blur ? "file://" + root.musicData.blur : ""
                     fillMode: Image.PreserveAspectCrop
-                    
+                    sourceSize: Qt.size(640, 360)
+                    asynchronous: true
+
                     // Fixed: Ensures blur is completely hidden when stopped so the pure base color matches the calendar
                     opacity: (status === Image.Ready && root.musicData.status !== "Stopped" && root.musicData.status !== "Offline") ? 0.9 : 0.0
                     Behavior on opacity { NumberAnimation { duration: 800; easing.type: Easing.InOutQuad } }
@@ -575,7 +577,9 @@ Item {
                                     anchors.fill: parent
                                     source: root.musicData.artUrl ? "file://" + root.musicData.artUrl : ""
                                     fillMode: Image.PreserveAspectCrop
-                                    visible: false 
+                                    sourceSize: Qt.size(512, 512)
+                                    asynchronous: true
+                                    visible: false
                                 }
                                 Rectangle {
                                     id: maskRect

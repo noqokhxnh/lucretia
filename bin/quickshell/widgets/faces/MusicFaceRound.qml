@@ -255,6 +255,8 @@ Item {
                         anchors.fill: parent
                         source: MprisController.artUrl ? (MprisController.artUrl.startsWith("file://") || MprisController.artUrl.startsWith("http") ? MprisController.artUrl : "file://" + MprisController.artUrl) : ""
                         fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(512, 512)
+                        asynchronous: true
                         visible: false
                     }
 

@@ -12,6 +12,7 @@ using json = nlohmann::json;
 namespace fs = std::filesystem;
 
 struct AppInfo {
+    std::string id;
     std::string name;
     std::string exec;
     std::string icon;
@@ -69,6 +70,7 @@ void parse_desktop_file(const fs::path& path, std::map<std::string, AppInfo>& ap
     if (!file.is_open()) return;
 
     AppInfo app;
+    app.id = path.filename().string();
     bool is_desktop = false;
     bool no_display = false;
     std::string line;
@@ -187,8 +189,9 @@ int main(int argc, char* argv[]) {
     std::set<std::string> favorites;
     std::set<std::string> hidden;
     const char* home = std::getenv("HOME");
+    fs::path settingsPath;
     if (home) {
-        fs::path settingsPath = fs::path(home) / ".cache/applauncher_settings.json";
+        settingsPath = fs::path(home) / ".cache/applauncher_settings.json";
         if (fs::exists(settingsPath)) {
             try {
                 std::ifstream sf(settingsPath);
@@ -210,11 +213,38 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    if (argc > 2 && (std::string(argv[1]) == "--toggle-pin" || std::string(argv[1]) == "toggle-pin")) {
+        std::string target = argv[2];
+        bool wasPinned = favorites.count(target) > 0;
+        if (wasPinned) {
+            favorites.erase(target);
+        } else {
+            favorites.insert(target);
+        }
+        if (!settingsPath.empty()) {
+            json sj;
+            sj["favorites"] = json::array();
+            for (const auto& f : favorites) sj["favorites"].push_back(f);
+            sj["hidden"] = json::array();
+            for (const auto& h : hidden) sj["hidden"].push_back(h);
+
+            fs::path tmpPath = settingsPath.string() + ".tmp";
+            std::ofstream out(tmpPath);
+            if (out.is_open()) {
+                out << sj.dump(4);
+                out.close();
+                fs::rename(tmpPath, settingsPath);
+            }
+        }
+        std::cout << json({{"status", "ok"}, {"pinned", !wasPinned}}).dump() << std::endl;
+        return 0;
+    }
+
     std::vector<AppInfo> allApps;
     for (auto const& [name, info] : apps) {
         if (hidden.count(info.name)) continue;
         AppInfo item = info;
-        item.is_favorite = (favorites.count(info.name) > 0);
+        item.is_favorite = (favorites.count(info.name) > 0) || (!info.id.empty() && favorites.count(info.id) > 0);
         allApps.push_back(item);
     }
 
@@ -229,6 +259,7 @@ int main(int argc, char* argv[]) {
             for (const auto& app : allApps) {
                 res.push_back({
                     {"name", app.name},
+                    {"desktop_id", app.id},
                     {"exec", app.exec},
                     {"icon", app.icon},
                     {"is_favorite", app.is_favorite},
@@ -255,6 +286,7 @@ int main(int argc, char* argv[]) {
         for (const auto& app : results) {
             res.push_back({
                 {"name", app.name},
+                {"desktop_id", app.id},
                 {"exec", app.exec},
                 {"icon", app.icon},
                 {"score", app.score},
