@@ -228,7 +228,7 @@ spawn-at-startup "wl-paste" "--type" "image" "--watch" "bash" "-c" "$HOME/.confi
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/update_notifier.sh"
 spawn-at-startup "bash" "-c" "$HOME/.config/niri/bin/battery_power_saver.sh"
 spawn-at-startup "fcitx5" "-d"
-// spawn-at-startup "easyeffects" "--service-mode"
+spawn-at-startup "bash" "-c" "command -v serpantinum-audio >/dev/null 2>&1 && serpantinum-audio start"
 
 output "eDP-1" {
     mode "1920x1080@60"

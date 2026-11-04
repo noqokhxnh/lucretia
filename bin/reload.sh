@@ -25,7 +25,13 @@ sleep 0.2
 # 4. Start Quickshell (Shell.qml supervises and starts qs_daemon cleanly)
 setsid -f quickshell -p "$SHELL_PATH" >/dev/null 2>&1
 
-# 5. Notify user
+# 5. Ensure serpantinum-audio daemon is running
+export PATH="$HOME/.local/bin:$PATH"
+if command -v serpantinum-audio &>/dev/null; then
+    serpantinum-audio ctl ping >/dev/null 2>&1 || serpantinum-audio start >/dev/null 2>&1 || true
+fi
+
+# 6. Notify user
 if command -v notify-send &>/dev/null; then
     notify-send -a "Lucretia" -i "preferences-desktop" "Quickshell" "Đã nạp lại toàn bộ shell thành công!" -t 2000 2>/dev/null || true
 fi

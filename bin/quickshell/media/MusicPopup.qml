@@ -7,6 +7,7 @@ import QtQuick.Shapes
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Mpris
+import "."
 import "../"
 import "../reusables"
 import "../singletons"
@@ -278,7 +279,27 @@ Item {
     property var eqData: {
         "b1": 0, "b2": 0, "b3": 0, "b4": 0, "b5": 0,
         "b6": 0, "b7": 0, "b8": 0, "b9": 0, "b10": 0,
-        "preset": "Flat", "pending": false
+        "preset": "Flat", "pending": false,
+        "balance": 0, "mono": false, "swap": false,
+        "dynamics": "off", "dyneq": false
+    }
+
+    property var savedEqData: ({
+        "b1": 0, "b2": 0, "b3": 0, "b4": 0, "b5": 0,
+        "b6": 0, "b7": 0, "b8": 0, "b9": 0, "b10": 0,
+        "preset": "Flat", "pending": false,
+        "balance": 0, "mono": false, "swap": false,
+        "dynamics": "off", "dyneq": false
+    })
+
+    property int bottomSectionIndex: 0
+    property bool audioTestRunning: false
+
+    Timer {
+        id: audioTestTimer
+        interval: 3200
+        repeat: false
+        onTriggered: root.audioTestRunning = false
     }
 
     property color eqAccentColor: ThemeBackend.mauve || "#cba6f7"
@@ -432,11 +453,70 @@ Item {
             temp.preset = presetName;
             temp.pending = false;
             root.eqData = temp;
-            
+            root.savedEqData = Object.assign({}, temp);
+
             root.lastEqUpdate = Date.now();
-            
+
             root.triggerEqLightning();
             execCmd(Caching.qsDir + `/media/equalizer.sh preset ${presetName}`);
+        }
+    }
+
+    function setBalance(value) {
+        var clamped = Math.max(-1.0, Math.min(1.0, Number(value)));
+        if (isNaN(clamped)) return;
+
+        var temp = Object.assign({}, root.eqData);
+        temp.balance = Math.round(clamped * 100) / 100;
+        root.eqData = temp;
+        root.savedEqData = Object.assign({}, temp);
+        root.lastEqUpdate = Date.now();
+        root.execCmd(Caching.qsDir + `/media/equalizer.sh set_balance ${temp.balance}`);
+    }
+
+    function setAudioFlag(name, value) {
+        if (name !== "mono" && name !== "swap" && name !== "dyneq") return;
+        var temp = Object.assign({}, root.eqData);
+        temp[name] = value === true;
+        root.eqData = temp;
+        root.savedEqData = Object.assign({}, temp);
+        root.lastEqUpdate = Date.now();
+        root.execCmd(Caching.qsDir + `/media/equalizer.sh set_${name} ${temp[name]}`);
+    }
+
+    function setDynamics(value) {
+        if (["off", "balanced", "night"].indexOf(value) < 0) return;
+        var temp = Object.assign({}, root.eqData);
+        temp.dynamics = value;
+        root.eqData = temp;
+        root.savedEqData = Object.assign({}, temp);
+        root.lastEqUpdate = Date.now();
+        root.execCmd(Caching.qsDir + `/media/equalizer.sh set_dynamics ${value}`);
+    }
+
+    function resetAudio() {
+        var temp = Object.assign({}, root.eqData);
+        temp.balance = 0;
+        temp.mono = false;
+        temp.swap = false;
+        temp.dynamics = "off";
+        root.eqData = temp;
+        root.savedEqData = Object.assign({}, temp);
+        root.audioTestRunning = false;
+        audioTestTimer.stop();
+        root.lastEqUpdate = Date.now();
+        root.execCmd(Caching.qsDir + "/media/equalizer.sh reset_audio");
+    }
+
+    function toggleAudioTest() {
+        if (root.audioTestRunning) {
+            root.execCmd(Caching.qsDir + "/media/equalizer.sh stop_test");
+            root.audioTestRunning = false;
+            audioTestTimer.stop();
+        } else {
+            root.execCmd(Caching.qsDir + "/media/equalizer.sh test");
+            root.audioTestRunning = true;
+            audioTestTimer.restart();
         }
     }
 
@@ -450,7 +530,11 @@ Item {
             try {
                 let raw = typeof text === "function" ? text() : text;
                 if (typeof raw === "string" && raw.trim().length > 0) {
-                    root.eqData = JSON.parse(raw.trim());
+                    var parsed = JSON.parse(raw.trim());
+                    root.eqData = parsed;
+                    if (!parsed.pending) {
+                        root.savedEqData = Object.assign({}, parsed);
+                    }
                 }
             } catch(e) {}
         }
@@ -1284,38 +1368,18 @@ Item {
                     Layout.fillWidth: true
                     spacing: root.s(12)
 
-                    RowLayout {
-                        Layout.fillWidth: true
+                    MusicBottomHeader {
+                        id: bottomHeader
+                        root: root
                         opacity: root.introEqHeader
                         transform: Translate { y: root.s(12) * (1 - root.introEqHeader) }
-
-                        Text { text: I18n.t("music.equalizer"); color: ThemeBackend.mauve || "#cba6f7"; font.family: ThemeBackend.fontFamily; font.pixelSize: root.s(15); font.bold: true; Layout.fillWidth: true }
-                        
-                        ClickButton {
-                            id: applyBtn
-                            Layout.preferredHeight: root.s(26)
-                            cornerRadius: ThemeBackend.borderRadius
-                            horizontalPadding: root.s(12)
-                            buttonText: root.eqData.pending ? I18n.t("music.eq.apply") : I18n.t("music.eq.saved")
-                            textFontSize: root.s(11.5)
-                            accentColor: root.eqData.pending ? (ThemeBackend.mauve || "#cba6f7") : (ThemeBackend.surface1 || "#45475a")
-                            textColor: root.eqData.pending ? (ThemeBackend.base || "#1e1e2e") : (ThemeBackend.subtext0 || "#a6adc8")
-                            enabled: root.eqData.pending
-                            onClicked: {
-                                if (root.eqData.pending) {
-                                    var temp = Object.assign({}, root.eqData);
-                                    temp.pending = false;
-                                    root.eqData = temp;
-                                    
-                                    root.lastEqUpdate = Date.now();
-                                    
-                                    root.triggerEqLightning();
-                                    root.execCmd(Caching.qsDir + "/media/equalizer.sh apply");
-                                }
-                            }
-                        }
-                        Text { text: root.eqData.preset ? I18n.t("music.presets." + root.eqData.preset.toLowerCase()) : I18n.t("music.presets.flat"); color: ThemeBackend.subtext0 || "#a6adc8"; font.family: ThemeBackend.fontFamily; font.pixelSize: root.s(13); font.bold: true; Layout.leftMargin: root.s(12) }
                     }
+
+                    ColumnLayout {
+                        id: eqContentCol
+                        Layout.fillWidth: true
+                        spacing: root.s(12)
+                        visible: root.bottomSectionIndex === 0
 
                     Item {
                         Layout.fillWidth: true
@@ -1386,6 +1450,7 @@ Item {
                                             from: -12; to: 12
                                             stepSize: 1
                                             hoverEnabled: true
+                                            enabled: !(root.eqData && root.eqData.dyneq === true)
 
                                             Connections {
                                                 target: root
@@ -1745,9 +1810,18 @@ Item {
                         }
                     }
                 }
+
+                MusicAudioView {
+                    id: audioView
+                    root: root
+                    Layout.fillWidth: true
+                    visible: root.bottomSectionIndex === 1
+                    opacity: root.introEqSliders
+                }
             }
         }
     }
+}
 
     component PresetButton : ClickButton {
         property string name: ""
@@ -1761,6 +1835,9 @@ Item {
         property bool isActivePreset: root.eqData && root.eqData.preset === name
         accentColor: isActivePreset ? (ThemeBackend.mauve || "#cba6f7") : (ThemeBackend.surface0 || "#313244")
         textColor: isActivePreset ? (ThemeBackend.base || "#1e1e2e") : (ThemeBackend.subtext0 || "#a6adc8")
-        onClicked: root.applyPresetOptimistically(name)
+        enabled: !(root.eqData && root.eqData.dyneq === true)
+        opacity: enabled ? 1.0 : 0.45
+        Behavior on opacity { NumberAnimation { duration: 180 } }
+        onClicked: if (enabled) root.applyPresetOptimistically(name)
     }
 }

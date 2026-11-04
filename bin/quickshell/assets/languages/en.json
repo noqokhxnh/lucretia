@@ -898,7 +898,27 @@
         "equalizer": "Equalizer",
         "eq": {
             "apply": "Apply",
-            "saved": "Saved"
+            "saved": "Saved",
+            "dynamic": "Dynamic"
+        },
+        "audio": {
+            "title": "Audio",
+            "test": "Test",
+            "stop_test": "Stop",
+            "reset": "Reset",
+            "mono": "Mono audio",
+            "swap": "Swap L/R",
+            "dynamic_range": "Dynamic range",
+            "off": "Off",
+            "balanced": "Balanced",
+            "night": "Night",
+            "left_only": "Left only",
+            "right_only": "Right only",
+            "centered": "Centered",
+            "left_slightly_favored": "Slightly left favored",
+            "right_slightly_favored": "Slightly right favored",
+            "left_favored": "Left favored",
+            "right_favored": "Right favored"
         },
         "presets": {
             "flat": "Flat",
