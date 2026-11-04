@@ -125,7 +125,7 @@
                 "switch_to_workspace": "Chuyển sang Không gian {num}",
                 "terminal": "Cửa sổ lệnh (foot)",
                 "browser": "Trình duyệt Web (Zen)",
-                "files": "Quản lý tệp (Nautilus)",
+                "files": "Quản lý tệp (Ski)",
                 "brightness_up": "Tăng độ sáng",
                 "brightness_down": "Giảm độ sáng",
                 "toggle_mic_mute": "Bật/tắt micro",
@@ -829,7 +829,9 @@
         "kill_hint_title": "kill <tên tiến trình> hoặc kill :<cổng>",
         "kill_hint_desc": "Nhập tên tiến trình hoặc số cổng (vd: :3000) để dừng",
         "searching_proc": "Đang tìm tiến trình: {query}...",
-        "no_proc_found": "Không tìm thấy tiến trình hoặc cổng phù hợp"
+        "no_proc_found": "Không tìm thấy tiến trình hoặc cổng phù hợp",
+        "web_search_hint": "Nhập từ khóa để tìm kiếm web",
+        "web_search_desc": "Tìm kiếm web cho: {query}"
     },
     "calendar": {
         "loading": "Đang tải...",
@@ -896,7 +898,27 @@
         "equalizer": "Bộ cân bằng âm",
         "eq": {
             "apply": "Áp dụng",
-            "saved": "Đã lưu"
+            "saved": "Đã lưu",
+            "dynamic": "Thích ứng"
+        },
+        "audio": {
+            "title": "Âm thanh",
+            "test": "Thử nghiệm",
+            "stop_test": "Dừng",
+            "reset": "Đặt lại",
+            "mono": "Âm thanh đơn kênh",
+            "swap": "Đảo kênh T/P",
+            "dynamic_range": "Dải động",
+            "off": "Tắt",
+            "balanced": "Cân bằng",
+            "night": "Ban đêm",
+            "left_only": "Chỉ kênh trái",
+            "right_only": "Chỉ kênh phải",
+            "centered": "Cân bằng",
+            "left_slightly_favored": "Hơi lệch trái",
+            "right_slightly_favored": "Hơi lệch phải",
+            "left_favored": "Lệch trái",
+            "right_favored": "Lệch phải"
         },
         "presets": {
             "flat": "Bằng phẳng",
@@ -1021,8 +1043,12 @@
             "recording_started_title": "Đã bắt đầu quay màn hình",
             "recording_started_body": "Nhấn phím tắt chụp màn hình một lần nữa để kết thúc quay.",
             "screenshot_saved_title": "Đã lưu ảnh chụp màn hình",
-            "screenshot_saved_body": "Tệp: {file}\nThư mục: {folder}"
+            "screenshot_saved_body": "Tệp: {file}\nThư mục: {folder}",
+            "ocr_success_title": "Đã sao chép văn bản vào clipboard",
+            "ocr_empty_title": "Không tìm thấy văn bản",
+            "ocr_empty_body": "Không nhận diện được văn bản nào trong vùng chọn."
         },
+        "ocr_button": "Quét chữ (OCR)",
         "gallery_title": "Thư viện ảnh chụp",
         "found_count": "Đã tìm thấy {count} ảnh chụp màn hình",
         "no_screenshots": "Chưa có ảnh chụp màn hình nào",

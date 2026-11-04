@@ -140,7 +140,7 @@ Item {
         }
 
         // Files
-        if (text.includes("nemo") || text.includes("nautilus") || text.includes("thunar") || 
+        if (text.includes("ski") || text.includes("nemo") || text.includes("nautilus") || text.includes("thunar") ||
             text.includes("dolphin") || text.includes("file") || text.includes("archive")) {
             return "󰉋";
         }

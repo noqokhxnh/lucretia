@@ -125,7 +125,7 @@
                 "switch_to_workspace": "Switch to Workspace {num}",
                 "terminal": "Terminal (foot)",
                 "browser": "Web Browser (Zen)",
-                "files": "File Manager (Nautilus)",
+                "files": "File Manager (Ski)",
                 "brightness_up": "Brightness Up",
                 "brightness_down": "Brightness Down",
                 "toggle_mic_mute": "Toggle Microphone Mute",
@@ -829,7 +829,9 @@
         "kill_hint_title": "kill <process> or kill :<port>",
         "kill_hint_desc": "Type a process name or port number (e.g. :3000) to terminate",
         "searching_proc": "Searching processes: {query}...",
-        "no_proc_found": "No matching processes or ports found"
+        "no_proc_found": "No matching processes or ports found",
+        "web_search_hint": "Type a query to search the web",
+        "web_search_desc": "Search web for: {query}"
     },
     "calendar": {
         "loading": "Loading...",
@@ -896,7 +898,27 @@
         "equalizer": "Equalizer",
         "eq": {
             "apply": "Apply",
-            "saved": "Saved"
+            "saved": "Saved",
+            "dynamic": "Dynamic"
+        },
+        "audio": {
+            "title": "Audio",
+            "test": "Test",
+            "stop_test": "Stop",
+            "reset": "Reset",
+            "mono": "Mono audio",
+            "swap": "Swap L/R",
+            "dynamic_range": "Dynamic range",
+            "off": "Off",
+            "balanced": "Balanced",
+            "night": "Night",
+            "left_only": "Left only",
+            "right_only": "Right only",
+            "centered": "Centered",
+            "left_slightly_favored": "Slightly left favored",
+            "right_slightly_favored": "Slightly right favored",
+            "left_favored": "Left favored",
+            "right_favored": "Right favored"
         },
         "presets": {
             "flat": "Flat",
@@ -1021,8 +1043,12 @@
             "recording_started_title": "Recording started",
             "recording_started_body": "Press your screenshot shortcut again to stop.",
             "screenshot_saved_title": "Screenshot saved",
-            "screenshot_saved_body": "File: {file}\nFolder: {folder}"
+            "screenshot_saved_body": "File: {file}\nFolder: {folder}",
+            "ocr_success_title": "Text copied to clipboard",
+            "ocr_empty_title": "No text detected",
+            "ocr_empty_body": "Could not recognize any text in the selected area."
         },
+        "ocr_button": "Scan text (OCR)",
         "gallery_title": "Screenshot Gallery",
         "found_count": "{count} screenshots found",
         "no_screenshots": "No screenshots yet",

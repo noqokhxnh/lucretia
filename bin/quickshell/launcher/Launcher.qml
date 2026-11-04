@@ -217,7 +217,7 @@ PanelWindow {
         launcherWindow.executeFilter(searchInput.text);
     }
 
-    function saveSettings(s) {
+    function saveSettings(s, targetId, targetName) {
         launcherWindow.currentSettings = s;
         let path = Quickshell.env("HOME") + "/.cache/applauncher_settings.json";
         let data = JSON.stringify(s);
@@ -225,7 +225,7 @@ PanelWindow {
         Quickshell.execDetached(["bash", "-c",
             "printf '%s' '" + escaped + "' > " + path + ".tmp && mv " + path + ".tmp " + path]);
         launcherWindow.loadApps();
-        launcherWindow.executeFilter(searchInput.text);
+        launcherWindow.executeFilter(searchInput ? searchInput.text : "", targetId, targetName);
     }
 
     function toggleFavorite(desktopId, appName) {
@@ -243,7 +243,7 @@ PanelWindow {
         } else {
             favs.push(name || id);
         }
-        saveSettings({ favorites: favs, hidden: s.hidden || [] });
+        saveSettings({ favorites: favs, hidden: s.hidden || [] }, id, name);
     }
 
     function toggleHidden(desktopId, appName) {
@@ -261,7 +261,7 @@ PanelWindow {
         } else {
             hid.push(name || id);
         }
-        saveSettings({ favorites: s.favorites || [], hidden: hid });
+        saveSettings({ favorites: s.favorites || [], hidden: hid }, id, name);
     }
 
     // -------------------------------------------------------------------------
@@ -654,12 +654,12 @@ PanelWindow {
         return i === sub.length;
     }
 
-    function executeFilter(query) {
+    function executeFilter(query, targetId, targetName) {
         launcherWindow.isKeyboardNav = false;
         if (keyboardNavTimer.running) keyboardNavTimer.stop();
 
-        let rawTrimmed = query.trim();
-        let q = query.toLowerCase().trim();
+        let rawTrimmed = (query || "").trim();
+        let q = (query || "").toLowerCase().trim();
         let filtered = [];
 
         // 1. Terminal Command Execution (Starts with >)
@@ -702,6 +702,58 @@ PanelWindow {
                     widgetTarget: "",
                     isFavorite: false,
                     isHidden: false
+                });
+            }
+        }
+
+        // 1.5 Web Search (Starts with ?)
+        if (rawTrimmed.startsWith("?")) {
+            let searchTarget = rawTrimmed.substring(1).trim();
+            let searchEngine = "https://www.google.com/search?q=";
+            let encodedQuery = encodeURIComponent(searchTarget);
+            let searchUrl = searchEngine + encodedQuery;
+
+            if (searchTarget.length > 0) {
+                filtered.push({
+                    name: "? " + searchTarget,
+                    description: typeof I18n !== "undefined" ? I18n.t("applauncher.web_search_desc", { query: searchTarget }) : ("Search web for: " + searchTarget),
+                    desktop_id: "",
+                    icon: "",
+                    fontIcon: "󰖟",
+                    score: 10000000,
+                    isCommand: false,
+                    command: "",
+                    isCalc: false,
+                    calcResult: "",
+                    isTool: false,
+                    toolResult: "",
+                    isWidget: false,
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false,
+                    isWebSearch: true,
+                    webUrl: searchUrl
+                });
+            } else {
+                filtered.push({
+                    name: "? ...",
+                    description: typeof I18n !== "undefined" ? I18n.t("applauncher.web_search_hint") : "Type a query to search the web",
+                    desktop_id: "",
+                    icon: "",
+                    fontIcon: "󰖟",
+                    score: 10000000,
+                    isCommand: false,
+                    command: "",
+                    isCalc: false,
+                    calcResult: "",
+                    isTool: false,
+                    toolResult: "",
+                    isWidget: false,
+                    widgetTarget: "",
+                    isFavorite: false,
+                    isHidden: false,
+                    isWebSearch: false,
+                    webUrl: ""
                 });
             }
         }
@@ -1152,8 +1204,18 @@ PanelWindow {
         launcherWindow.filteredApps = filtered;
 
         if (filtered.length > 0) {
-            appList.currentIndex = 0;
-            appList.positionViewAtBeginning();
+            let targetIdx = -1;
+            if (targetId || targetName) {
+                targetIdx = filtered.findIndex(function(a) {
+                    return (targetId && a.desktop_id === targetId) || (targetName && a.name === targetName);
+                });
+            }
+            if (targetIdx !== -1) {
+                appList.currentIndex = targetIdx;
+            } else {
+                appList.currentIndex = 0;
+            }
+            appList.positionViewAtIndex(appList.currentIndex, ListView.Contain);
         } else {
             appList.currentIndex = -1;
         }
@@ -1163,6 +1225,14 @@ PanelWindow {
         if (index < 0 || index >= launcherWindow.filteredApps.length) return;
         let item = launcherWindow.filteredApps[index];
         if (!item) return;
+
+        if (item.isWebSearch) {
+            if (item.webUrl) {
+                Quickshell.execDetached(["xdg-open", item.webUrl]);
+            }
+            closeLauncher();
+            return;
+        }
 
         if (item.isCommand) {
             if (item.command && item.command.trim().length > 0) {
@@ -1190,7 +1260,11 @@ PanelWindow {
 
         if (item.isFile || item.isDir) {
             if (item.filePath) {
-                Quickshell.execDetached(["xdg-open", item.filePath]);
+                if (item.isDir) {
+                    Quickshell.execDetached(["bash", "-c", "if command -v ski >/dev/null 2>&1; then ski \"" + item.filePath + "\"; else xdg-open \"" + item.filePath + "\"; fi"]);
+                } else {
+                    Quickshell.execDetached(["xdg-open", item.filePath]);
+                }
             }
             closeLauncher();
             return;
@@ -1913,6 +1987,7 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
+                                            acceptedButtons: Qt.LeftButton | Qt.RightButton
                                             onClicked: (mouse) => {
                                                 mouse.accepted = true;
                                                 launcherWindow.toggleFavorite(model.desktop_id, model.name);
@@ -1939,6 +2014,7 @@ PanelWindow {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
+                                            acceptedButtons: Qt.LeftButton | Qt.RightButton
                                             onClicked: (mouse) => {
                                                 mouse.accepted = true;
                                                 launcherWindow.toggleHidden(model.desktop_id, model.name);
@@ -1954,9 +2030,16 @@ PanelWindow {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: {
-                                    appList.currentIndex = index;
-                                    activateIndex(index);
+                                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                onClicked: (mouse) => {
+                                    if (mouse.button === Qt.RightButton) {
+                                        if (!model.isCommand && !model.isCalc && !model.isTool) {
+                                            launcherWindow.toggleFavorite(model.desktop_id, model.name);
+                                        }
+                                    } else {
+                                        appList.currentIndex = index;
+                                        activateIndex(index);
+                                    }
                                 }
                             }
                         }

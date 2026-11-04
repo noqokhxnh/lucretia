@@ -1569,7 +1569,7 @@ Scope {
 
                                 Timer {
                                     id: clockTimer
-                                    interval: 1000; running: true; repeat: true; triggeredOnStart: true
+                                    interval: 1000; running: rootLock.locked; repeat: true; triggeredOnStart: true
                                     onTriggered: {
                                         let d = new Date();
                                         let fmt = (typeof Config !== "undefined" && Config.rawSettings && Config.rawSettings.bar && Config.rawSettings.bar.time && Config.rawSettings.bar.time.format !== undefined) ? Config.rawSettings.bar.time.format : "HH:mm:ss";

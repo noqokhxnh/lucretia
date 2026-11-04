@@ -28,9 +28,10 @@ FocusService::FocusService(QObject* parent) : QObject(parent), db(nullptr) {
                  ((std::getenv("XDG_RUNTIME_DIR") ? std::string(std::getenv("XDG_RUNTIME_DIR")) : "/tmp") + "/lucretia/workspaces");
     fs::create_directories(ws_run_dir);
 
-    // Initial state queries
-    updateActiveWindow();
-    updateWorkspacesState();
+    // Initial state setup
+    reloadSettingsIfNeeded();
+    refreshActiveWindowFromCache();
+    refreshWorkspacesFromCache();
 
     // Start Niri listener socket thread
     daemon_thread = std::thread([this]() {
@@ -72,13 +73,6 @@ FocusService::~FocusService() {
     if (daemon_thread.joinable()) {
         daemon_thread.detach();
     }
-    {
-        std::lock_guard<std::mutex> lock(query_mutex);
-        if (query_sock >= 0) {
-            ::close(query_sock);
-            query_sock = -1;
-        }
-    }
     flushBuffer();
     if (db) sqlite3_close(db);
 }
@@ -100,73 +94,6 @@ std::string FocusService::getNiriSocketPath() {
         } catch (...) {}
     }
     return "";
-}
-
-std::string FocusService::queryNiri(const std::string& req) {
-    std::lock_guard<std::mutex> lock(query_mutex);
-
-    auto connect_query = [this]() -> bool {
-        if (query_sock >= 0) {
-            ::close(query_sock);
-            query_sock = -1;
-        }
-        std::string sock_path = getNiriSocketPath();
-        if (sock_path.empty()) return false;
-
-        int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-        if (sock < 0) return false;
-
-        struct sockaddr_un addr;
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-        strncpy(addr.sun_path, sock_path.c_str(), sizeof(addr.sun_path) - 1);
-
-        struct timeval tv;
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
-        setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
-
-        if (::connect(sock, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-            ::close(sock);
-            return false;
-        }
-        query_sock = sock;
-        return true;
-    };
-
-    if (query_sock < 0 && !connect_query()) {
-        return "";
-    }
-
-    std::string to_send = req;
-    if (to_send.empty() || to_send.back() != '\n') to_send += '\n';
-
-    auto try_send_recv = [this, &to_send]() -> std::string {
-        if (send(query_sock, to_send.c_str(), to_send.length(), MSG_NOSIGNAL) < 0) {
-            return "";
-        }
-        std::string resp;
-        char buf[8192];
-        while (true) {
-            ssize_t n = recv(query_sock, buf, sizeof(buf) - 1, 0);
-            if (n <= 0) return "";
-            buf[n] = '\0';
-            resp.append(buf, n);
-            if (resp.find('\n') != std::string::npos) {
-                break;
-            }
-        }
-        return resp;
-    };
-
-    std::string res = try_send_recv();
-    if (res.empty()) {
-        if (connect_query()) {
-            res = try_send_recv();
-        }
-    }
-    return res;
 }
 
 bool FocusService::isLocked() {
@@ -213,7 +140,96 @@ void FocusService::writeFocusState(const std::string& cls, const std::string& ti
     }
 }
 
-void FocusService::updateActiveWindow() {
+void FocusService::reloadSettingsIfNeeded() {
+    const char* home = std::getenv("HOME");
+    if (!home) return;
+    std::string settings_path = std::string(home) + "/.config/lucretia/settings.json";
+    std::error_code ec;
+    auto mtime = fs::last_write_time(settings_path, ec);
+    if (!ec && mtime != last_settings_mtime) {
+        last_settings_mtime = mtime;
+        std::ifstream sf(settings_path);
+        if (sf.is_open()) {
+            try {
+                auto s_json = json::parse(sf);
+                cached_workspace_count = s_json.value("workspaceCount", 8);
+                if (cached_workspace_count <= 0) cached_workspace_count = 8;
+            } catch (...) {}
+        }
+    }
+}
+
+void FocusService::processEventLine(const std::string& line) {
+    try {
+        auto data = json::parse(line);
+        if (data.contains("WindowsChanged") && data["WindowsChanged"].contains("windows")) {
+            windows_cache.clear();
+            for (const auto& win : data["WindowsChanged"]["windows"]) {
+                int64_t wid = win.value("id", (int64_t)-1);
+                if (wid >= 0) {
+                    windows_cache[wid] = win;
+                }
+            }
+            refreshActiveWindowFromCache();
+            refreshWorkspacesFromCache();
+        } else if (data.contains("WorkspacesChanged") && data["WorkspacesChanged"].contains("workspaces")) {
+            workspaces_cache = data["WorkspacesChanged"]["workspaces"].get<std::vector<json>>();
+            refreshWorkspacesFromCache();
+        } else if (data.contains("WindowOpenedOrChanged") && data["WindowOpenedOrChanged"].contains("window")) {
+            auto win = data["WindowOpenedOrChanged"]["window"];
+            int64_t wid = win.value("id", (int64_t)-1);
+            if (wid >= 0) {
+                // Clear stale focus on all other windows if this window is focused
+                if (win.value("is_focused", false)) {
+                    for (auto& [id, w] : windows_cache) {
+                        if (w.value("is_focused", false)) {
+                            w["is_focused"] = false;
+                        }
+                    }
+                }
+                windows_cache[wid] = win;
+                refreshActiveWindowFromCache();
+                refreshWorkspacesFromCache();
+            }
+        } else if (data.contains("WindowClosed") && data["WindowClosed"].contains("id")) {
+            int64_t wid = data["WindowClosed"].value("id", (int64_t)-1);
+            if (wid >= 0) {
+                windows_cache.erase(wid);
+                refreshActiveWindowFromCache();
+                refreshWorkspacesFromCache();
+            }
+        } else if (data.contains("WindowFocusChanged")) {
+            if (data["WindowFocusChanged"].contains("id") && data["WindowFocusChanged"]["id"].is_null()) {
+                for (auto& [id, w] : windows_cache) {
+                    w["is_focused"] = false;
+                }
+            } else if (data["WindowFocusChanged"].contains("id")) {
+                int64_t foc_id = data["WindowFocusChanged"].value("id", (int64_t)-1);
+                for (auto& [id, w] : windows_cache) {
+                    w["is_focused"] = (id == foc_id);
+                }
+            }
+            refreshActiveWindowFromCache();
+            refreshWorkspacesFromCache();
+        } else if (data.contains("WorkspaceActivated")) {
+            int64_t act_id = data["WorkspaceActivated"].value("id", (int64_t)-1);
+            bool is_foc = data["WorkspaceActivated"].value("focused", false);
+            for (auto& ws : workspaces_cache) {
+                int64_t wid = ws.value("id", (int64_t)-1);
+                if (wid == act_id) {
+                    ws["is_active"] = true;
+                    ws["is_focused"] = is_foc;
+                } else {
+                    ws["is_active"] = false;
+                    ws["is_focused"] = false;
+                }
+            }
+            refreshWorkspacesFromCache();
+        }
+    } catch (...) {}
+}
+
+void FocusService::refreshActiveWindowFromCache() {
     if (isLocked()) {
         {
             std::lock_guard<std::mutex> lock(state_mutex);
@@ -224,8 +240,15 @@ void FocusService::updateActiveWindow() {
         return;
     }
 
-    std::string response = queryNiri("\"FocusedWindow\"\n");
-    if (response.empty()) {
+    json focused_win = nullptr;
+    for (const auto& [id, w] : windows_cache) {
+        if (w.value("is_focused", false)) {
+            focused_win = w;
+            break;
+        }
+    }
+
+    if (focused_win.is_null()) {
         {
             std::lock_guard<std::mutex> lock(state_mutex);
             current_class = "Desktop";
@@ -235,65 +258,38 @@ void FocusService::updateActiveWindow() {
         return;
     }
 
-    try {
-        auto data = json::parse(response);
-        if (data.contains("Ok") && data["Ok"].contains("FocusedWindow")) {
-            auto focused = data["Ok"]["FocusedWindow"];
-            if (focused.is_null()) {
-                {
-                    std::lock_guard<std::mutex> lock(state_mutex);
-                    current_class = "Desktop";
-                    current_title = "Desktop";
-                }
-                writeFocusState("Desktop", "Desktop");
-            } else {
-                std::string cls = focused.value("app_id", "");
-                if (cls.empty()) cls = "Unknown";
-                std::string title = focused.value("title", "");
-                if (title.empty()) title = cls;
+    std::string cls = focused_win.value("app_id", "");
+    if (cls.empty()) cls = "Unknown";
+    std::string title = focused_win.value("title", "");
+    if (title.empty()) title = cls;
 
-                std::string cls_lower = cls;
-                for (auto &c : cls_lower) c = std::tolower(c);
-                std::string title_lower = title;
-                for (auto &c : title_lower) c = std::tolower(c);
+    std::string cls_lower = cls;
+    for (auto &c : cls_lower) c = std::tolower(c);
+    std::string title_lower = title;
+    for (auto &c : title_lower) c = std::tolower(c);
 
-                if (cls_lower.find("quickshell") != std::string::npos ||
-                    title_lower.find("qs-master") != std::string::npos ||
-                    cls_lower.find("qs-master") != std::string::npos) {
-                    cls = "Quickshell";
-                    title = "Quickshell";
-                }
-                std::string clean_title = focus_common::resolve_app_name(cls, title);
-                {
-                    std::lock_guard<std::mutex> lock(state_mutex);
-                    current_class = cls;
-                    current_title = clean_title;
-                }
-                writeFocusState(cls, clean_title);
-            }
-        }
-    } catch (...) {
+    if (cls_lower.find("quickshell") != std::string::npos ||
+        title_lower.find("qs-master") != std::string::npos ||
+        cls_lower.find("qs-master") != std::string::npos) {
+        cls = "Quickshell";
+        title = "Quickshell";
     }
+    std::string clean_title = focus_common::resolve_app_name(cls, title);
+    {
+        std::lock_guard<std::mutex> lock(state_mutex);
+        current_class = cls;
+        current_title = clean_title;
+    }
+    writeFocusState(cls, clean_title);
 }
 
-void FocusService::updateWorkspacesState() {
-    std::string spaces_resp = queryNiri("\"Workspaces\"\n");
-    if (spaces_resp.empty()) return;
-    std::string windows_resp = queryNiri("\"Windows\"\n");
-    if (windows_resp.empty()) return;
-
+void FocusService::refreshWorkspacesFromCache() {
     try {
-        auto spaces_data = json::parse(spaces_resp);
-        auto windows_data = json::parse(windows_resp);
-        if (!spaces_data.contains("Ok") || !spaces_data["Ok"].contains("Workspaces")) return;
-        if (!windows_data.contains("Ok") || !windows_data["Ok"].contains("Windows")) return;
-
-        const auto& spaces = spaces_data["Ok"]["Workspaces"];
-        const auto& windows = windows_data["Ok"]["Windows"];
+        reloadSettingsIfNeeded();
 
         std::map<int64_t, int> id_to_idx;
         int active_idx = -1;
-        for (const auto& w : spaces) {
+        for (const auto& w : workspaces_cache) {
             int64_t id = w.value("id", (int64_t)-1);
             int idx = w.value("idx", -1);
             id_to_idx[id] = idx;
@@ -304,7 +300,7 @@ void FocusService::updateWorkspacesState() {
 
         struct WInfo { int count = 0; std::string tooltip = "Empty"; bool focused = false; };
         std::map<int, WInfo> w_map;
-        for (const auto& win : windows) {
+        for (const auto& [wid_key, win] : windows_cache) {
             if (win.contains("workspace_id") && !win["workspace_id"].is_null()) {
                 int64_t wid = win["workspace_id"].get<int64_t>();
                 if (id_to_idx.count(wid)) {
@@ -321,19 +317,7 @@ void FocusService::updateWorkspacesState() {
             }
         }
 
-        int seq_end = 8;
-        const char* home = std::getenv("HOME");
-        if (home) {
-            std::string settings_path = std::string(home) + "/.config/lucretia/settings.json";
-            std::ifstream sf(settings_path);
-            if (sf.is_open()) {
-                try {
-                    auto s_json = json::parse(sf);
-                    seq_end = s_json.value("workspaceCount", 8);
-                } catch (...) {}
-            }
-        }
-        if (seq_end <= 0) seq_end = 8;
+        int seq_end = cached_workspace_count > 0 ? cached_workspace_count : 8;
 
         json res = json::array();
         for (int i = 1; i <= seq_end; ++i) {
@@ -366,8 +350,9 @@ void FocusService::updateWorkspacesState() {
 }
 
 void FocusService::daemonLoop() {
-    updateActiveWindow();
-    updateWorkspacesState();
+    reloadSettingsIfNeeded();
+    refreshActiveWindowFromCache();
+    refreshWorkspacesFromCache();
 
     while (!stop_daemon) {
         std::string sock_path = getNiriSocketPath();
@@ -400,7 +385,7 @@ void FocusService::daemonLoop() {
             continue;
         }
 
-        char buf[4096];
+        char buf[8192];
         std::string stream_data = "";
         while (!stop_daemon) {
             ssize_t n = recv(sock, buf, sizeof(buf) - 1, 0);
@@ -414,14 +399,7 @@ void FocusService::daemonLoop() {
                 stream_data.erase(0, pos + 1);
 
                 if (!line.empty()) {
-                    if (line.find("WindowFocusChanged") != std::string::npos ||
-                        line.find("WindowOpenedOrChanged") != std::string::npos ||
-                        line.find("WindowClosed") != std::string::npos ||
-                        line.find("WorkspaceActivated") != std::string::npos ||
-                        line.find("WorkspacesChanged") != std::string::npos) {
-                        updateActiveWindow();
-                        updateWorkspacesState();
-                    }
+                    processEventLine(line);
                 }
             }
         }

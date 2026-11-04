@@ -210,6 +210,8 @@ Item {
                     anchors.fill: parent
                     source: (root.isMediaActive && MprisController.artUrl) ? "file://" + MprisController.artUrl : ""
                     fillMode: Image.PreserveAspectCrop
+                    sourceSize: Qt.size(256, 256)
+                    asynchronous: true
                     visible: false
                 }
 

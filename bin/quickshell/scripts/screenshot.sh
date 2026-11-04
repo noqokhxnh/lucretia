@@ -4,6 +4,7 @@ EDIT_MODE=false
 FULL_MODE=false
 RECORD_MODE=false
 SCAN_QR_MODE=false
+OCR_MODE=false
 GEOMETRY=""
 SOURCE_IMG=""
 CROP_RECT=""
@@ -23,6 +24,7 @@ while [[ "$#" -gt 0 ]]; do
         --full) FULL_MODE=true; shift ;;
         --record) RECORD_MODE=true; shift ;;
         --scan-qr) SCAN_QR_MODE=true; shift ;;
+        --ocr) OCR_MODE=true; shift ;;
         --geometry) GEOMETRY="$2"; shift 2 ;;
         --source) SOURCE_IMG="$2"; shift 2 ;;
         --crop) CROP_RECT="$2"; shift 2 ;;
@@ -115,7 +117,9 @@ if [ -f "$CACHE_DIR/rec_pid" ]; then
                 ACTION=$(timeout 30 notify-send -a "$notif_app" -i "$NOTIF_ICON" -h "string:image-path:$NOTIF_ICON" -A "default=$notif_action" "$notif_title" "$notif_body" 2>/dev/null)
                 rm -f "$VIDEO_THUMB"
                 if [ "$ACTION" = "default" ]; then
-                    if command -v nautilus &> /dev/null; then
+                    if command -v ski &> /dev/null; then
+                        ski "$RECORD_DIR"
+                    elif command -v nautilus &> /dev/null; then
                         nautilus "$RECORD_DIR"
                     else
                         xdg-open "$RECORD_DIR"
@@ -254,7 +258,7 @@ if [ -z "$TARGET_MON" ] && [ -z "$GEOMETRY" ]; then
     TARGET_MON=$(get_active_monitor)
 fi
 
-if [ "$SCAN_QR_MODE" = false ] && [ "$RECORD_MODE" = false ] && [ "$FULL_MODE" = false ] && [ -z "$GEOMETRY" ]; then
+if [ "$SCAN_QR_MODE" = false ] && [ "$OCR_MODE" = false ] && [ "$RECORD_MODE" = false ] && [ "$FULL_MODE" = false ] && [ -z "$GEOMETRY" ]; then
     PREFS="$QS_STATE_SCREENSHOT/audio_prefs"
     if [ -f "$PREFS" ]; then
         IFS=',' read -r QS_DESK_VOL QS_DESK_MUTE QS_MIC_VOL QS_MIC_MUTE QS_MIC_DEV < "$PREFS"
@@ -353,6 +357,48 @@ EOF
         echo -e "0,0,0,0|||NOT_FOUND" > "$RES_FILE"
     fi
     rm -f "$TMP_IMG"
+    exit 0
+fi
+
+if [ "$OCR_MODE" = true ]; then
+    TMP_IMG="$QS_RUN_SCREENSHOT/ocr_temp_$$.png"
+    capture_region "$TMP_IMG"
+
+    if [ -s "$TMP_IMG" ]; then
+        if command -v tesseract &>/dev/null; then
+            LANG_ARG="eng"
+            if tesseract --list-langs 2>/dev/null | grep -q "vie"; then
+                LANG_ARG="eng+vie"
+            fi
+            OCR_TEXT=$(tesseract "$TMP_IMG" stdout -l "$LANG_ARG" 2>/dev/null)
+            if [ -n "$OCR_TEXT" ]; then
+                echo -n "$OCR_TEXT" | wl-copy
+                (
+                    source "$SCRIPT_DIR/i18n.sh" 2>/dev/null
+                    notif_app="$(t "screenshot.notifications.screenshot_app_name" 2>/dev/null || echo "Screenshot")"
+                    notif_title="$(t "screenshot.notifications.ocr_success_title" 2>/dev/null || echo "Text copied to clipboard")"
+                    PREVIEW=$(echo "$OCR_TEXT" | head -n 3 | cut -c 1-80)
+                    notify-send -a "$notif_app" -i "$TMP_IMG" "$notif_title" "$PREVIEW" 2>/dev/null
+                    rm -f "$TMP_IMG"
+                ) &
+            else
+                rm -f "$TMP_IMG"
+                (
+                    source "$SCRIPT_DIR/i18n.sh" 2>/dev/null
+                    notif_app="$(t "screenshot.notifications.screenshot_app_name" 2>/dev/null || echo "Screenshot")"
+                    notif_title="$(t "screenshot.notifications.ocr_empty_title" 2>/dev/null || echo "No text detected")"
+                    notif_body="$(t "screenshot.notifications.ocr_empty_body" 2>/dev/null || echo "Could not recognize any text in the selected area.")"
+                    notify-send -a "$notif_app" "$notif_title" "$notif_body" 2>/dev/null
+                ) &
+            fi
+        else
+            rm -f "$TMP_IMG"
+            check_missing_deps "tesseract"
+        fi
+    else
+        rm -f "$TMP_IMG"
+    fi
+    [ -n "$SOURCE_IMG" ] && rm -f "$SOURCE_IMG"
     exit 0
 fi
 
@@ -496,7 +542,9 @@ if [ "$FULL_MODE" = true ] || [ -n "$GEOMETRY" ] || [ -n "$SOURCE_IMG" ]; then
 
             ACTION=$(timeout 30 notify-send -a "$notif_app" -i "$FILENAME" -h "string:image-path:$FILENAME" -A "default=$notif_action" "$notif_title" "$notif_body" 2>/dev/null)
             if [ "$ACTION" = "default" ]; then
-                if command -v nautilus &> /dev/null; then
+                if command -v ski &> /dev/null; then
+                    ski "$SAVE_DIR"
+                elif command -v nautilus &> /dev/null; then
                     nautilus "$SAVE_DIR"
                 else
                     xdg-open "$SAVE_DIR"

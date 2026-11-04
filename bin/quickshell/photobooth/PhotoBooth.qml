@@ -218,7 +218,7 @@ Item {
     }
 
     function openFolder() {
-        Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && exec nautilus " + Quickshell.env("HOME") + "/Pictures/PhotoBooth"])
+        Quickshell.execDetached(["bash", "-c", "unset HL_INITIAL_WORKSPACE_TOKEN && if command -v ski >/dev/null 2>&1; then exec ski \"" + Quickshell.env("HOME") + "/Pictures/PhotoBooth\"; elif command -v nautilus >/dev/null 2>&1; then exec nautilus \"" + Quickshell.env("HOME") + "/Pictures/PhotoBooth\"; else exec xdg-open \"" + Quickshell.env("HOME") + "/Pictures/PhotoBooth\"; fi"])
     }
 
     // --- Camera ---

@@ -38,8 +38,11 @@ private:
     std::mutex buf_mutex;
     std::mutex state_mutex;
 
-    int query_sock{-1};
-    std::mutex query_mutex;
+    // In-memory caches directly fed from Niri EventStream (0 socket reconnections during runtime)
+    std::unordered_map<int64_t, nlohmann::json> windows_cache;
+    std::vector<nlohmann::json> workspaces_cache;
+    int cached_workspace_count{8};
+    fs::file_time_type last_settings_mtime{};
 
     std::string current_class{"Desktop"};
     std::string current_title{"Desktop"};
@@ -58,10 +61,11 @@ private:
     std::vector<LogEntry> buffer;
 
     std::string getNiriSocketPath();
-    std::string queryNiri(const std::string& req);
     bool isLocked();
-    void updateActiveWindow();
-    void updateWorkspacesState();
+    void reloadSettingsIfNeeded();
+    void processEventLine(const std::string& line);
+    void refreshActiveWindowFromCache();
+    void refreshWorkspacesFromCache();
     void writeFocusState(const std::string& cls, const std::string& title);
     void daemonLoop();
     void flushBuffer();
