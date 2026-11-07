@@ -313,6 +313,13 @@ elif echo "$GPU_INFO" | grep -qi "vmware\|virtualbox\|qxl\|virtio\|bochs"; then
 fi
 
 EXISTING_SETTINGS="$HOME/.config/niri/settings.json"
+# The runtime treats ~/.config/lucretia/settings.json as the live settings
+# file (QS_SETTINGS). When it exists as a real file rather than the symlink
+# this installer creates, it holds newer data than the niri copy, so seed
+# from it instead of silently falling back to stale values.
+if [ -f "$HOME/.config/lucretia/settings.json" ] && [ ! -L "$HOME/.config/lucretia/settings.json" ]; then
+    EXISTING_SETTINGS="$HOME/.config/lucretia/settings.json"
+fi
 if [ -f "$EXISTING_SETTINGS" ] && command -v jq &>/dev/null; then
     _sj_lang=$(jq -r 'if has("language") then (.language // "") else "IGNORE_ME" end' "$EXISTING_SETTINGS" 2>/dev/null)
     _sj_kbopt=$(jq -r 'if has("kbOptions") then (.kbOptions // "") else "IGNORE_ME" end' "$EXISTING_SETTINGS" 2>/dev/null)
@@ -1317,6 +1324,15 @@ if [ -f "$TARGET_CONFIG_DIR/settings.json" ]; then
     mkdir -p "$BACKUP_DIR"
     cp "$TARGET_CONFIG_DIR/settings.json" "$BACKUP_DIR/settings.json"
 fi
+# The live settings file may sit at ~/.config/lucretia/settings.json as a
+# REAL file: the shell writes settings via tmp-file + mv, and mv onto the
+# installer's symlink replaces the symlink itself, so every change after
+# the first install lands only in that file. Back it up as well; the SSoT
+# merge below prefers it, and the symlink step must never destroy it.
+if [ -f "$HOME/.config/lucretia/settings.json" ] && [ ! -L "$HOME/.config/lucretia/settings.json" ]; then
+    mkdir -p "$BACKUP_DIR"
+    cp "$HOME/.config/lucretia/settings.json" "$BACKUP_DIR/lucretia-settings.json"
+fi
 if [ -f "$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env" ]; then
     mkdir -p "$BACKUP_DIR"
     cp "$TARGET_CONFIG_DIR/bin/quickshell/calendar/.env" "$BACKUP_DIR/weather.env"
@@ -1501,7 +1517,10 @@ UPSTREAM_JSON="$REPO_DIR/default_settings.json"
 
 mkdir -p "$(dirname "$SETTINGS_FILE")"
 
-if [ -f "$BACKUP_DIR/settings.json" ] && jq -e . "$BACKUP_DIR/settings.json" >/dev/null 2>&1; then
+if [ -f "$BACKUP_DIR/lucretia-settings.json" ] && jq -e . "$BACKUP_DIR/lucretia-settings.json" >/dev/null 2>&1; then
+    OLD_JSON="$BACKUP_DIR/lucretia-settings.json"
+    echo "  -> Using live settings from ~/.config/lucretia/settings.json..."
+elif [ -f "$BACKUP_DIR/settings.json" ] && jq -e . "$BACKUP_DIR/settings.json" >/dev/null 2>&1; then
     OLD_JSON="$BACKUP_DIR/settings.json"
     echo "  -> Processing JSON Merges safely..."
 else
@@ -1557,12 +1576,21 @@ if jq -n --slurpfile local "$OLD_JSON" --slurpfile up "$UPSTREAM_JSON" \
 else
     rm -f "$TMP_SETTINGS"
     echo -e "  ${C_RED}[ WARN ] jq merge failed or produced empty file. Preserving existing settings.${RESET}"
-    if [ -f "$BACKUP_DIR/settings.json" ]; then
+    if [ -f "$BACKUP_DIR/lucretia-settings.json" ]; then
+        cp "$BACKUP_DIR/lucretia-settings.json" "$SETTINGS_FILE"
+    elif [ -f "$BACKUP_DIR/settings.json" ]; then
         cp "$BACKUP_DIR/settings.json" "$SETTINGS_FILE"
     fi
 fi
 
-# Ensure ~/.config/lucretia/settings.json is synchronized via symlink
+# Ensure ~/.config/lucretia/settings.json is synchronized via symlink.
+# Safety net: never let ln -sf destroy a live settings file that somehow
+# was not backed up above (e.g. created after the backup step ran).
+if [ -f "$HOME/.config/lucretia/settings.json" ] && [ ! -L "$HOME/.config/lucretia/settings.json" ] && [ ! -f "$BACKUP_DIR/lucretia-settings.json" ]; then
+    mkdir -p "$BACKUP_DIR"
+    cp "$HOME/.config/lucretia/settings.json" "$BACKUP_DIR/lucretia-settings.json"
+    echo -e "  ${C_YELLOW}-> Live settings file backed up to ${BACKUP_DIR}/lucretia-settings.json${RESET}"
+fi
 mkdir -p "$HOME/.config/lucretia"
 ln -sf "$SETTINGS_FILE" "$HOME/.config/lucretia/settings.json"
 
